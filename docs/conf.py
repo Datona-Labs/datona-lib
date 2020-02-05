@@ -55,12 +55,6 @@ html_theme = 'sphinx_rtd_theme'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
-# -- Options for Sphinx-JS ---------------------------------------------------
-js_source_path = '../src'
-primary_domain = 'js'
+# -- Options for Sphinx ------------------------------------------------------
 
-html_context = {
-    'css_files': [
-        '_static/theme_overrides.css',  # override wide tables in RTD theme
-        ],
-     }
+master_doc = 'index'
