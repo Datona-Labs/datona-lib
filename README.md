@@ -6,16 +6,16 @@
 
 Core Javascript library for accessing the [Datona IO Platform](https://datona.io).
 
-For more information about the platform see [What Is Smart Data Access](TODO) or download the [white paper](https://datonalabs.org/documents/WhitePaper.pdf).
+For more information about the platform see [What Is Smart Data Access](https://datona-lib.readthedocs.io/en/latest/what.html) or download the [white paper](https://datonalabs.org/documents/WhitePaper.pdf).
 
 ## Features
-- Fully encapsulates the [Datona Application Layer Protocol](TODO);
-- Allows [Smart Data Access Contracts](TODO) on the blockchain to be deployed, managed and queried;
+- Fully encapsulates the [Datona Application Layer Protocol](https://datona-lib.readthedocs.io/en/latest/types.html#application-layer-protocol);
+- Allows [Smart Data Access Contracts](https://datona-lib.readthedocs.io/en/latest/what.html#smart-data-access-contracts) on the blockchain to be deployed, managed and queried;
 - Allows Data Vaults controlled by Smart Data Access Contracts to be created, updated, accessed and deleted on any compliant local or remote Data Vault Server;
 - Provides all cryptographic functions needed to use the platform.
 
 ## Documentation
-Full documentation is available on [ReadTheDocs](TODO).
+Full documentation is available on [ReadTheDocs](https://datona-lib.readthedocs.io/en/latest/index.html).
 
 ## Installation
 
@@ -31,7 +31,7 @@ You need to be running a local Ethereum node or have access to a remote node - e
 const datona = require('datona-lib');
 ```
 
-See the [project documentation](TODO) for usage information.
+See the [project documentation](https://datona-lib.readthedocs.io/en/latest/index.html) for usage information.
 
 ## Projects utilising datona-lib
 
