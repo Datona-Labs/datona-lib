@@ -1,0 +1,437 @@
+** DRAFT **
+
+###############
+Datona Protocol
+###############
+
+This standard specifies the Datona application layer protocol.  The protocol governs communications between compliant software applications of the various types used in the Datona ecosystem, such as data owner applications, requester software and data vault servers.
+
+The protocol is split into three sub-protocols that specify the standard for communications between specific types of applications.  Each sub-protocol is partly developed independently and has its own version.
+
+.. list-table::
+  :widths: auto
+  :header-rows: 1
+
+  * - Sub-Protocol
+    - Description
+  * - General
+    - Defines the approaches to data integrity, confidentiality, authenticity and non-repudiation.
+
+      Defines the general application-level packet format for all communication between Datona-enabled software applications.
+  * - Smart Data Access Request
+    - Defines the application-level protocol and packet structure for a request for data from a requester to a data owner, and associated accept or reject responses from the data owner.
+  * - Vault Request
+    - Defines the application-level protocol and packet structure for communications between a software application and a Data Vault Server.
+
+***************
+Version History
+***************
+
+This protocol (and all Datona software releases) uses Semantic Versioning.
+
++------------+-------------+-------------+-------------+-------------------------------------------+
+|            | Contains sub-protocol versions          |                                           |
++            +-------------+-------------+-------------+                                           +
+|            |             |     SDA     |    Vault    |                                           |
+|  Version   |   General   |   Request   |   Request   | Description                               |
++============+=============+=============+=============+===========================================+
+|   0.0.1    |    0.0.1    |    0.0.1    |    0.0.1    | Initial development version for datona-lib|
++------------+-------------+-------------+-------------+-------------------------------------------+
+
+**********
+Core Types
+**********
+
+.. _Types:
+
+.. list-table::
+  :widths: auto
+  :header-rows: 1
+
+  * - Type
+    - Definition
+  * - *Address*
+    - Blockchain address in the format ``/^0x[0-9a-fA-F]{40}$/``
+  * - *DatonaSignature*
+    - ECDSA secp256k1 signature - 130 hex-character string representing 64 byte signature (s) plus 1 byte recovery (r) in that order
+  * - *Hash*
+    - keccak256 hash in the format ``/^[0-9a-fA-F]{64}$/``
+  * - *PrivateKey*
+    - Private key in the format ``/^[0-9a-fA-F]{64}$/``
+  * - *URL*
+    - Server URL of the form: ``{ scheme: String, host: String, port: Number }``
+
+------------------------------------------------------------------------------
+
+****************
+General Protocol
+****************
+
+*Draft Version 0.0.1*
+
+The network protocol or URI scheme used to communicate between Datona-enabled applications is not restricted by this standard.  Users are free to use whatever method they prefer to transmit requests.
+
+Principles
+==========
+
+.. list-table::
+  :widths: 25 75
+  :header-rows: 1
+
+  * - Principle
+    - Approach
+  * - Integrity &
+
+      Confidentiality
+    - *Encryption*
+
+      All Datona transactions will be encrypted using the destination’s public address.
+
+      ** This has not yet been implemented in Datona Lib. **
+  * - Authenticity &
+
+      Non-repudiation
+    - *Digital Signature + Verification of Address*
+
+      All Datona transactions are sent as a SignedTransaction, which contains the raw transaction and a digital signature.  The digital signature demonstrates that the signatory was the author of the transaction data.  However, this is only true if the signatory’s public address can be associated with the individual or organisation.  This can be done in a few ways:
+
+      a) the user could publicly publish their address in a way that makes it very difficult for them to argue that the address is not theirs;
+
+      b) the user could have their public address verified by a trusted authority.
+
+
+Packet Format
+=============
+
+.. _Transaction:
+
+Transaction
+-----------
+
+All transactions in the Datona Protocol have the following JSON structure:
+
+.. code-block:: json
+
+  {
+    "txnType": String,
+    ...
+  }
+
+.. list-table::
+  :widths: 20 80
+  :header-rows: 1
+
+  * - Field
+    - Description
+  * - txnType
+    - *(String)*.  The name of the transaction type used to identify the type of transaction.
+
+------------------------------------------------------------------------------
+
+.. _SignedTransaction:
+
+SignedTransaction
+-----------------
+
+All signed transactions in the Datona Protocol are sent in the following JSON format:
+
+.. code-block:: json
+
+  {
+    "txn": Transaction,
+    "signature": DatonaSignature
+  }
+
+*where:*
+
+  * ``signature`` is the DatonaSignature of the keccak256 hash of the ``txn`` element.
+
+------------------------------------------------------------------------------
+
+.. _GeneralServerResponse:
+
+GeneralServerResponse
+---------------------
+
+A basic acknowledgement or error response from a server to a client.
+
+Acknowledgement
+~~~~~~~~~~~~~~~
+
+.. code-block:: json
+
+  {
+    "txnType": "GeneralResponse",
+    "responseType":"success"
+  }
+
+.. list-table::
+  :widths: 20 80
+  :header-rows: 1
+
+  * - Field
+    - Description
+  * - responseType
+    - *(String)*  The type of the response: either “success” or “error”
+
+
+Error
+~~~~~
+
+Error responses contain the fields of a DatonaError.
+
+.. code-block:: json
+
+  {
+    "txnType": "GeneralResponse",
+    "responseType":"error",
+    "error": {
+      "name":"",
+      "message":"",
+      "details":""
+    }
+  }
+
+.. list-table::
+  :widths: 20 80
+  :header-rows: 1
+
+  * - name
+    - *(String)*  Name of error
+  * - message
+    - *(String)*  Natural language error message
+  * - details
+    - *(String)*  Detailed error message, usually not suitable for displaying to the average user.  Possibly empty.
+
+
+------------------------------------------------------------------------------
+
+
+**********************************
+Smart Data Access Request Protocol
+**********************************
+
+Draft Version 0.0.1
+
+A SmartDataAccessRequest is sent from a requester to a data owner, to request data to be shared in a vault controlled by a Smart Data Access Contract.  The data owner can respond with a SmartDataAccessResponse accepting or rejecting the request.
+
+The format of the response is specific to the requester’s use case.  Therefore, the SmartDataAccessRequest contains user defined acceptTransaction and rejectTransaction elements that the requester is free to tailor as needed.
+
+If accepting the request, the owner’s application software is required to construct a SmartDataAccessResponse using the template given in the acceptTransaction element and extend it with (a) the url of the data vault server holding the data, and (b) the blockchain address of the deployed S-DAC.
+
+If rejecting the request, the owner’s application software is required to construct a SmartDataAccessResponse using the template given in the rejectTransaction and extend it with the reason for the rejection.
+
+Packet Format
+=============
+
+.. _SmartDataAccessRequestPacket:
+
+SmartDataAccessRequestPacket
+----------------------------
+
+The following JSON gives the minimal template spec for a Smart Data Access request from Requester to Owner.
+
+.. code-block:: json
+
+  {
+    "txnType": "SmartDataAccessRequest",
+    "version": "0.0.1",
+    "contract": {
+      "hash": ""
+    },
+    "api": {
+      "url": {
+        "scheme": "",
+        "host": "",
+        "port": ""
+      }
+      "acceptTransaction": {},
+      "rejectTransaction": {}
+    }
+  }
+
+.. list-table::
+  :widths: 20 80
+  :header-rows: 1
+
+  * - Field
+    - Description
+  * - version
+    - *(String)*  The version of the Smart Data Access Request protocol with which this request is compliant.
+  * - contract
+    - *(Object)*  The requested S-DAC and associated details
+  * - contract.hash
+    - *(Hash)*  keccak256 hash of the requested S-DAC’s runtime bytecode
+  * - api
+    - *(Object)*.  Details of how the owner-end software should respond to the request.
+  * - api.url
+    - *(URL)*  URL of the Requester’s server that will handle the response.  See Type Definitions.
+  * - api.acceptTransaction
+    - *(Object)*  Template for the transaction that will be returned to the requester if the request is accepted.  Requester specific - for example can be configured to include an internal reference number.
+
+      Shall be extended with the following fields:
+
+      * *contract*: *Address* of the S-DAC deployed on the blockchain, staring with ``0x``
+
+      * *vaultUrl*: *URL* of the vault service that is hosting the data, in the same format as *api.url* defined above.
+  * - api.rejectTransaction
+    - *(Object)*  Template for the transaction that will be returned to the requester if the request is rejected.  Will be extended with the following fields:
+
+      * *reason*: ``String`` message containing the reason for the rejection
+
+
+------------------------------------------------------------------------------
+
+.. _SmartDataAccessResponse:
+
+SmartDataAccessResponse
+-----------------------
+
+An accept response consists of copying the acceptTransaction object from the SmartDataAccessRequestPacket and adding the following elements:
+
+.. code-block:: json
+
+  {
+    "txnType": "SmartDataAccessResponse",
+    "responseType": "accept",
+    "contract": "",
+    "vaultUrl": {
+      "scheme": "",
+      "host": "",
+      "port": ""
+    }
+    ... elements copied from the acceptTransaction object (if any)
+  }
+
+
+.. list-table::
+  :widths: 20 80
+  :header-rows: 1
+
+  * - Field
+    - Description
+  * - contract
+    - *(Address)*  Blockchain address of the deployed S-DAC
+  * - contract.hash
+    - *(Hash)*  keccak256 hash of the requested S-DAC’s runtime bytecode
+  * - vaultUrl
+    - *(URL)*  URL of the Requester’s server that will handle the response.
+
+------------------------------------------------------------------------------
+
+**********************
+Vault Request Protocol
+**********************
+
+*Draft Version 0.0.1*
+
+VaultRequest packets are sent to a Data Vault Server to create, update, access or delete a vault.  The server promises to respond to any request with a VaultResponse packet indicating success or error.  The protocol consists of a single request and response.
+
+Packet Format
+=============
+
+.. _VaultRequest:
+
+VaultRequest
+------------
+
+One of the following JSON requests:
+
+create
+~~~~~~
+
+.. code-block:: json
+
+  {
+    "txnType": "VaultRequest",
+    "requestType": "create",
+    "contract": "",
+    "data": ""
+  }
+
+update
+~~~~~~
+
+.. code-block:: json
+
+  {
+    "txnType": "VaultRequest",
+    "requestType": "update",
+    "contract": "",
+    "data": ""
+  }
+
+access
+~~~~~~
+
+.. code-block:: json
+
+  {
+    "txnType": "VaultRequest",
+    "requestType": "access",
+    "contract": ""
+  }
+
+delete
+~~~~~~
+
+.. code-block:: json
+
+  {
+    "txnType": "VaultRequest",
+    "requestType": "delete",
+    "contract": ""
+  }
+
+
+.. list-table::
+  :widths: 20 80
+  :header-rows: 1
+
+  * - Field
+    - Description
+  * - type
+    - *(String)*  The type of request: either “create”, “update”, “access” or “delete”
+  * - contract
+    - *(Address)*  The blockchain address of the Smart Data Access Contract that controls the vault.  The S-DAC must already be deployed on the blockchain.
+  * - data
+    - Any type.  The data to store in the vault or retrieved from the vault
+
+------------------------------------------------------------------------------
+
+.. _VaultResponse:
+
+VaultResponse
+-------------
+
+Every Vault Request from the client is responded to with a Vault Response.  There are two types of response - success and error.
+
+success
+~~~~~~~
+
+A success response conforms with the GeneralServerResponse_ Acknowledgement format.  If responding to an access request, the response will additionally contain a ``data`` field with returned vault contents.
+
+.. code-block:: json
+
+  {
+    "txnType": "VaultResponse",
+    "responseType":"success",
+    "data": Object
+  }
+
+error
+~~~~~
+
+An error response conforms with the GeneralServerResponse_ Error format.
+
+.. code-block:: json
+
+  {
+    "txnType": "VaultResponse",
+    "responseType":"error",
+    error: {
+      "name":"",
+      "message":"",
+      "details":""
+    }
+  }

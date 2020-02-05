@@ -1,0 +1,47 @@
+{
+  "name": "datona-lib",
+  "version": "0.0.1",
+  "description": "Core library for access to the Datona IO Platform",
+  "main": "src/datona.js",
+  "author": "Datona Labs",
+  "license": "LGPL",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "./node_modules/.bin/mocha --reporter spec -i -g 'Blockchain subscribe/unsubscribe'",
+    "test-realtime": "./node_modules/.bin/mocha --reporter spec -g 'Blockchain subscribe/unsubscribe'",
+    "test-all": "./node_modules/.bin/mocha --reporter spec",
+    "test-cov": "istanbul cover node_modules/mocha/bin/_mocha -- -R spec"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Datona-Labs/datona-lib.git"
+  },
+  "keywords": [
+    "smart data access",
+    "control of data",
+    "data vault",
+    "gdpr",
+    "data protection",
+    "blockchain",
+    "datona"
+  ],
+  "bugs": {
+    "url": "https://github.com/Datona-Labs/datona-lib/issues"
+  },
+  "homepage": "https://github.com/Datona-Labs/datona-lib#readme",
+  "dependencies": {
+    "js-sha3": "^0.8.0",
+    "npm": "^6.13.6",
+    "rlp": "^2.2.4",
+    "secp256k1": "^3.8.0",
+    "web3": "^1.0.0-beta.55"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "chai-as-promised": "^5.3.0",
+    "istanbul": "^0.4.3",
+    "mocha": "^2.4.5"
+  }
+}

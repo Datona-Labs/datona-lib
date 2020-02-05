@@ -1,0 +1,665 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Datona Protocol &mdash; Datona-Lib 0.0.1a documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Datona-Lib
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Overview By Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datona-blockchain.html">datona-blockchain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datona-vault.html">datona-vault</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datona-crypto.html">datona-crypto</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datona-comms.html">datona-comms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="types.html">Core Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="types.html#application-layer-protocol">Application Layer Protocol</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datona-errors.html">Errors</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Datona-Lib</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Datona Protocol</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/protocol.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <p>** DRAFT **</p>
+<div class="section" id="datona-protocol">
+<h1>Datona Protocol<a class="headerlink" href="#datona-protocol" title="Permalink to this headline">¶</a></h1>
+<p>This standard specifies the Datona application layer protocol.  The protocol governs communications between compliant software applications of the various types used in the Datona ecosystem, such as data owner applications, requester software and data vault servers.</p>
+<p>The protocol is split into three sub-protocols that specify the standard for communications between specific types of applications.  Each sub-protocol is partly developed independently and has its own version.</p>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Sub-Protocol</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>General</p></td>
+<td><p>Defines the approaches to data integrity, confidentiality, authenticity and non-repudiation.</p>
+<p>Defines the general application-level packet format for all communication between Datona-enabled software applications.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p>Smart Data Access Request</p></td>
+<td><p>Defines the application-level protocol and packet structure for a request for data from a requester to a data owner, and associated accept or reject responses from the data owner.</p></td>
+</tr>
+<tr class="row-even"><td><p>Vault Request</p></td>
+<td><p>Defines the application-level protocol and packet structure for communications between a software application and a Data Vault Server.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="section" id="version-history">
+<h2>Version History<a class="headerlink" href="#version-history" title="Permalink to this headline">¶</a></h2>
+<p>This protocol (and all Datona software releases) uses Semantic Versioning.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 13%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 46%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head" rowspan="2"><p>Version</p></th>
+<th class="head" colspan="3"><p>Contains sub-protocol versions</p></th>
+<th class="head" rowspan="2"><p>Description</p></th>
+</tr>
+<tr class="row-even"><th class="head"><p>General</p></th>
+<th class="head"><blockquote>
+<div><p>SDA</p>
+</div></blockquote>
+<p>Request</p>
+</th>
+<th class="head"><blockquote>
+<div><p>Vault</p>
+</div></blockquote>
+<p>Request</p>
+</th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-odd"><td><p>0.0.1</p></td>
+<td><p>0.0.1</p></td>
+<td><p>0.0.1</p></td>
+<td><p>0.0.1</p></td>
+<td><p>Initial development version for datona-lib</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="core-types">
+<h2>Core Types<a class="headerlink" href="#core-types" title="Permalink to this headline">¶</a></h2>
+<table class="colwidths-auto docutils align-default" id="types">
+<thead>
+<tr class="row-odd"><th class="head"><p>Type</p></th>
+<th class="head"><p>Definition</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><em>Address</em></p></td>
+<td><p>Blockchain address in the format <code class="docutils literal notranslate"><span class="pre">/^0x[0-9a-fA-F]{40}$/</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><em>DatonaSignature</em></p></td>
+<td><p>ECDSA secp256k1 signature - 130 hex-character string representing 64 byte signature (s) plus 1 byte recovery (r) in that order</p></td>
+</tr>
+<tr class="row-even"><td><p><em>Hash</em></p></td>
+<td><p>keccak256 hash in the format <code class="docutils literal notranslate"><span class="pre">/^[0-9a-fA-F]{64}$/</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><em>PrivateKey</em></p></td>
+<td><p>Private key in the format <code class="docutils literal notranslate"><span class="pre">/^[0-9a-fA-F]{64}$/</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><em>URL</em></p></td>
+<td><p>Server URL of the form: <code class="docutils literal notranslate"><span class="pre">{</span> <span class="pre">scheme:</span> <span class="pre">String,</span> <span class="pre">host:</span> <span class="pre">String,</span> <span class="pre">port:</span> <span class="pre">Number</span> <span class="pre">}</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr class="docutils" />
+<div class="section" id="general-protocol">
+<h2>General Protocol<a class="headerlink" href="#general-protocol" title="Permalink to this headline">¶</a></h2>
+<p><em>Draft Version 0.0.1</em></p>
+<p>The network protocol or URI scheme used to communicate between Datona-enabled applications is not restricted by this standard.  Users are free to use whatever method they prefer to transmit requests.</p>
+<div class="section" id="principles">
+<h3>Principles<a class="headerlink" href="#principles" title="Permalink to this headline">¶</a></h3>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 75%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Principle</p></th>
+<th class="head"><p>Approach</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Integrity &amp;</p>
+<p>Confidentiality</p>
+</td>
+<td><p><em>Encryption</em></p>
+<p>All Datona transactions will be encrypted using the destination’s public address.</p>
+<p>** This has not yet been implemented in Datona Lib. **</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p>Authenticity &amp;</p>
+<p>Non-repudiation</p>
+</td>
+<td><p><em>Digital Signature + Verification of Address</em></p>
+<p>All Datona transactions are sent as a SignedTransaction, which contains the raw transaction and a digital signature.  The digital signature demonstrates that the signatory was the author of the transaction data.  However, this is only true if the signatory’s public address can be associated with the individual or organisation.  This can be done in a few ways:</p>
+<ol class="loweralpha simple">
+<li><p>the user could publicly publish their address in a way that makes it very difficult for them to argue that the address is not theirs;</p></li>
+<li><p>the user could have their public address verified by a trusted authority.</p></li>
+</ol>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="packet-format">
+<h3>Packet Format<a class="headerlink" href="#packet-format" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="transaction">
+<span id="id1"></span><h4>Transaction<a class="headerlink" href="#transaction" title="Permalink to this headline">¶</a></h4>
+<p>All transactions in the Datona Protocol have the following JSON structure:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
+  &quot;txnType&quot;: String,
+  ...
+}
+</pre></div>
+</div>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>txnType</p></td>
+<td><p><em>(String)</em>.  The name of the transaction type used to identify the type of transaction.</p></td>
+</tr>
+</tbody>
+</table>
+<hr class="docutils" />
+</div>
+<div class="section" id="signedtransaction">
+<span id="id2"></span><h4>SignedTransaction<a class="headerlink" href="#signedtransaction" title="Permalink to this headline">¶</a></h4>
+<p>All signed transactions in the Datona Protocol are sent in the following JSON format:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
+  &quot;txn&quot;: Transaction,
+  &quot;signature&quot;: DatonaSignature
+}
+</pre></div>
+</div>
+<p><em>where:</em></p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">signature</span></code> is the DatonaSignature of the keccak256 hash of the <code class="docutils literal notranslate"><span class="pre">txn</span></code> element.</p></li>
+</ul>
+</div></blockquote>
+<hr class="docutils" />
+</div>
+<div class="section" id="generalserverresponse">
+<span id="id3"></span><h4>GeneralServerResponse<a class="headerlink" href="#generalserverresponse" title="Permalink to this headline">¶</a></h4>
+<p>A basic acknowledgement or error response from a server to a client.</p>
+<div class="section" id="acknowledgement">
+<h5>Acknowledgement<a class="headerlink" href="#acknowledgement" title="Permalink to this headline">¶</a></h5>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;txnType&quot;</span><span class="p">:</span> <span class="s2">&quot;GeneralResponse&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;responseType&quot;</span><span class="p">:</span><span class="s2">&quot;success&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>responseType</p></td>
+<td><p><em>(String)</em>  The type of the response: either “success” or “error”</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="error">
+<h5>Error<a class="headerlink" href="#error" title="Permalink to this headline">¶</a></h5>
+<p>Error responses contain the fields of a DatonaError.</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;txnType&quot;</span><span class="p">:</span> <span class="s2">&quot;GeneralResponse&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;responseType&quot;</span><span class="p">:</span><span class="s2">&quot;error&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;error&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;details&quot;</span><span class="p">:</span><span class="s2">&quot;&quot;</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p><em>(String)</em>  Name of error</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>message</p></td>
+<td><p><em>(String)</em>  Natural language error message</p></td>
+</tr>
+<tr class="row-odd"><td><p>details</p></td>
+<td><p><em>(String)</em>  Detailed error message, usually not suitable for displaying to the average user.  Possibly empty.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+<hr class="docutils" />
+<div class="section" id="smart-data-access-request-protocol">
+<h2>Smart Data Access Request Protocol<a class="headerlink" href="#smart-data-access-request-protocol" title="Permalink to this headline">¶</a></h2>
+<p>Draft Version 0.0.1</p>
+<p>A SmartDataAccessRequest is sent from a requester to a data owner, to request data to be shared in a vault controlled by a Smart Data Access Contract.  The data owner can respond with a SmartDataAccessResponse accepting or rejecting the request.</p>
+<p>The format of the response is specific to the requester’s use case.  Therefore, the SmartDataAccessRequest contains user defined acceptTransaction and rejectTransaction elements that the requester is free to tailor as needed.</p>
+<p>If accepting the request, the owner’s application software is required to construct a SmartDataAccessResponse using the template given in the acceptTransaction element and extend it with (a) the url of the data vault server holding the data, and (b) the blockchain address of the deployed S-DAC.</p>
+<p>If rejecting the request, the owner’s application software is required to construct a SmartDataAccessResponse using the template given in the rejectTransaction and extend it with the reason for the rejection.</p>
+<div class="section" id="id4">
+<h3>Packet Format<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="smartdataaccessrequestpacket">
+<span id="id5"></span><h4>SmartDataAccessRequestPacket<a class="headerlink" href="#smartdataaccessrequestpacket" title="Permalink to this headline">¶</a></h4>
+<p>The following JSON gives the minimal template spec for a Smart Data Access request from Requester to Owner.</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;txnType&quot;</span><span class="p">:</span> <span class="s2">&quot;SmartDataAccessRequest&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;0.0.1&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;contract&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&quot;hash&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span>
+  <span class="p">},</span>
+  <span class="nt">&quot;api&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&quot;url&quot;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="nt">&quot;scheme&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;host&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;port&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span>
+    <span class="p">}</span>
+    <span class="s2">&quot;acceptTransaction&quot;</span><span class="p">:</span> <span class="p">{},</span>
+    <span class="nt">&quot;rejectTransaction&quot;</span><span class="p">:</span> <span class="p">{}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>version</p></td>
+<td><p><em>(String)</em>  The version of the Smart Data Access Request protocol with which this request is compliant.</p></td>
+</tr>
+<tr class="row-odd"><td><p>contract</p></td>
+<td><p><em>(Object)</em>  The requested S-DAC and associated details</p></td>
+</tr>
+<tr class="row-even"><td><p>contract.hash</p></td>
+<td><p><em>(Hash)</em>  keccak256 hash of the requested S-DAC’s runtime bytecode</p></td>
+</tr>
+<tr class="row-odd"><td><p>api</p></td>
+<td><p><em>(Object)</em>.  Details of how the owner-end software should respond to the request.</p></td>
+</tr>
+<tr class="row-even"><td><p>api.url</p></td>
+<td><p><em>(URL)</em>  URL of the Requester’s server that will handle the response.  See Type Definitions.</p></td>
+</tr>
+<tr class="row-odd"><td><p>api.acceptTransaction</p></td>
+<td><p><em>(Object)</em>  Template for the transaction that will be returned to the requester if the request is accepted.  Requester specific - for example can be configured to include an internal reference number.</p>
+<p>Shall be extended with the following fields:</p>
+<ul class="simple">
+<li><p><em>contract</em>: <em>Address</em> of the S-DAC deployed on the blockchain, staring with <code class="docutils literal notranslate"><span class="pre">0x</span></code></p></li>
+<li><p><em>vaultUrl</em>: <em>URL</em> of the vault service that is hosting the data, in the same format as <em>api.url</em> defined above.</p></li>
+</ul>
+</td>
+</tr>
+<tr class="row-even"><td><p>api.rejectTransaction</p></td>
+<td><p><em>(Object)</em>  Template for the transaction that will be returned to the requester if the request is rejected.  Will be extended with the following fields:</p>
+<ul class="simple">
+<li><p><em>reason</em>: <code class="docutils literal notranslate"><span class="pre">String</span></code> message containing the reason for the rejection</p></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<hr class="docutils" />
+</div>
+<div class="section" id="smartdataaccessresponse">
+<span id="id6"></span><h4>SmartDataAccessResponse<a class="headerlink" href="#smartdataaccessresponse" title="Permalink to this headline">¶</a></h4>
+<p>An accept response consists of copying the acceptTransaction object from the SmartDataAccessRequestPacket and adding the following elements:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
+  &quot;txnType&quot;: &quot;SmartDataAccessResponse&quot;,
+  &quot;responseType&quot;: &quot;accept&quot;,
+  &quot;contract&quot;: &quot;&quot;,
+  &quot;vaultUrl&quot;: {
+    &quot;scheme&quot;: &quot;&quot;,
+    &quot;host&quot;: &quot;&quot;,
+    &quot;port&quot;: &quot;&quot;
+  }
+  ... elements copied from the acceptTransaction object (if any)
+}
+</pre></div>
+</div>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>contract</p></td>
+<td><p><em>(Address)</em>  Blockchain address of the deployed S-DAC</p></td>
+</tr>
+<tr class="row-odd"><td><p>contract.hash</p></td>
+<td><p><em>(Hash)</em>  keccak256 hash of the requested S-DAC’s runtime bytecode</p></td>
+</tr>
+<tr class="row-even"><td><p>vaultUrl</p></td>
+<td><p><em>(URL)</em>  URL of the Requester’s server that will handle the response.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<hr class="docutils" />
+<div class="section" id="vault-request-protocol">
+<h2>Vault Request Protocol<a class="headerlink" href="#vault-request-protocol" title="Permalink to this headline">¶</a></h2>
+<p><em>Draft Version 0.0.1</em></p>
+<p>VaultRequest packets are sent to a Data Vault Server to create, update, access or delete a vault.  The server promises to respond to any request with a VaultResponse packet indicating success or error.  The protocol consists of a single request and response.</p>
+<div class="section" id="id7">
+<h3>Packet Format<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="vaultrequest">
+<span id="id8"></span><h4>VaultRequest<a class="headerlink" href="#vaultrequest" title="Permalink to this headline">¶</a></h4>
+<p>One of the following JSON requests:</p>
+<div class="section" id="create">
+<h5>create<a class="headerlink" href="#create" title="Permalink to this headline">¶</a></h5>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;txnType&quot;</span><span class="p">:</span> <span class="s2">&quot;VaultRequest&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;requestType&quot;</span><span class="p">:</span> <span class="s2">&quot;create&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;contract&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;data&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="update">
+<h5>update<a class="headerlink" href="#update" title="Permalink to this headline">¶</a></h5>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;txnType&quot;</span><span class="p">:</span> <span class="s2">&quot;VaultRequest&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;requestType&quot;</span><span class="p">:</span> <span class="s2">&quot;update&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;contract&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;data&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="access">
+<h5>access<a class="headerlink" href="#access" title="Permalink to this headline">¶</a></h5>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;txnType&quot;</span><span class="p">:</span> <span class="s2">&quot;VaultRequest&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;requestType&quot;</span><span class="p">:</span> <span class="s2">&quot;access&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;contract&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="delete">
+<h5>delete<a class="headerlink" href="#delete" title="Permalink to this headline">¶</a></h5>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;txnType&quot;</span><span class="p">:</span> <span class="s2">&quot;VaultRequest&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;requestType&quot;</span><span class="p">:</span> <span class="s2">&quot;delete&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;contract&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>type</p></td>
+<td><p><em>(String)</em>  The type of request: either “create”, “update”, “access” or “delete”</p></td>
+</tr>
+<tr class="row-odd"><td><p>contract</p></td>
+<td><p><em>(Address)</em>  The blockchain address of the Smart Data Access Contract that controls the vault.  The S-DAC must already be deployed on the blockchain.</p></td>
+</tr>
+<tr class="row-even"><td><p>data</p></td>
+<td><p>Any type.  The data to store in the vault or retrieved from the vault</p></td>
+</tr>
+</tbody>
+</table>
+<hr class="docutils" />
+</div>
+</div>
+<div class="section" id="vaultresponse">
+<span id="id9"></span><h4>VaultResponse<a class="headerlink" href="#vaultresponse" title="Permalink to this headline">¶</a></h4>
+<p>Every Vault Request from the client is responded to with a Vault Response.  There are two types of response - success and error.</p>
+<div class="section" id="success">
+<h5>success<a class="headerlink" href="#success" title="Permalink to this headline">¶</a></h5>
+<p>A success response conforms with the <a class="reference internal" href="#generalserverresponse">GeneralServerResponse</a> Acknowledgement format.  If responding to an access request, the response will additionally contain a <code class="docutils literal notranslate"><span class="pre">data</span></code> field with returned vault contents.</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
+  &quot;txnType&quot;: &quot;VaultResponse&quot;,
+  &quot;responseType&quot;:&quot;success&quot;,
+  &quot;data&quot;: Object
+}
+</pre></div>
+</div>
+</div>
+<div class="section" id="id10">
+<h5>error<a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h5>
+<p>An error response conforms with the <a class="reference internal" href="#generalserverresponse">GeneralServerResponse</a> Error format.</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
+  &quot;txnType&quot;: &quot;VaultResponse&quot;,
+  &quot;responseType&quot;:&quot;error&quot;,
+  error: {
+    &quot;name&quot;:&quot;&quot;,
+    &quot;message&quot;:&quot;&quot;,
+    &quot;details&quot;:&quot;&quot;
+  }
+}
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Datona Labs
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

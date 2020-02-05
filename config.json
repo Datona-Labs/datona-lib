@@ -1,0 +1,7 @@
+{
+    "blockchainURL" : {
+      "scheme": "ws",
+      "host": "localhost",
+      "port": "8545"
+    }
+}

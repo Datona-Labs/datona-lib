@@ -1,0 +1,286 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Welcome to the Datona-Lib documentation &mdash; Datona-Lib 0.0.1a documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="What Is Smart Data Access?" href="what.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="#" class="icon icon-home"> Datona-Lib
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">User Documenation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="what.html">What Is Smart Data Access?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="howto.html">How To Use</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API Specification</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="datona-blockchain.html">datona-blockchain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datona-vault.html">datona-vault</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datona-crypto.html">datona-crypto</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datona-comms.html">datona-comms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="types.html">Core Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="types.html#application-layer-protocol">Application Layer Protocol</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datona-errors.html">Errors</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">Datona-Lib</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="#">Docs</a> &raquo;</li>
+        
+      <li>Welcome to the Datona-Lib documentation</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="welcome-to-the-datona-lib-documentation">
+<h1>Welcome to the Datona-Lib documentation<a class="headerlink" href="#welcome-to-the-datona-lib-documentation" title="Permalink to this headline">¶</a></h1>
+<p>Version 0.0.1.</p>
+<p><em>This is an alpha version designed for experimental use only.</em></p>
+<div class="section" id="what-is-datona-lib">
+<h2>What is Datona-Lib?<a class="headerlink" href="#what-is-datona-lib" title="Permalink to this headline">¶</a></h2>
+<p>Datona-Lib is an open-source Node.js library that encapsulates the core cryptographic, blockchain, vault and communications features needed to develop on the <a class="reference external" href="https://datona.io">datona.io</a> platform.  It is available on <a class="reference external" href="https://github.com/Datona-Labs/datona-lib">github here</a>.  It is intended for developers of vault servers, identity apps and requester software, and for those wanting to experiment with <a class="reference internal" href="what.html#whatissda"><span class="std std-ref">Smart Data Access</span></a>.</p>
+<p>Datona-Lib consists of four components:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="datona-crypto.html#datona-crypto"><span class="std std-ref">datona-crypto</span></a> implements the core cryptographic functions such as hashing and digital signatures.</p></li>
+<li><p><a class="reference internal" href="datona-vault.html#datona-vault"><span class="std std-ref">datona-vault</span></a> allows developers of owner and requester apps to interface with and manage a remote vault without needing to implement the <a class="reference internal" href="types.html#vaultrequestprotocol"><span class="std std-ref">Datona Vault Application-Layer Request Protocol</span></a>.  For developers of vault servers it fully encapsulates the <a class="reference internal" href="what.html#howitworks"><span class="std std-ref">Vault Keeper function</span></a>.</p></li>
+<li><p><a class="reference internal" href="datona-comms.html#datona-comms"><span class="std std-ref">datona-comms</span></a> implements the Datona <a class="reference internal" href="types.html#applicationlayerprotocol"><span class="std std-ref">Application Layer Protocol</span></a>.</p></li>
+<li><p><a class="reference internal" href="datona-blockchain.html#datona-blockchain"><span class="std std-ref">datona-blockchain</span></a> provides the interface to <a class="reference internal" href="what.html#whatisansdac"><span class="std std-ref">Smart Data Access Contracts</span></a> on the blockchain.</p></li>
+</ul>
+</div>
+<div class="section" id="contents">
+<h2>Contents<a class="headerlink" href="#contents" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">User Documenation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="what.html">What Is Smart Data Access?</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="what.html#how-does-it-work">How Does It Work?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="what.html#smart-data-access-contracts">Smart Data Access Contracts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="what.html#life-cycle-of-smart-data">Life-Cycle of Smart Data</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="howto.html">How To Use</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="howto.html#requesters">Requesters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="howto.html#owner-app-developers">Owner App Developers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="howto.html#vault-service-providers">Vault Service Providers</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">API Specification</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="datona-blockchain.html">datona-blockchain</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="datona-blockchain.html#class-contract">Class Contract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="datona-blockchain.html#class-genericsmartdataaccesscontract">Class GenericSmartDataAccessContract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="datona-blockchain.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="datona-vault.html">datona-vault</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="datona-vault.html#class-remotevault">Class RemoteVault</a></li>
+<li class="toctree-l2"><a class="reference internal" href="datona-vault.html#class-vaultkeeper">Class VaultKeeper</a></li>
+<li class="toctree-l2"><a class="reference internal" href="datona-vault.html#interface-vaultdataserver">Interface VaultDataServer</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="datona-crypto.html">datona-crypto</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="datona-crypto.html#class-key">Class Key</a></li>
+<li class="toctree-l2"><a class="reference internal" href="datona-crypto.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="datona-comms.html">datona-comms</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="datona-comms.html#class-smartdataaccessrequest">Class SmartDataAccessRequest</a></li>
+<li class="toctree-l2"><a class="reference internal" href="datona-comms.html#class-datonaconnector">Class DatonaConnector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="datona-comms.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="types.html">Core Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="types.html#application-layer-protocol">Application Layer Protocol</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="types.html#smart-data-access-contract-interface">Smart Data Access Contract Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="types.html#general-protocol">General Protocol</a></li>
+<li class="toctree-l2"><a class="reference internal" href="types.html#smart-data-access-request-protocol">Smart Data Access Request Protocol</a></li>
+<li class="toctree-l2"><a class="reference internal" href="types.html#vault-request-protocol">Vault Request Protocol</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="datona-errors.html">Errors</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="datona-errors.html#class-datonaerror">Class DatonaError</a></li>
+<li class="toctree-l2"><a class="reference internal" href="datona-errors.html#classes-of-datonaerror">Classes of DatonaError</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="what.html" class="btn btn-neutral float-right" title="What Is Smart Data Access?" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Datona Labs
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

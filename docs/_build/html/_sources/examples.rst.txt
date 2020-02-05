@@ -1,0 +1,85 @@
+###################
+How To Use
+###################
+
+Example Usage: Owner Software
+-----------------------------
+
+Example function handling the acceptance of a Smart Data Access request from the Requester.
+
+Assumes the software has already displayed the request, has received authorisation from the owner and has selected a suitable vault service to host the data.
+
+Does not handle errors
+
+::
+
+  const datona = require('datona-lib');
+
+  /* Params:
+   *   request : Request   The request object received from the Requester
+   *   vaultUrl : String   The API URL of the vault service chosen by the owner to host the vault
+   */
+  function acceptRequest(request, vaultUrl){
+
+    // Setup keys
+    const myPrivateKey = new datona.crypto.Key("b94452c533536500e30f2253c96d123133ca1cbdb987556c2dc229573a2cd53c");
+
+    // Read contract bytecode and ABI from file system and create a Contract object
+    const contractSourceCode = require("./contracts/" + request.data.contract.hash);
+    const sdac = new datona.blockchain.Contract(contractSourceCode.abi);
+
+    // Function to create a new vault and store the data.  Returns a Promise.
+    function createAndDeployVault(){
+      const vault = new datona.Vault( vaultUrl, sdac.address, myPrivateKey );
+      return vault.storeData("Hello World!");
+    }
+
+    // Function to send the contract address and vault URL to the requester.  Returns a Promise.
+    function informRequester(){
+      return request.accept(sdac.address, vaultUrl, myPrivateKey);
+    }
+
+    sdac.deploy(contractSourceCode.bytecode, request.data.requester.publicAddress)
+      .then( createAndDeployVault })
+      .then( informRequester )
+      .then( console.log )
+      .catch( console.error );
+
+  }
+
+
+Example Usage: Requester Software
+---------------------------------
+
+Example function handling an accept response from the Owner.
+
+::
+
+  const datona = require('datona-lib');
+
+  function handleRequestAcceptTransaction(request, txnStr){
+
+    // Setup keys
+    const myPrivateKey = new datona.crypto.Key("7a803a1773a2f8626651b1190897b6f517c81bda5127591c69a035fca15b7bd5");
+
+    // Decode the transaction
+    const txn = datona.comms.decodeTransaction(txnStr);
+
+    // Connect to the Owner's S-DAC on the blockchain
+    const contractSourceCode = require("./contracts/" + request.data.contract.hash);
+    const contract = new datona.blockchain.Contract(contractSourceCode.abi, txn.data.contract);
+
+    // Function to retrieve the owner's data
+    function retrieveData(){
+      const vault = new datona.Vault( response.data.vaultUrl, response.data.contract, myPrivateKey );
+      return vault.retrieveData()
+    }
+
+    // Verify the signatory is the owner of the contract and that the correct contract has been deployed,
+    // then retrieve the data from the vault
+    contract.assertOwner(txn.signatory)
+      .then( contract.assertBytecode( contractSourceCode.bytecode ) )
+      .then( retrieveData )
+      .then( console.log )
+      .catch( console.error );
+  }
