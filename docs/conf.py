@@ -31,7 +31,6 @@ release = '0.0.1a'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-  'sphinx_js',
   'sphinx_rtd_theme'
 ]
 
