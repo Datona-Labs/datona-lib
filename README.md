@@ -60,7 +60,7 @@ Runs all tests and generates a coverage report.
 
 ## Community
 
-- [Discord](https://discord.gg/YVaXcz)
+- [Discord](https://discord.gg/sSnvK5C)
 - [Twitter](https://twitter.com/DatonaLabs)
 
 ## Copyright
