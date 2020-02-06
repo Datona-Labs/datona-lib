@@ -434,7 +434,7 @@ describe("Blockchain", function() {
           .then(
             function(expired){
               expect(expired).to.equal(false);
-              return sdac.transact(ownerKey, "owner");
+              return sdac.transact(ownerKey, "getOwner");
             }
           )
           .then(

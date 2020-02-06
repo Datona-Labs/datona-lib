@@ -159,7 +159,7 @@ class Contract {
         });
     } else {
       const thisContract = this;
-      return this.call("owner")
+      return this.call("getOwner")
         .then(function(owner) {
           thisContract.owner = owner;
           return owner;

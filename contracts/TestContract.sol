@@ -6,7 +6,10 @@ pragma solidity ^0.5.1;
 
 contract SDAC {
 
-    string public constant version = "0.1";
+    string public constant version = "0.0.1";
+
+    // returns the owner of this contract
+    function getOwner() public view returns (address);
 
     // basic permission.  Assumes the data vault has validated the requester's ID'
     function isPermitted( address requester ) public view returns (bool);
@@ -18,6 +21,7 @@ contract SDAC {
     function terminate() public;
 
 }
+
 
 
 contract TestContract is SDAC {
@@ -54,7 +58,13 @@ contract TestContract is SDAC {
     }
 
 
-    // basic permission.  Assumes the data vault has validated the requester's ID'
+    // returns the owner of this contract
+     function getOwner() public view returns (address) {
+        return owner;
+    }
+
+
+   // basic permission.  Assumes the data vault has validated the requester's ID'
     function isPermitted( address requester ) public view returns (bool) {
         return ( requester == permittedRequester ) &&
                ( ! hasExpired() );
