@@ -107,9 +107,9 @@ describe("System Scenarios", function() {
         .then( function(response){
           expect(response.signatory.toLowerCase()).to.equal(vaultOwner.address.toLowerCase());
           expect(response.txn.txnType).to.equal("VaultResponse");
+          if (response.txn.responseType == "error") console.error(response.txn.error);
           expect(response.txn.responseType).to.equal("success");
-        })
-        .catch(console.log);
+        });
     });
 
     it( "[create the same vault again fails]", function(){
@@ -121,14 +121,16 @@ describe("System Scenarios", function() {
     it( "inform requester", function(){
       return request.accept(contract.address, vaultOwner.address, vaultServerConfig.url)
         .then( function(response){
+          if (response.txn.responseType == "error") console.error(response.txn.error);
           expect(response.txn.responseType).to.equal("success");
+          expect(requesterServer.sdaResponse.txnType).to.equal("SmartDataAccessResponse");
+          expect(requesterServer.sdaResponse.responseType).to.equal("accept");
           expect(requesterServer.sdaResponse.contract).to.equal(contract.address);
           expect(requesterServer.sdaResponse.vaultAddress).to.equal(vaultOwner.address);
           expect(requesterServer.sdaResponse.vaultUrl.scheme).to.equal(vaultServerConfig.url.scheme);
           expect(requesterServer.sdaResponse.vaultUrl.host).to.equal(vaultServerConfig.url.host);
           expect(requesterServer.sdaResponse.vaultUrl.port).to.equal(vaultServerConfig.url.port);
-        })
-        .catch(console.log);
+        });
     });
 
     it( "access the vault", function(){
@@ -152,9 +154,9 @@ describe("System Scenarios", function() {
         .then( function(response){
           expect(response.signatory.toLowerCase()).to.equal(vaultOwner.address.toLowerCase());
           expect(response.txn.txnType).to.equal("VaultResponse");
+          if (response.txn.responseType == "error") console.error(response.txn.error);
           expect(response.txn.responseType).to.equal("success");
-        })
-        .catch(console.log);
+        });
     });
 
     it( "access the vault returns the new data", function(){
@@ -162,8 +164,7 @@ describe("System Scenarios", function() {
       return vault.access()
         .then( function(data){
           expect(data).to.equal("Greasy chips");
-        })
-        .catch(console.log);
+        });
     });
 
     it( "[trying to terminate the vault before the contract has expired fails]", function(){
@@ -191,9 +192,9 @@ describe("System Scenarios", function() {
         .then( function(response){
           expect(response.signatory.toLowerCase()).to.equal(vaultOwner.address.toLowerCase());
           expect(response.txn.txnType).to.equal("VaultResponse");
+          if (response.txn.responseType == "error") console.error(response.txn.error);
           expect(response.txn.responseType).to.equal("success");
-        })
-        .catch(console.log);
+        });
     });
 
   });

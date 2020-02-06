@@ -76,7 +76,7 @@ SignedTransaction
 
 All Datona transactions are sent as a SignedTransaction, which contains the raw Transaction_ and a digital signature.
 
-.. code-block::
+.. code-block:: json
 
   {
     "txn": Transaction,
@@ -96,7 +96,7 @@ Transaction
 
 All transactions in the Datona Protocol have the following JSON structure:
 
-.. code-block::
+.. code-block:: json
 
   {
     "txnType": String,
@@ -146,7 +146,7 @@ Error
 
 Error responses contain the fields of a DatonaError.
 
-.. code-block::
+.. code-block:: json
 
   {
     "txnType": "GeneralResponse",
@@ -162,6 +162,8 @@ Error responses contain the fields of a DatonaError.
   :widths: 20 80
   :header-rows: 1
 
+  * - Field
+    - Description
   * - name
     - *(String)*  Name of error
   * - message
@@ -192,7 +194,7 @@ SmartDataAccessRequestPacket
 
 The following JSON gives the minimal template spec for a Smart Data Access request from Requester to Owner.
 
-.. code-block::
+.. code-block:: json
 
   {
     "txnType": "SmartDataAccessRequest",
@@ -250,13 +252,13 @@ SmartDataAccessResponse
 
 An accept response consists of copying the acceptTransaction object from the SmartDataAccessRequestPacket and adding the following elements:
 
-.. code-block::
+.. code-block:: json
 
   {
     "txnType": "SmartDataAccessResponse",
     "responseType": "accept",
     "contract": Address,
-    "vault": Address,
+    "vaultAddress": Address,
     "vaultUrl": {
       "scheme": String,
       "host": String,
@@ -274,10 +276,23 @@ An accept response consists of copying the acceptTransaction object from the Sma
     - Description
   * - contract
     - *(Address)*  Blockchain address of the deployed S-DAC
-  * - contract.hash
-    - *(Hash)*  keccak256 hash of the requested S-DAC’s runtime bytecode
+  * - vaultAddress
+    - *(Address)*  Public address of the vault server (used to authenticate all comms with the server)
   * - vaultUrl
     - *(URL)*  URL of the Requester’s server that will handle the response.
+
+
+A reject response consists of copying the rejectTransaction object from the SmartDataAccessRequestPacket and adding the following elements:
+
+.. code-block:: json
+
+  {
+    "txnType": "SmartDataAccessResponse",
+    "responseType": "reject",
+    "reason": String
+  }
+  ... elements copied from the rejectTransaction object (if any)
+
 
 ------------------------------------------------------------------------------
 
@@ -298,7 +313,7 @@ One of the following JSON requests:
 create
 ~~~~~~
 
-.. code-block::
+.. code-block:: json
 
   {
     "txnType": "VaultRequest",
@@ -310,7 +325,7 @@ create
 update
 ~~~~~~
 
-.. code-block::
+.. code-block:: json
 
   {
     "txnType": "VaultRequest",
@@ -322,7 +337,7 @@ update
 access
 ~~~~~~
 
-.. code-block::
+.. code-block:: json
 
   {
     "txnType": "VaultRequest",
@@ -333,7 +348,7 @@ access
 delete
 ~~~~~~
 
-.. code-block::
+.. code-block:: json
 
   {
     "txnType": "VaultRequest",
@@ -369,7 +384,7 @@ success
 
 A success response conforms with the GeneralServerResponse_ Acknowledgement format.  If responding to an access request, the response will additionally contain a ``data`` field with returned vault contents.
 
-.. code-block::
+.. code-block:: json
 
   {
     "txnType": "VaultResponse",
@@ -382,7 +397,7 @@ error
 
 An error response conforms with the GeneralServerResponse_ Error format.
 
-.. code-block::
+.. code-block:: json
 
   {
     "txnType": "VaultResponse",

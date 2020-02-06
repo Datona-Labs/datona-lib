@@ -33,7 +33,6 @@
   
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="_static/theme_overrides.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="datona-blockchain" href="datona-blockchain.html" />
@@ -218,7 +217,7 @@
 <span id="buildsdac"></span><h3><a class="toc-backref" href="#id2">Building a Smart Data Access Contract</a><a class="headerlink" href="#building-a-smart-data-access-contract" title="Permalink to this headline">¶</a></h3>
 <p>All S-DACs must comply with the <a class="reference internal" href="types.html#sdacinterface"><span class="std std-ref">Smart Data Access Contract Interface</span></a> but the implementation will depend on the use case.  S-DACs can be simple, for example to give indefinite access until terminated; or they can be highly complex giving access to different Requesters depending on a complex workflow supported by external blockchain oracles.</p>
 <p>Here is an example of a simple contract that automatically terminates after a given number of days.  It permits access for a single Requester and permits the Owner or Requester to terminate at any time.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>pragma solidity ^0.5.1;
+<div class="highlight-solidity notranslate"><div class="highlight"><pre><span></span>pragma solidity ^0.5.1;
 
 contract Duration_SDAC is SDAC {
 
@@ -265,23 +264,23 @@ contract Duration_SDAC is SDAC {
 <h3><a class="toc-backref" href="#id3">Building a Smart Data Access Request</a><a class="headerlink" href="#building-a-smart-data-access-request" title="Permalink to this headline">¶</a></h3>
 <p>Here is an example <a class="reference internal" href="types.html#smartdataaccessrequestpacket"><span class="std std-ref">Smart Data Access Request Packet</span></a> for passing to a data owner.  The <em>hash</em> in this request is a hash of the runtime bytecode of the Duration_SDAC above.  The <em>url</em> in this request is the URL of the Requester’s server that will handle a <a class="reference internal" href="types.html#smartdataaccessresponse"><span class="std std-ref">Smart Data Access Response Packet</span></a> from the Owner.</p>
 <p>In this case the Requester has added a <em>customerId</em> field to the accept and reject transaction templates.  This number will be added to the response that the Owner returns to the Requester.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-  <span class="s2">&quot;txnType&quot;</span><span class="p">:</span> <span class="s2">&quot;SmartDataAccessRequest&quot;</span><span class="p">,</span>
-  <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;0.0.1&quot;</span><span class="p">,</span>
-  <span class="s2">&quot;contract&quot;</span><span class="p">:</span> <span class="p">{</span>
-    <span class="s2">&quot;hash&quot;</span><span class="p">:</span> <span class="s2">&quot;5573012304cc4d87a7a07253c728e08250db6821a3dfdbbbcac9a24f8cd89ad4&quot;</span><span class="p">,</span>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;txnType&quot;</span><span class="p">:</span> <span class="s2">&quot;SmartDataAccessRequest&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;0.0.1&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;contract&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&quot;hash&quot;</span><span class="p">:</span> <span class="s2">&quot;5573012304cc4d87a7a07253c728e08250db6821a3dfdbbbcac9a24f8cd89ad4&quot;</span><span class="p">,</span>
   <span class="p">},</span>
-  <span class="s2">&quot;api&quot;</span><span class="p">:</span> <span class="p">{</span>
-    <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="p">{</span>
-      <span class="s2">&quot;scheme&quot;</span><span class="p">:</span> <span class="s2">&quot;file&quot;</span><span class="p">,</span>
-      <span class="s2">&quot;host&quot;</span><span class="p">:</span> <span class="s2">&quot;my.server.io&quot;</span><span class="p">,</span>
-      <span class="s2">&quot;port&quot;</span><span class="p">:</span> <span class="s2">&quot;8601&quot;</span>
+  <span class="nt">&quot;api&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&quot;url&quot;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="nt">&quot;scheme&quot;</span><span class="p">:</span> <span class="s2">&quot;file&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;host&quot;</span><span class="p">:</span> <span class="s2">&quot;my.server.io&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;port&quot;</span><span class="p">:</span> <span class="s2">&quot;8601&quot;</span>
     <span class="p">},</span>
-    <span class="s2">&quot;acceptTransaction&quot;</span><span class="p">:</span> <span class="p">{</span>
-      <span class="s2">&quot;customerId&quot;</span><span class="p">:</span> <span class="s2">&quot;10001&quot;</span>
+    <span class="nt">&quot;acceptTransaction&quot;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="nt">&quot;customerId&quot;</span><span class="p">:</span> <span class="s2">&quot;10001&quot;</span>
     <span class="p">},</span>
-    <span class="s2">&quot;rejectTransaction&quot;</span><span class="p">:</span> <span class="p">{</span>
-      <span class="s2">&quot;customerId&quot;</span><span class="p">:</span> <span class="s2">&quot;10001&quot;</span>
+    <span class="nt">&quot;rejectTransaction&quot;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="nt">&quot;customerId&quot;</span><span class="p">:</span> <span class="s2">&quot;10001&quot;</span>
     <span class="p">}</span>
   <span class="p">}</span>
 <span class="p">}</span>

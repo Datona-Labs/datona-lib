@@ -453,6 +453,8 @@ describe("Comms", function() {
             expect(server.data.length).to.be.gt(0);
             const serverPacket = datona.comms.decodeTransaction(server.data);
             expect(serverPacket.signatory).to.equal(owner.address);
+            expect(serverPacket.txn.txnType).to.equal("SmartDataAccessResponse");
+            expect(serverPacket.txn.responseType).to.equal("accept");
             expect(serverPacket.txn.myAcceptDetails).to.equal("acceptance id");
             expect(serverPacket.txn.contract).to.equal(owner.address);
             expect(serverPacket.txn.vaultAddress).to.equal(requester.address);
@@ -546,6 +548,8 @@ describe("Comms", function() {
             expect(server.data.length).to.be.gt(0);
             const serverPacket = datona.comms.decodeTransaction(server.data);
             expect(serverPacket.signatory).to.equal(owner.address);
+            expect(serverPacket.txn.txnType).to.equal("SmartDataAccessResponse");
+            expect(serverPacket.txn.responseType).to.equal("reject");
             expect(serverPacket.txn.myRejectDetails).to.equal("rejection id");
             expect(serverPacket.txn.reason).to.equal(reason);
           })

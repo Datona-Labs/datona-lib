@@ -185,6 +185,8 @@ class SmartDataAccessRequest extends DatonaConnector {
     assert.isAddress(vaultAddress, "SmartDataAccessRequest accept vaultAddress");
     assert.isUrl(vaultUrl, "SmartDataAccessRequest accept vaultUrl");
     var txn = this.data.api.acceptTransaction;
+    txn.txnType = "SmartDataAccessResponse";
+    txn.responseType = "accept";
     txn.contract = contractAddress;
     txn.vaultAddress = vaultAddress;
     txn.vaultUrl = vaultUrl;
@@ -201,6 +203,8 @@ class SmartDataAccessRequest extends DatonaConnector {
   reject(reason) {
     assert.isPresent(reason, "SmartDataAccessRequest reject reason")
     var txn = this.data.api.rejectTransaction;
+    txn.txnType = "SmartDataAccessResponse";
+    txn.responseType = "reject";
     txn.reason = reason;
     return this.send(txn);
   }

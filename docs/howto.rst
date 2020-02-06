@@ -26,7 +26,7 @@ All S-DACs must comply with the :ref:`Smart Data Access Contract Interface <Sdac
 
 Here is an example of a simple contract that automatically terminates after a given number of days.  It permits access for a single Requester and permits the Owner or Requester to terminate at any time.
 
-.. code-block::
+.. code-block:: solidity
 
   pragma solidity ^0.5.1;
 
@@ -77,7 +77,7 @@ Here is an example :ref:`Smart Data Access Request Packet<SmartDataAccessRequest
 
 In this case the Requester has added a *customerId* field to the accept and reject transaction templates.  This number will be added to the response that the Owner returns to the Requester.
 
-.. code-block::
+.. code-block:: json
 
   {
     "txnType": "SmartDataAccessRequest",
