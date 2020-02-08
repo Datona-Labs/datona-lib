@@ -4,6 +4,8 @@
 
 # Datona IO Platform Library (datona-lib)
 
+[![NPM](https://img.shields.io/npm/v/datona-lib)](https://www.npmjs.org/package/datona-lib)
+
 Core Javascript library for accessing the [Datona IO Platform](https://datona.io).
 
 For more information about the platform see [What Is Smart Data Access](https://datona-lib.readthedocs.io/en/latest/what.html) or download the [white paper](https://datonalabs.org/documents/WhitePaper.pdf).
