@@ -66,7 +66,7 @@ class RemoteVault extends comms.DatonaConnector {
     return this.send(request)
       .then( function(response){
         comms.validateResponse(response.txn, "VaultResponse");
-        if (response.txn.responseType == "error") throw errors.fromObject(response.txn.error);
+        if (response.txn.responseType === "error") throw errors.fromObject(response.txn.error);
         return response;
       });
   }
@@ -85,7 +85,7 @@ class RemoteVault extends comms.DatonaConnector {
     return this.send(request)
       .then( function(response){
         comms.validateResponse(response.txn, "VaultResponse");
-        if (response.txn.responseType == "error") throw errors.fromObject(response.txn.error);
+        if (response.txn.responseType === "error") throw errors.fromObject(response.txn.error);
         return response;
       });
   }
@@ -103,7 +103,7 @@ class RemoteVault extends comms.DatonaConnector {
     return this.send(request)
       .then( function(response){
         comms.validateResponse(response.txn, "VaultResponse");
-        if (response.txn.responseType == "error") throw errors.fromObject(response.txn.error);
+        if (response.txn.responseType === "error") throw errors.fromObject(response.txn.error);
         return response.txn.data;
       });
   }
@@ -121,7 +121,7 @@ class RemoteVault extends comms.DatonaConnector {
     return this.send(request)
       .then( function(response){
         comms.validateResponse(response.txn, "VaultResponse");
-        if (response.txn.responseType == "error") throw errors.fromObject(response.txn.error);
+        if (response.txn.responseType === "error") throw errors.fromObject(response.txn.error);
         return response;
       });
   }
@@ -156,7 +156,7 @@ class VaultKeeper {
     const key = this.key;
     try {
       const {txn, signatory} = comms.decodeTransaction(signedRequestStr);
-      if (txn.txnType != "VaultRequest") throw new errors.RequestError("Invalid transaction type ('"+txn.txnType+"')");
+      if (txn.txnType !== "VaultRequest") throw new errors.RequestError("Invalid transaction type ('"+txn.txnType+"')");
       var func;
       switch (txn.requestType) {
         case "create": func = this.createVault.bind(this); break;
@@ -206,7 +206,7 @@ class VaultKeeper {
     assert.isAddress(signatory, "VaultKeeper createVault signatory");
     try {
       // validate the request and obtain the signatory and contract
-      if (request.requestType != "access") throw new errors.InvalidTransactionError("attempted to access a vault with in an invalid request type '"+request.requestType+"'");
+      if (request.requestType !== "access") throw new errors.InvalidTransactionError("attempted to access a vault with in an invalid request type '"+request.requestType+"'");
       if (!assert.isAddress(request.contract)) throw new errors.MalformedTransactionError("Invalid request contract field", request.contract);
       const contract = new blockchain.GenericSmartDataAccessContract(request.contract);
 
@@ -235,7 +235,7 @@ class VaultKeeper {
     assert.isAddress(signatory, "VaultKeeper createVault signatory");
     try {
       // validate the request and obtain the signatory and contract
-      if (request.requestType != "delete") throw new errors.InvalidTransactionError("attempted to delete a vault with in an invalid request type '"+request.requestType+"'");
+      if (request.requestType !== "delete") throw new errors.InvalidTransactionError("attempted to delete a vault with in an invalid request type '"+request.requestType+"'");
       if (!assert.isAddress(request.contract)) throw new errors.MalformedTransactionError("Invalid request contract field", request.contract);
       const contract = new blockchain.GenericSmartDataAccessContract(request.contract);
 
@@ -338,7 +338,7 @@ function _createOrUpdateVault(serverFunction, requestType, request, signatory) {
   assert.isAddress(signatory, "VaultKeeper createVault signatory");
   try {
     // validate the request and obtain the contract
-    if (request.requestType != requestType) throw new errors.InvalidTransactionError("attempted to "+requestType+" a vault with in an invalid request type '"+request.requestType+"'");
+    if (request.requestType !== requestType) throw new errors.InvalidTransactionError("attempted to "+requestType+" a vault with in an invalid request type '"+request.requestType+"'");
     if (!assert.isAddress(request.contract)) throw new errors.MalformedTransactionError("Invalid request contract field", request.contract);
     if (!assert.isNotNull(request.data)) throw new errors.MalformedTransactionError("Missing request data field");
     const contract = new blockchain.GenericSmartDataAccessContract(request.contract);

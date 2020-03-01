@@ -19,7 +19,7 @@ const net = require('net');
      this.server = net.createServer(this.connection.bind(this));
 
      this.server.on('error', (err) => {
-       log("fatal server error: " + err)
+       log("fatal server error: " + err);
        throw err;
      });
 

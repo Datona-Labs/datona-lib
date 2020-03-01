@@ -31,4 +31,4 @@ module.exports = {
   blockchain: require('./datona-blockchain'),
   assertions: require('./assertions'),
   errors: require('./errors')
-}
+};

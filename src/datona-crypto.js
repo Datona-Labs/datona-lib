@@ -25,7 +25,7 @@
 
 const errors = require('./errors');
 const assert = require('./assertions');
-const ecdsa = require('secp256k1')
+const ecdsa = require('secp256k1');
 const keccak256 = require('js-sha3').keccak256;
 const rlp = require('rlp');
 const randomBytes = require('crypto').randomBytes;
@@ -76,7 +76,7 @@ module.exports = {
   calculateContractAddress: calculateContractAddress,
   hash: hash,
   Key: Key
-}
+};
 
 
 
@@ -114,7 +114,7 @@ function sign(hash, privateKey) {
  */
 function verify(hash, signature, address) {
   assert.isAddress(address, "address");
-  return recover(hash, signature) == address;
+  return recover(hash, signature) === address;
 }
 
 

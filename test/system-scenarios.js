@@ -40,7 +40,7 @@ describe("System Scenarios", function() {
       port: 8963
     },
     suppressLogs: true // set to false to debug server
-  }
+  };
 
   // Vault Server
   var vaultServer;
@@ -51,7 +51,7 @@ describe("System Scenarios", function() {
       port: 8124
     },
     suppressLogs: true // set to false to debug server
-  }
+  };
 
   before( function() {
     requesterServer = new RequesterServer(requesterServerConfig.url.port, requesterKey, requesterServerConfig.suppressLogs);

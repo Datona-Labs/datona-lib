@@ -60,12 +60,12 @@ class DatonaError extends Error {
    */
   toString() {
     var str = this.name + " - " + this.message;
-    if (this.details != undefined) {
+    if (this.details !== undefined) {
       var details = (typeof this.details == "string") ? this.details.replace(/(?:\r\n|\r|\n)/g, '; ') : JSON.stringify(this.details);
-      if (details.length > 96) details = details.slice(0,96) + "...";
-      return str + " ("+details+")";
+      if (details.length > 96) details = details.slice(0, 96) + "...";
+      str += " (" + details + ")";
     }
-    else return str;
+    return str;
   }
 
 }
@@ -77,11 +77,11 @@ module.exports.DatonaError = DatonaError;
  * Inverse of DatonaError.toObject()
  */
 function fromObject(error) {
-  if (error == undefined) throw new DatonaError("error is missing");
-  if (toString.call(error) != '[object Object]') throw new DatonaError("error is invalid type: expecting object.");
-  if (error.name == undefined || error.name == "") throw new DatonaError("name missing from error");
+  if (error === undefined) throw new DatonaError("error is missing");
+  if (toString.call(error) !== '[object Object]') throw new DatonaError("error is invalid type: expecting object.");
+  if (error.name === undefined || error.name === "") throw new DatonaError("name missing from error");
   const type = module.exports[error.name];
-  if (type == undefined || ! type instanceof DatonaError) throw new DatonaError("error has invalid name");
+  if (type === undefined || ! type instanceof DatonaError) throw new DatonaError("error has invalid name");
   return new type(error.message, error.details);
 }
 module.exports.fromObject = fromObject;
@@ -324,7 +324,7 @@ module.exports.VaultError = VaultError;
 class FileSystemError extends DatonaError {
   constructor(err, message) {
     const fsErrMsg = decodeFSError(err);
-    message = (message == undefined) ? fsErrMsg : message+" ("+fsErrMsg+")";
+    message = (message === undefined) ? fsErrMsg : message+" ("+fsErrMsg+")";
     super(message, err);
     this.name = "FileSystemError";
   }
@@ -412,7 +412,7 @@ const FS_ERROR_CODES = {
 };
 
 function decodeFSError(err) {
-  if (err == undefined || err.code == undefined) return err;
+  if (err === undefined || err.code === undefined) return err;
   else if (err.code in FS_ERROR_CODES) return FS_ERROR_CODES[err.code] + " " + err.path;
   else return "unknown error accessing " + err.path;
-};
+}

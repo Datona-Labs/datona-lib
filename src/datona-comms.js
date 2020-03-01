@@ -143,7 +143,7 @@ class DatonaConnector {
    */
   _decode(txnStr) {
     const txn = decodeTransaction(txnStr);
-    if (txn.signatory.toLowerCase() != this.remoteAddress.toLowerCase()){
+    if (txn.signatory.toLowerCase() !== this.remoteAddress.toLowerCase()){
       throw new errors.TransactionError("Validation failure. Wrong signatory", "Expected: "+this.remoteAddress+", Received: "+txn.signatory);
     }
     return txn;
@@ -170,7 +170,7 @@ class SmartDataAccessRequest extends DatonaConnector {
       assert.isHash(txn.txn.contract.hash, "contract hash");
       super(txn.txn.api.url, localPrivateKey, txn.signatory);
       this.data = txn.txn;
-      if (txn.txn.txnType != "SmartDataAccessRequest") throw new errors.RequestError("Invalid transaction type ('"+txn.txn.txnType+"')");
+      if (txn.txn.txnType !== "SmartDataAccessRequest") throw new errors.RequestError("Invalid transaction type ('"+txn.txn.txnType+"')");
     } catch (error) {
       throw new errors.RequestError("Request is invalid: " + error.message, error.details);
     }
@@ -201,7 +201,7 @@ class SmartDataAccessRequest extends DatonaConnector {
    * Sends a rejection transaction to the requester with the reason given.
    */
   reject(reason) {
-    assert.isPresent(reason, "SmartDataAccessRequest reject reason")
+    assert.isPresent(reason, "SmartDataAccessRequest reject reason");
     var txn = this.data.api.rejectTransaction;
     txn.txnType = "SmartDataAccessResponse";
     txn.responseType = "reject";
@@ -225,7 +225,7 @@ module.exports = {
   validateResponse: validateResponse,
   createSuccessResponse: createSuccessResponse,
   createErrorResponse: createErrorResponse
-}
+};
 
 
 
@@ -279,7 +279,7 @@ function validateResponse(txn, expectedTxnType = "GeneralResponse") {
     assert.isString(expectedTxnType, "GeneralResponse constructor expectedTxnType");
     assert.isObject(txn, expectedTxnType+" constructor txn");
     assert.isString(txn.txnType, "txnType");
-    if (txn.txnType != expectedTxnType) throw new errors.TransactionError("invalid transaction type ('"+txn.txnType+"')");
+    if (txn.txnType !== expectedTxnType) throw new errors.TransactionError("invalid transaction type ('"+txn.txnType+"')");
     assert.isString(txn.responseType, "responseType");
     switch (txn.responseType) {
       case "success": break;

@@ -29,7 +29,7 @@ const crypto = require('./datona-crypto');
 const errors = require('./errors');
 const assert = require('./assertions');
 const Web3 = require('web3');
-const Transaction = require('ethereumjs-tx').Transaction
+const Transaction = require('ethereumjs-tx').Transaction;
 const sdacInterface = require("../contracts/SDAC.json");
 var web3;
 
@@ -49,14 +49,14 @@ class Contract {
   constructor(abi, address) {
     assert.isArray(abi, "Contract abi");
     try{
-      if (web3 == undefined) setProvider(CONFIG.blockchainURL);
+      if (web3 === undefined) setProvider(CONFIG.blockchainURL);
       this.web3Contract = new web3.eth.Contract(abi);
     }
     catch (error) {
       throw new errors.BlockchainError("Could not construct contract: "+error.message);
     }
     this.abi = abi;
-    if (address != undefined) this.setAddress(address);
+    if (address !== undefined) this.setAddress(address);
   }
 
 
@@ -67,7 +67,7 @@ class Contract {
    */
   setAddress(address) {
     assert.isAddress(address, "address");
-    if (this.address != undefined) throw new errors.BlockchainError("address already set");
+    if (this.address !== undefined) throw new errors.BlockchainError("address already set");
     this.web3Contract.options.address = address;
     this.address = address;
   }
@@ -79,8 +79,8 @@ class Contract {
   deploy(key, bytecode, constructorArgs) {
     assert.isInstanceOf(key, "Contract.deploy key", crypto.Key);
     assert.isHexString(bytecode, "Contract.deploy bytecode");
-    if (constructorArgs != undefined) assert.isArray(constructorArgs, "constructorArgs");
-    if (this.address != undefined) throw new errors.BlockchainError("contract already deployed");
+    if (constructorArgs !== undefined) assert.isArray(constructorArgs, "constructorArgs");
+    if (this.address !== undefined) throw new errors.BlockchainError("contract already deployed");
 
     try {
 
@@ -116,7 +116,7 @@ class Contract {
 
       // function to set the address of this Contract instance once the receipt is received
       function storeAddress(receipt) {
-        if (receipt.status == true){
+        if (receipt.status === true){
           this.setAddress(receipt.contractAddress);
           return receipt.contractAddress;
         }
@@ -131,15 +131,13 @@ class Contract {
         .then(storeAddress.bind(this))
         .catch(
           function(error) {
-            const exception = (error instanceof errors.DatonaError) ? error : new errors.BlockchainError(error.message);
-            throw exception;
+            throw (error instanceof errors.DatonaError) ? error : new errors.BlockchainError(error.message);
           }
         );
 
     }
     catch (error) {
-      const exception = (error instanceof errors.DatonaError) ? error : new errors.BlockchainError(error.message);
-      throw exception;
+      throw (error instanceof errors.DatonaError) ? error : new errors.BlockchainError(error.message);
     }
   }
 
@@ -148,10 +146,10 @@ class Contract {
    * Promises to get the owner of this contract from the blockchain
    */
   getOwner() {
-    if (this.address == undefined) {
+    if (this.address === undefined) {
       throw new errors.BlockchainError("Contract.getOwner: contract has not been deployed or mapped to an existing contract");
     }
-    if (this.owner != undefined) {
+    if (this.owner !== undefined) {
       const thisContract = this;
       return new Promise(
         function(resolve, reject) {
@@ -175,7 +173,7 @@ class Contract {
    * Promises to return the expiry status (boolean) of this contract
    */
   hasExpired() {
-    if (this.address == undefined) throw new errors.BlockchainError("Contract.hasExpired: contract has not been deployed or mapped to an existing contract");
+    if (this.address === undefined) throw new errors.BlockchainError("Contract.hasExpired: contract has not been deployed or mapped to an existing contract");
     return this.call("hasExpired");
   }
 
@@ -185,7 +183,7 @@ class Contract {
    */
   isPermitted(address) {
     assert.isAddress(address, "Contract isPermitted address");
-    if (this.address == undefined) throw new errors.BlockchainError("Contract.isPermitted: contract has not been deployed or mapped to an existing contract");
+    if (this.address === undefined) throw new errors.BlockchainError("Contract.isPermitted: contract has not been deployed or mapped to an existing contract");
     return this.call("isPermitted", [address]);
   }
 
@@ -197,7 +195,7 @@ class Contract {
   call(method, args = []) {
     assert.isString(method, "Contract.call method");
     assert.isArray(args, "Contract.call args");
-    if (this.address == undefined) throw new errors.BlockchainError("Contract.call: contract has not been deployed or mapped to an existing contract");
+    if (this.address === undefined) throw new errors.BlockchainError("Contract.call: contract has not been deployed or mapped to an existing contract");
     var methodAbi = this.abi.find(obj => { return obj.name === method; });
     if (!methodAbi) throw new errors.BlockchainError("Contract.call method '"+method+"' does not exist");
     try{
@@ -220,8 +218,8 @@ class Contract {
     assert.isInstanceOf(key, "Contract.transact key", crypto.Key);
     assert.isString(method, "Contract.transact method");
     assert.isArray(args, "Contract.call args");
-    if (this.address == undefined) throw new errors.BlockchainError("Contract.call: contract has not been deployed or mapped to an existing contract");
-    if (this.web3Contract == undefined) throw new errors.BlockchainError("contract does not exist on the blockchain");
+    if (this.address === undefined) throw new errors.BlockchainError("Contract.call: contract has not been deployed or mapped to an existing contract");
+    if (this.web3Contract === undefined) throw new errors.BlockchainError("contract does not exist on the blockchain");
     try{
       var methodAbi = this.abi.find(obj => { return obj.name === method; });
       if (!methodAbi) throw new errors.BlockchainError("Contract.transact method '"+method+"' does not exist");
@@ -260,8 +258,7 @@ class Contract {
         .then(web3.eth.sendSignedTransaction)
         .catch(
           function(error) {
-            const exception = (error instanceof errors.DatonaError) ? error : new errors.BlockchainError(error.message);
-            throw exception;
+            throw (error instanceof errors.DatonaError) ? error : new errors.BlockchainError(error.message);
           }
         );
 
@@ -276,10 +273,10 @@ class Contract {
    * Promises to get the runtime bytecode of this contract from the blockchain
    */
   getBytecode() {
-    if (this.address == undefined) {
+    if (this.address === undefined) {
       throw new errors.BlockchainError("Contract.getBytecode: contract has not been deployed or mapped to an existing contract");
     }
-    else if (this.bytecode != undefined) {
+    else if (this.bytecode !== undefined) {
       const thisContract = this;
       return new Promise( function(resolve, reject) { resolve(thisContract.bytecode); });
     }
@@ -311,7 +308,7 @@ class Contract {
   assertBytecode(expectedBytecode) {
     return this.getBytecode()
       .then(function(bytecode) {
-        if (bytecode != expectedBytecode) {
+        if (bytecode !== expectedBytecode) {
           throw new errors.ContractTypeError("bytecode does not match");
         }
       });
@@ -325,7 +322,7 @@ class Contract {
     assert.isAddress(expectedOwner, "Contract.assertOwner expectedOwner");
     return this.getOwner()
       .then(function(owner) {
-        if (owner.toLowerCase() != expectedOwner.toLowerCase()) {
+        if (owner.toLowerCase() !== expectedOwner.toLowerCase()) {
           throw new errors.ContractOwnerError("owner does not match");
         }
       });
@@ -399,7 +396,7 @@ module.exports = {
   subscribe: subscribe,
   unsubscribe: unsubscribe,
   close: close
-}
+};
 
 
 
@@ -420,7 +417,7 @@ var web3Subscribed = false;
  */
 function setProvider(url) {
   try {
-    const urlStr = url.scheme+"://" + url.host+ (url.port == undefined || url.port == "" ? "" : ":"+url.port);
+    const urlStr = url.scheme+"://" + url.host+ (url.port === undefined || url.port === "" ? "" : ":"+url.port);
     switch (url.scheme) {
       case "ws":
       case "wss":
@@ -429,7 +426,7 @@ function setProvider(url) {
       case "http":
       case "https":
         web3 = new Web3(new Web3.providers.HttpProvider(urlStr));
-        break
+        break;
       default:
         throw new errors.BlockchainError("Invalid url scheme for the blockchain provider.  Valid schemes are ws, wss, http and https");
     }
@@ -448,7 +445,7 @@ function setProvider(url) {
 function subscribe(bytecodeHash, callback, permittedAddress) {
   assert.isHash(bytecodeHash, "subscribe bytecodeHash");
   assert.isFunction(callback, "subscribe callback");
-  if (permittedAddress != undefined) {
+  if (permittedAddress !== undefined) {
     assert.isAddress(permittedAddress);
   }
 
@@ -475,11 +472,11 @@ function unsubscribe(subscriptionId) {
   var numUnsubscribed = 0;
   var i = 0;
   while (i < subscriptions.length) {
-    if (subscriptions[i].hash == subscriptionId) {
+    if (subscriptions[i].hash === subscriptionId) {
       subscriptions.splice(i,1);
       numUnsubscribed++;
     }
-    else { i++ };
+    else i++;
   }
   return numUnsubscribed;
 }
@@ -490,9 +487,9 @@ function unsubscribe(subscriptionId) {
  * if any blockchain functions have been used.
  */
 function close(){
-  if (web3 != undefined){
+  if (web3 !== undefined){
     try{
-      if (web3.currentProvider.connection != undefined) web3.currentProvider.connection.close();
+      if (web3.currentProvider.connection !== undefined) web3.currentProvider.connection.close();
       web3 = undefined;
     }
     catch(error){
@@ -513,7 +510,7 @@ function close(){
  * receive all new pending transactions
  */
 function monitorForPendingTransactions() {
-  if (web3 == undefined) setProvider(CONFIG.blockchainURL);
+  if (web3 === undefined) setProvider(CONFIG.blockchainURL);
   web3.eth
     .subscribe('pendingTransactions', (error, result) => {
       if (error) throw new errors.BlockchainError("Failed to subscribe to web3: "+error.message);
@@ -558,14 +555,14 @@ function monitorForNewContracts(txHash) {
 function checkAndInformSubscriber(bytecodeHash, contractAddress) {
   for ( var i = 0; i < subscriptions.length; i++) {
     const subscription = subscriptions[i];
-    if (bytecodeHash == subscription.bytecodeHash) {
-      if (subscription.permittedAddress == undefined) {
+    if (bytecodeHash === subscription.bytecodeHash) {
+      if (subscription.permittedAddress === undefined) {
         subscription.callback(contractAddress, subscription.bytecodeHash);
       } else {
         var contract = new web3.eth.Contract(sdacInterface.abi, contractAddress);
         contract.methods["isPermitted"](subscription.permittedAddress).call()
           .then(function(result, error) {
-            if (result == true) {
+            if (result === true) {
               subscription.callback(contractAddress, subscription.bytecodeHash);
             }
             if (error) {
