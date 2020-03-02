@@ -133,3 +133,11 @@ exports.isInstanceOf = function(value, name, type) {
   if (name !== undefined && !result) throw new errors.TypeError(name + ": invalid type. Expected " + type.name);
   else return result;
 };
+
+exports.matches = function(value, regex, name) {
+  exports.isString(value, name);
+  const result = value.match(regex);
+  if (name !== undefined && !result) throw new errors.TypeError(name + ": invalid type. Expected to match '"+regex+"'");
+  else return result;
+};
+

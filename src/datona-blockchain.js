@@ -38,10 +38,38 @@ var web3;
  * Classes
  */
 
+class Permissions {
+
+  constructor (permissionsByte) {
+    if (toString.call(permissionsByte) === '[object Number]') {
+      this.permissions = permissionsByte;
+    }
+    else {
+      assert.matches(permissionsByte, '^0x[0-9A-Fa-f]{2}$', "invalid string representation of permissions byte",permissionsByte);
+      this.permissions = parseInt(permissionsByte);
+    }
+  }
+
+  canRead() { return (this.permissions & Contract.READ_BIT) > 0 }
+  canWrite() { return (this.permissions & Contract.WRITE_BIT) > 0 }
+  canAppend() { return (this.permissions & Contract.APPEND_BIT) > 0 }
+  isDirectory() { return (this.permissions & Contract.DIRECTORY_BIT) > 0 }
+
+}
+
+
 /*
  * Represents a Smart Data Access Contract on the blockchain
  */
 class Contract {
+
+  static NO_PERMISSIONS = 0x00;
+  static ALL_PERMISSIONS = 0x07;
+  static READ_BIT = 0x04;
+  static WRITE_BIT = 0x02;
+  static APPEND_BIT = 0x01;
+  static DIRECTORY_BIT = 0x80;
+  static ROOT_DIRECTORY = "0x0000000000000000000000000000000000000000";
 
   /*
    * If the address is not given this represents a new contract to be deployed.
@@ -157,7 +185,7 @@ class Contract {
         });
     } else {
       const thisContract = this;
-      return this.call("getOwner")
+      return this.call("owner")
         .then(function(owner) {
           thisContract.owner = owner;
           return owner;
@@ -184,7 +212,24 @@ class Contract {
   isPermitted(address) {
     assert.isAddress(address, "Contract isPermitted address");
     if (this.address === undefined) throw new errors.BlockchainError("Contract.isPermitted: contract has not been deployed or mapped to an existing contract");
-    return this.call("isPermitted", [address]);
+    return this.getPermissions(address, Contract.ROOT_DIRECTORY)
+        .then( function(permissions){
+          return permissions.canRead();
+        });
+  }
+
+
+  /*
+   * Promises to return a byte with the d----rwa permissions of the given file for the given user address.
+   */
+  getPermissions(requester, fileId) {
+    assert.isAddress(requester, "Contract getPermissions requester");
+    assert.isAddress(fileId, "Contract getPermissions fileId");
+    if (this.address === undefined) throw new errors.BlockchainError("Contract.isPermitted: contract has not been deployed or mapped to an existing contract");
+    return this.call("getPermissions", [requester, fileId])
+        .then( function(permissions){
+          return new Permissions(permissions);
+        });
   }
 
 
@@ -559,8 +604,8 @@ function checkAndInformSubscriber(bytecodeHash, contractAddress) {
       if (subscription.permittedAddress === undefined) {
         subscription.callback(contractAddress, subscription.bytecodeHash);
       } else {
-        var contract = new web3.eth.Contract(sdacInterface.abi, contractAddress);
-        contract.methods["isPermitted"](subscription.permittedAddress).call()
+        const contract = new Contract(sdacInterface.abi, contractAddress);
+        contract.isPermitted(subscription.permittedAddress)
           .then(function(result, error) {
             if (result === true) {
               subscription.callback(contractAddress, subscription.bytecodeHash);

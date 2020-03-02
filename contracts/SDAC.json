@@ -1,76 +1,154 @@
 {
   "abi": [
-	{
-		"constant": false,
-		"inputs": [],
-		"name": "terminate",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [
-			{
-				"name": "requester",
-				"type": "address"
-			}
-		],
-		"name": "isPermitted",
-		"outputs": [
-			{
-				"name": "",
-				"type": "bool"
-			}
-		],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [],
-		"name": "version",
-		"outputs": [
-			{
-				"name": "",
-				"type": "string"
-			}
-		],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [],
-		"name": "getOwner",
-		"outputs": [
-			{
-				"name": "",
-				"type": "address"
-			}
-		],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [],
-		"name": "hasExpired",
-		"outputs": [
-			{
-				"name": "",
-				"type": "bool"
-			}
-		],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	}
-],
+	  {
+		  "inputs": [],
+		  "name": "ALL_PERMISSIONS",
+		  "outputs": [
+			  {
+				  "internalType": "bytes1",
+				  "name": "",
+				  "type": "bytes1"
+			  }
+		  ],
+		  "stateMutability": "view",
+		  "type": "function"
+	  },
+	  {
+		  "inputs": [],
+		  "name": "APPEND_BIT",
+		  "outputs": [
+			  {
+				  "internalType": "bytes1",
+				  "name": "",
+				  "type": "bytes1"
+			  }
+		  ],
+		  "stateMutability": "view",
+		  "type": "function"
+	  },
+	  {
+		  "inputs": [],
+		  "name": "DIRECTORY_BIT",
+		  "outputs": [
+			  {
+				  "internalType": "bytes1",
+				  "name": "",
+				  "type": "bytes1"
+			  }
+		  ],
+		  "stateMutability": "view",
+		  "type": "function"
+	  },
+	  {
+		  "inputs": [],
+		  "name": "DatonaProtocolVersion",
+		  "outputs": [
+			  {
+				  "internalType": "string",
+				  "name": "",
+				  "type": "string"
+			  }
+		  ],
+		  "stateMutability": "view",
+		  "type": "function"
+	  },
+	  {
+		  "inputs": [],
+		  "name": "NO_PERMISSIONS",
+		  "outputs": [
+			  {
+				  "internalType": "bytes1",
+				  "name": "",
+				  "type": "bytes1"
+			  }
+		  ],
+		  "stateMutability": "view",
+		  "type": "function"
+	  },
+	  {
+		  "inputs": [],
+		  "name": "READ_BIT",
+		  "outputs": [
+			  {
+				  "internalType": "bytes1",
+				  "name": "",
+				  "type": "bytes1"
+			  }
+		  ],
+		  "stateMutability": "view",
+		  "type": "function"
+	  },
+	  {
+		  "inputs": [],
+		  "name": "WRITE_BIT",
+		  "outputs": [
+			  {
+				  "internalType": "bytes1",
+				  "name": "",
+				  "type": "bytes1"
+			  }
+		  ],
+		  "stateMutability": "view",
+		  "type": "function"
+	  },
+	  {
+		  "inputs": [
+			  {
+				  "internalType": "address",
+				  "name": "requester",
+				  "type": "address"
+			  },
+			  {
+				  "internalType": "address",
+				  "name": "file",
+				  "type": "address"
+			  }
+		  ],
+		  "name": "getPermissions",
+		  "outputs": [
+			  {
+				  "internalType": "bytes1",
+				  "name": "",
+				  "type": "bytes1"
+			  }
+		  ],
+		  "stateMutability": "view",
+		  "type": "function"
+	  },
+	  {
+		  "inputs": [],
+		  "name": "hasExpired",
+		  "outputs": [
+			  {
+				  "internalType": "bool",
+				  "name": "",
+				  "type": "bool"
+			  }
+		  ],
+		  "stateMutability": "view",
+		  "type": "function"
+	  },
+	  {
+		  "inputs": [],
+		  "name": "owner",
+		  "outputs": [
+			  {
+				  "internalType": "address",
+				  "name": "",
+				  "type": "address"
+			  }
+		  ],
+		  "stateMutability": "view",
+		  "type": "function"
+	  },
+	  {
+		  "inputs": [],
+		  "name": "terminate",
+		  "outputs": [],
+		  "stateMutability": "nonpayable",
+		  "type": "function"
+	  }
+  ],
   "bytecode": "",
   "runtimeBytecode": ""
 }

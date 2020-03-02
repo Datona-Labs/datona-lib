@@ -1,33 +1,10 @@
-pragma solidity ^0.5.1;
+pragma solidity ^0.6.3;
 
-/*
- * Example of a basic Smart Information Contract
- */
-
-contract SDAC {
-
-    string public constant version = "0.0.1";
-
-    // returns the owner of this contract
-    function getOwner() public view returns (address);
-
-    // basic permission.  Assumes the data vault has validated the requester's ID'
-    function isPermitted( address requester ) public view returns (bool);
-
-    // returns true if the contract has expired either automatically or manually
-    function hasExpired() public view returns (bool);
-
-    // terminates the contract if the sender is permitted and any termination conditions are met
-    function terminate() public;
-
-}
-
-
+import "SDAC.sol";
 
 contract TestContract is SDAC {
 
-    string public constant apiVersion = "0.1";
-    string public constant version = "0.1";
+    string public constant version = "0.1.1";
 
     address public owner = msg.sender;
     address public permittedRequester;
@@ -58,30 +35,32 @@ contract TestContract is SDAC {
     }
 
 
-    // returns the owner of this contract
-     function getOwner() public view returns (address) {
-        return owner;
+    function getPermissions( address requester, address file ) public view override returns (byte) {
+        if ( file == address(0) && !hasExpired() ) {
+            if (requester == owner) return NO_PERMISSIONS | READ_BIT | WRITE_BIT | APPEND_BIT;
+            if (requester == permittedRequester) return NO_PERMISSIONS | READ_BIT;
+        }
+        return NO_PERMISSIONS;
     }
 
 
-   // basic permission.  Assumes the data vault has validated the requester's ID'
     function isPermitted( address requester ) public view returns (bool) {
-        return ( requester == permittedRequester ) &&
-               ( ! hasExpired() );
+        return ( getPermissions(requester, address(0)) & READ_BIT ) > 0;
     }
 
 
-     // returns true if the contract has expired either automatically or manually
-    function hasExpired() public view returns (bool) {
+    // returns true if the contract has expired either automatically or manually
+    function hasExpired() public view override returns (bool) {
         return terminated ||
-               block.timestamp - contractStart >= contractDuration * 1 days;
+        block.timestamp - contractStart >= contractDuration * 1 days;
     }
 
 
     // terminates the contract if the sender is permitted and any termination conditions are met
-    function terminate() public onlyOwnerOrRequester {
+    function terminate() public override onlyOwnerOrRequester {
         terminated = true;
     }
 
 
 }
+

@@ -142,7 +142,7 @@ describe("System Scenarios", function() {
     });
 
     it( "[attempt to access by non-permitted address fails with PermissionError]", function(){
-      const vault = new datona.vault.RemoteVault(vaultServerConfig.url, contract.address, ownerKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault(vaultServerConfig.url, contract.address, vaultKey, vaultOwner.address);
       return vault.access()
         .should.eventually.be.rejectedWith(DatonaErrors.PermissionError, "permission denied");
 

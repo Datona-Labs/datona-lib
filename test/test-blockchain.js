@@ -318,8 +318,8 @@ describe("Blockchain", function() {
 
       it("can be used with SDAC interface", function() {
         const sdac = new datona.blockchain.Contract(sdacInterface.abi, contract.address);
-        return sdac.call("isPermitted", [requester.address])
-          .should.eventually.equal(true);
+        return sdac.call("getPermissions", [requester.address, "0x0000000000000000000000000000000000000000"])
+          .should.eventually.equal("0x04");
       });
 
     });
@@ -434,7 +434,7 @@ describe("Blockchain", function() {
           .then(
             function(expired){
               expect(expired).to.equal(false);
-              return sdac.transact(ownerKey, "getOwner");
+              return sdac.transact(ownerKey, "getPermissions", [requester.address, "0x0000000000000000000000000000000000000000"]);
             }
           )
           .then(
@@ -451,42 +451,6 @@ describe("Blockchain", function() {
       });
 
     });
-
-
-      describe(".getOwner", function() {
-
-        it("throws a DatonaError if the contract has not been deployed", function() {
-          const localContract = new datona.blockchain.Contract(testSDAC.abi);
-          expect(function() {
-              return localContract.getOwner();
-            })
-            .to.throw(DatonaErrors.BlockchainError, "contract has not been deployed or mapped to an existing contract");
-        });
-
-        it("return the correct address after deploying", function() {
-          return contract.getOwner()
-            .should.eventually.satisfy((addr) => addr.toUpperCase() == owner.address.toUpperCase());
-        });
-
-        it("return the correct address for a second time from the same contract", function() {
-          return contract.getOwner()
-            .should.eventually.satisfy((addr) => addr.toUpperCase() == owner.address.toUpperCase());
-        });
-
-        it("return the correct address after mapping address to existing contract", function() {
-          const localContract = new datona.blockchain.Contract(testSDAC.abi);
-          localContract.setAddress(contract.address);
-          return localContract.getOwner()
-            .should.eventually.satisfy((addr) => addr.toUpperCase() == owner.address.toUpperCase());
-        });
-
-        it("can be used with SDAC interface", function() {
-          const localContract = new datona.blockchain.Contract(sdacInterface.abi, contract.address);
-          return localContract.getOwner()
-            .should.eventually.satisfy((addr) => addr.toUpperCase() == owner.address.toUpperCase());
-        });
-
-      });
 
 
       describe(".hasExpired", function() {
@@ -560,7 +524,8 @@ describe("Blockchain", function() {
         });
 
         it("returns false if the address is not permitted access", function() {
-          return contract.isPermitted(owner.address)
+          const randomAddress = "0x288b32F2653C1d72043d240A7F938a114Ab69584";
+          return contract.isPermitted(randomAddress)
             .should.eventually.equal(false);
         });
 
@@ -912,7 +877,8 @@ describe("Blockchain", function() {
         assert(sdacSH.contracts.length == 0);
         assert(anotherSdacSH.contracts.length == 0);
         const sdacSubscriptionId = datona.blockchain.subscribe(bcHash, sdacSH.callback.bind(sdacSH));
-        const anotherSdacSubscriptionId = datona.blockchain.subscribe(bcHash, anotherSdacSH.callback.bind(anotherSdacSH), owner.address, testSDAC.abi);
+        const randomAddress = "0x288b32F2653C1d72043d240A7F938a114Ab69584";
+        const anotherSdacSubscriptionId = datona.blockchain.subscribe(bcHash, anotherSdacSH.callback.bind(anotherSdacSH), randomAddress, testSDAC.abi);
         assert(sdacSH.contracts.length == 0);
         assert(anotherSdacSH.contracts.length == 0);
         contract = new datona.blockchain.Contract(testSDAC.abi);
