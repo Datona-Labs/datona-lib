@@ -35,6 +35,13 @@ var web3;
 
 
 /*
+ * Constants
+ */
+
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+
+
+/*
  * Classes
  */
 
@@ -207,14 +214,34 @@ class Contract {
 
 
   /*
-   * Promises to return whether the given address is permitted to access the vault (boolean)
+   * Promises to return whether the given requester is permitted to read the given vault file (boolean)
    */
-  isPermitted(address) {
-    assert.isAddress(address, "Contract isPermitted address");
-    if (this.address === undefined) throw new errors.BlockchainError("Contract.isPermitted: contract has not been deployed or mapped to an existing contract");
-    return this.getPermissions(address, Contract.ROOT_DIRECTORY)
+  canRead(requester, fileId) {
+    return this.getPermissions(requester, fileId)
         .then( function(permissions){
           return permissions.canRead();
+        });
+  }
+
+
+  /*
+   * Promises to return whether the given requester is permitted to write to the given vault file (boolean)
+   */
+  canWrite(requester, fileId) {
+    return this.getPermissions(requester, fileId)
+        .then( function(permissions){
+          return permissions.canWrite();
+        });
+  }
+
+
+  /*
+   * Promises to return whether the given requester is permitted to append to the given vault file (boolean)
+   */
+  canAppend(requester, fileId) {
+    return this.getPermissions(requester, fileId)
+        .then( function(permissions){
+          return permissions.canAppend();
         });
   }
 
@@ -224,7 +251,8 @@ class Contract {
    */
   getPermissions(requester, fileId) {
     assert.isAddress(requester, "Contract getPermissions requester");
-    assert.isAddress(fileId, "Contract getPermissions fileId");
+    if (fileId === undefined) fileId = Contract.ROOT_DIRECTORY;
+    else assert.isAddress(fileId, "Contract getPermissions fileId");
     if (this.address === undefined) throw new errors.BlockchainError("Contract.isPermitted: contract has not been deployed or mapped to an existing contract");
     return this.call("getPermissions", [requester, fileId])
         .then( function(permissions){
@@ -401,15 +429,29 @@ class Contract {
 
 
   /*
-   * Promises to reject if the given address does not have permission to access the vault.
+   * Promises to reject if the given requester does not have permission to access the given vault file.
    */
-  assertIsPermitted(address) {
-    return this.isPermitted(address)
-      .then(function(permitted) {
-        if (!permitted) {
-          throw new errors.PermissionError("permission denied");
-        }
-      });
+  assertCanRead(requester, fileId) {
+    return this.canRead(requester, fileId)
+      .then(_assertPermitted);
+  }
+
+
+  /*
+   * Promises to reject if the given requester does not have permission to write to the given vault file.
+   */
+  assertCanWrite(requester, fileId) {
+    return this.canWrite(requester, fileId)
+      .then(_assertPermitted);
+  }
+
+
+  /*
+   * Promises to reject if the given requester does not have permission to append to the given vault file.
+   */
+  assertCanAppend(requester, fileId) {
+    return this.canAppend(requester, fileId)
+      .then(_assertPermitted);
   }
 
 }
@@ -427,21 +469,6 @@ class GenericSmartDataAccessContract extends Contract {
   }
 
 }
-
-
-
-/*
- * Exports
- */
-
-module.exports = {
-  setProvider: setProvider,
-  Contract: Contract,
-  GenericSmartDataAccessContract: GenericSmartDataAccessContract,
-  subscribe: subscribe,
-  unsubscribe: unsubscribe,
-  close: close
-};
 
 
 
@@ -487,11 +514,14 @@ function setProvider(url) {
  * blockchain with the given code hash.  Optionally, the client can receive notification
  * only if the given address is permitted to access the data controlled by the contract.
  */
-function subscribe(bytecodeHash, callback, permittedAddress) {
+function subscribe(bytecodeHash, callback, permittedAddress, fileId) {
   assert.isHash(bytecodeHash, "subscribe bytecodeHash");
   assert.isFunction(callback, "subscribe callback");
   if (permittedAddress !== undefined) {
-    assert.isAddress(permittedAddress);
+    assert.isAddress(permittedAddress, "subscribe permittedAddress");
+  }
+  if (fileId !== undefined){
+    assert.isAddress(fileId, "subscribe fileId");
   }
 
   // subscribe to web3 if this is the first client subscription
@@ -501,7 +531,9 @@ function subscribe(bytecodeHash, callback, permittedAddress) {
   const subscription = {
     bytecodeHash: bytecodeHash,
     callback: callback,
-    permittedAddress: permittedAddress };
+    permittedAddress: permittedAddress,
+    fileId: fileId
+  };
   const subscriptionHash = crypto.hash(JSON.stringify(subscription));
   subscription.hash = subscriptionHash;
   subscriptions.push(subscription);
@@ -542,6 +574,22 @@ function close(){
     }
   }
 }
+
+
+
+/*
+ * Exports
+ */
+
+module.exports = {
+  ZERO_ADDRESS: ZERO_ADDRESS,
+  setProvider: setProvider,
+  Contract: Contract,
+  GenericSmartDataAccessContract: GenericSmartDataAccessContract,
+  subscribe: subscribe,
+  unsubscribe: unsubscribe,
+  close: close
+};
 
 
 
@@ -605,7 +653,7 @@ function checkAndInformSubscriber(bytecodeHash, contractAddress) {
         subscription.callback(contractAddress, subscription.bytecodeHash);
       } else {
         const contract = new Contract(sdacInterface.abi, contractAddress);
-        contract.isPermitted(subscription.permittedAddress)
+        contract.canRead(subscription.permittedAddress, subscription.fileId)
           .then(function(result, error) {
             if (result === true) {
               subscription.callback(contractAddress, subscription.bytecodeHash);
@@ -618,3 +666,15 @@ function checkAndInformSubscriber(bytecodeHash, contractAddress) {
     }
   }
 }
+
+
+/*
+ * Local callback function to throw a PermissionError if permitted parameter is not true
+ */
+function _assertPermitted(permitted) {
+  if (!permitted) {
+    throw new errors.PermissionError("permission denied");
+  }
+}
+
+

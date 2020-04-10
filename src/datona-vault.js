@@ -29,7 +29,6 @@ const crypto = require('./datona-crypto');
 const comms = require('./datona-comms');
 const blockchain = require('./datona-blockchain');
 
-
 /*
  * Classes
  */
@@ -52,15 +51,35 @@ class RemoteVault extends comms.DatonaConnector {
 
 
   /*
-   * Promises to store the given data in the vault.  This method creates the
+   * Promises to create the vault on the remote server.  This method creates the
    * data request, signs it, initiates the request and validates the response.
    */
-  create(data) {
-    assert.isPresent(data, "data");
+  create() {
     const request = {
       txnType: "VaultRequest",
       requestType: "create",
       contract: this.contract,
+    };
+    return this.send(request)
+      .then( function(response){
+        comms.validateResponse(response.txn, "VaultResponse");
+        if (response.txn.responseType === "error") throw errors.fromObject(response.txn.error);
+        return response;
+      });
+  }
+
+
+  /*
+   * Promises to write or rewrite the given file of this vault.
+   */
+  write(data, file = blockchain.ZERO_ADDRESS) {
+    assert.isAddress(file, "file");
+    assert.isPresent(data, "data");
+    const request = {
+      txnType: "VaultRequest",
+      requestType: "write",
+      contract: this.contract,
+      file: file,
       data: data
     };
     return this.send(request)
@@ -73,32 +92,37 @@ class RemoteVault extends comms.DatonaConnector {
 
 
   /*
-   * Promises to rewrite the data held in this vault.
+   * Promises to append to the given file of this vault.
    */
-  update(data) {
+  append(data, file = blockchain.ZERO_ADDRESS) {
+    assert.isAddress(file, "file");
+    assert.isPresent(data, "data");
     const request = {
       txnType: "VaultRequest",
-      requestType: "update",
+      requestType: "append",
       contract: this.contract,
+      file: file,
       data: data
     };
     return this.send(request)
-      .then( function(response){
-        comms.validateResponse(response.txn, "VaultResponse");
-        if (response.txn.responseType === "error") throw errors.fromObject(response.txn.error);
-        return response;
-      });
+        .then( function(response){
+          comms.validateResponse(response.txn, "VaultResponse");
+          if (response.txn.responseType === "error") throw errors.fromObject(response.txn.error);
+          return response;
+        });
   }
 
 
   /*
    * Promises to retrieve the data held in this vault, if permitted by the contract.
    */
-  access() {
+  read(file = blockchain.ZERO_ADDRESS) {
+    assert.isAddress(file, "file");
     const request = {
       txnType: "VaultRequest",
-      requestType: "access",
-      contract: this.contract
+      requestType: "read",
+      contract: this.contract,
+      file: file
     };
     return this.send(request)
       .then( function(response){
@@ -160,8 +184,9 @@ class VaultKeeper {
       var func;
       switch (txn.requestType) {
         case "create": func = this.createVault.bind(this); break;
-        case "update": func = this.updateVault.bind(this); break;
-        case "access": func = this.accessVault.bind(this); break;
+        case "write": func = this.writeVault.bind(this); break;
+        case "append": func = this.appendVault.bind(this); break;
+        case "read": func = this.readVault.bind(this); break;
         case "delete": func = this.deleteVault.bind(this); break;
         default:
           throw new errors.InvalidTransactionError("Invalid request type ('" + txn.requestType + "')");
@@ -184,45 +209,72 @@ class VaultKeeper {
    * VaultDataServer.
    */
   createVault(request, signatory) {
-    return _createOrUpdateVault(this.vaultDataServer.createVault.bind(this.vaultDataServer), "create", request, signatory);
+
+    function checkPermissions(contract, signatory, file) {
+      return contract.assertOwner(signatory).then(contract.assertNotExpired.bind(contract));
+    }
+
+    function callDataServer(contractAddress, file, data) { // bound to vaultDataServer instance
+      return this.create(contractAddress);
+    }
+
+    return _handleVaultKeeperRequest("create", request, signatory, checkPermissions, callDataServer.bind(this.vaultDataServer));
   }
 
 
   /*
-   * Handles a valid update request and promises to update the vault via the
+   * Handles a valid write request and promises to write the vault via the
    * VaultDataServer.
    */
-  updateVault(request, signatory) {
-    return _createOrUpdateVault(this.vaultDataServer.updateVault.bind(this.vaultDataServer), "update", request, signatory);
+  writeVault(request, signatory) {
+
+    function checkPermissions(contract, signatory, file) {
+      if (!assert.isNotNull(request.data)) throw new errors.MalformedTransactionError("Missing request data field");
+      return contract.assertCanWrite(signatory, file).then(contract.assertNotExpired.bind(contract));
+    }
+
+    function callDataServer(contractAddress, file, data) { // bound to vaultDataServer instance
+      return this.write(contractAddress, file, data);
+    }
+
+    return _handleVaultKeeperRequest("write", request, signatory, checkPermissions, callDataServer.bind(this.vaultDataServer));
   }
 
 
   /*
-   * Handles a valid access request and promises to return the data from the
+   * Handles a valid append request and promises to append to the vault via the
+   * VaultDataServer.
+   */
+  appendVault(request, signatory) {
+
+    function checkPermissions(contract, signatory, file) {
+      if (!assert.isNotNull(request.data)) throw new errors.MalformedTransactionError("Missing request data field");
+      return contract.assertCanAppend(signatory, file).then(contract.assertNotExpired.bind(contract));
+    }
+
+    function callDataServer(contractAddress, file, data) { // bound to vaultDataServer instance
+      return this.append(contractAddress, file, data);
+    }
+
+    return _handleVaultKeeperRequest("append", request, signatory, checkPermissions, callDataServer.bind(this.vaultDataServer));
+  }
+
+
+  /*
+   * Handles a valid read request and promises to return the data from the
    * vault via VaultDataServer.
    */
-  accessVault(request, signatory) {
-    assert.isObject(request, "VaultKeeper createVault request");
-    assert.isAddress(signatory, "VaultKeeper createVault signatory");
-    try {
-      // validate the request and obtain the signatory and contract
-      if (request.requestType !== "access") throw new errors.InvalidTransactionError("attempted to access a vault with in an invalid request type '"+request.requestType+"'");
-      if (!assert.isAddress(request.contract)) throw new errors.MalformedTransactionError("Invalid request contract field", request.contract);
-      const contract = new blockchain.GenericSmartDataAccessContract(request.contract);
+  readVault(request, signatory) {
 
-      // Verify the signatory is permitted to access the vault and the contract
-      // has not expired then access the vault
-      const serverFunction = this.vaultDataServer.accessVault.bind(this.vaultDataServer);
-      return contract.assertIsPermitted(signatory)
-        .then(contract.assertNotExpired.bind(contract))
-        .then( function(){ return serverFunction(request.contract) })
-        .then(createSuccessResponse)
-        .catch(createErrorResponse);
-
-    } catch (error) {
-      const exception = error instanceof errors.DatonaError ? error : new errors.TransactionError("VaultKeeper accessVault: "+error.message);
-      return new Promise(function(resolve, reject) { resolve(createErrorResponse(exception)) });
+    function checkPermissions(contract, signatory, file) {
+      return contract.assertCanRead(signatory, file).then(contract.assertNotExpired.bind(contract));
     }
+
+    function callDataServer(contractAddress, file, data) { // bound to vaultDataServer instance
+      return this.read(contractAddress, file);
+    }
+
+    return _handleVaultKeeperRequest("read", request, signatory, checkPermissions, callDataServer.bind(this.vaultDataServer));
   }
 
 
@@ -231,27 +283,16 @@ class VaultKeeper {
    * VaultDataServer.
    */
   deleteVault(request, signatory) {
-    assert.isObject(request, "VaultKeeper createVault request");
-    assert.isAddress(signatory, "VaultKeeper createVault signatory");
-    try {
-      // validate the request and obtain the signatory and contract
-      if (request.requestType !== "delete") throw new errors.InvalidTransactionError("attempted to delete a vault with in an invalid request type '"+request.requestType+"'");
-      if (!assert.isAddress(request.contract)) throw new errors.MalformedTransactionError("Invalid request contract field", request.contract);
-      const contract = new blockchain.GenericSmartDataAccessContract(request.contract);
 
-      // Verify the signatory is the owner of the contract and the contract has
-      // expired then delete the vault
-      const serverFunction = this.vaultDataServer.deleteVault.bind(this.vaultDataServer);
-      return contract.assertOwner(signatory)
-        .then(contract.assertHasExpired.bind(contract))
-        .then( function(){ return serverFunction(request.contract) })
-        .then(createSuccessResponse)
-        .catch(createErrorResponse);
-
-    } catch (error) {
-      const exception = error instanceof errors.DatonaError ? error : new errors.TransactionError("VaultKeeper deleteVault: "+error.message);
-      return new Promise(function(resolve, reject) { resolve(createErrorResponse(exception)) });
+    function checkPermissions(contract, signatory, file) {
+      return contract.assertOwner(signatory).then(contract.assertHasExpired.bind(contract));
     }
+
+    function callDataServer(contractAddress, file, data) { // bound to vaultDataServer instance
+      return this.delete(contractAddress);
+    }
+
+    return _handleVaultKeeperRequest("delete", request, signatory, checkPermissions, callDataServer.bind(this.vaultDataServer));
   }
 
 }
@@ -266,27 +307,30 @@ class VaultDataServer {
   constructor() {};
 
   /*
-   * Unconditionally creates a new vault controlled by the given contract,
-   * storing the given data.
+   * Unconditionally creates a new vault controlled by the given contract.
    */
-  createVault(contract, data) { throw new errors.DeveloperError("createVault has not been implemented"); };
+  create(contract) { throw new errors.DeveloperError("Vault server's create function has not been implemented"); };
 
   /*
-   * Unconditionally updates the vault controlled by the given contract,
-   * overwriting it with the given data.
+   * Unconditionally creates or overwrites data in a file within the vault controlled by the given contract.
    */
-  updateVault(contract, data) { throw new errors.DeveloperError("updateVault has not been implemented"); };
+  write(contract, file, data) { throw new errors.DeveloperError("Vault server's write has not been implemented"); };
 
   /*
-   * Unconditionally obtains the data from the vault controlled by the given
-   * contract.
+   * Unconditionally appends data to a file within the vault controlled by the given contract.
    */
-  accessVault(contract) { throw new errors.DeveloperError("accessVault has not been implemented"); };
+  append(contract, file, data) { throw new errors.DeveloperError("Vault server's append has not been implemented"); };
 
   /*
-   * Unconditionally deletes the vault controlled by the given contract.
+   * Unconditionally reads the data from a file within the vault controlled by the given contract.
    */
-  deleteVault(contract) { throw new errors.DeveloperError("deleteVault has not been implemented"); };
+  read(contract, file) { throw new errors.DeveloperError("Vault server's read function has not been implemented"); };
+
+  /*
+   * Unconditionally deletes a file controlled by the given contract.  If the file is null then the
+   * entire vault is deleted.
+   */
+  delete(contract, file) { throw new errors.DeveloperError("Vault server's delete function has not been implemented"); };
 
 }
 
@@ -325,7 +369,7 @@ module.exports = {
   RemoteVault: RemoteVault,
   VaultKeeper: VaultKeeper,
   VaultDataServer: VaultDataServer
-}
+};
 
 
 
@@ -333,20 +377,19 @@ module.exports = {
  * Internal Functions
  */
 
-function _createOrUpdateVault(serverFunction, requestType, request, signatory) {
-  assert.isObject(request, "VaultKeeper createVault request");
-  assert.isAddress(signatory, "VaultKeeper createVault signatory");
+function _handleVaultKeeperRequest(requestType, request, signatory, permissionFunction, dataServerFunction) {
+  assert.isObject(request, "VaultKeeper "+requestType+"Vault request");
+  assert.isAddress(signatory, "VaultKeeper "+requestType+"Vault signatory");
   try {
     // validate the request and obtain the contract
-    if (request.requestType !== requestType) throw new errors.InvalidTransactionError("attempted to "+requestType+" a vault with in an invalid request type '"+request.requestType+"'");
+    if (request.requestType !== requestType) throw new errors.InvalidTransactionError("attempted to "+requestType+" a vault with an invalid request type '"+request.requestType+"'");
     if (!assert.isAddress(request.contract)) throw new errors.MalformedTransactionError("Invalid request contract field", request.contract);
-    if (!assert.isNotNull(request.data)) throw new errors.MalformedTransactionError("Missing request data field");
     const contract = new blockchain.GenericSmartDataAccessContract(request.contract);
-    // Verify the signatory is the owner of the contract and the contract has
-    // not expired then create or update the vault
-    return contract.assertOwner(signatory)
-      .then(contract.assertNotExpired.bind(contract))
-      .then( function(){ return serverFunction(request.contract, request.data) })
+    const file = (request.file !== undefined) ? request.file : blockchain.ZERO_ADDRESS;
+    // Verify the signatory is permitted to write to the contract and the contract has
+    // not expired then write or append the vault
+    return permissionFunction(contract, signatory, file)
+      .then( function(){ return dataServerFunction(request.contract, file, request.data) })
       .then(createSuccessResponse)
       .catch(createErrorResponse);
 
@@ -355,3 +398,7 @@ function _createOrUpdateVault(serverFunction, requestType, request, signatory) {
     return new Promise(function(resolve, reject) { resolve(createErrorResponse(exception)) });
   }
 }
+
+
+
+

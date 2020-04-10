@@ -5,6 +5,7 @@ const should = chai.should();
 const datona = require("../src/datona");
 const DatonaErrors = datona.errors;
 const net = require('net');
+const sdacInterface = require("../contracts/SDAC.json");
 
 
 describe("Vault", function() {
@@ -25,6 +26,14 @@ describe("Vault", function() {
 
   const contractAddress = "0x288b32F2653C1d72043d240A7F938a114Ab69584";  // random address
 
+  const zeroAddress = "0x0000000000000000000000000000000000000000";
+
+  const NO_PERMISSIONS = 0x00;
+  const ALL_PERMISSIONS = 0x07;
+  const READ_BIT = 0x04;
+  const WRITE_BIT = 0x02;
+  const APPEND_BIT = 0x01;
+  const DIRECTORY_BIT = 0x80;
 
   describe("RemoteVault", function() {
 
@@ -57,7 +66,7 @@ describe("Vault", function() {
       scheme: "file",
       host: "localhost",
       port: portNumber
-    }
+    };
 
 
     describe("constructor", function() {
@@ -151,18 +160,10 @@ describe("Vault", function() {
 
     describe("create", function() {
 
-      it("throws a DatonaError if the data parameter is missing", function() {
-        expect(function() {
-          const vault = new datona.vault.RemoteVault(serverUrl, contractAddress, ownerKey, requester.address);
-          vault.create();
-        }).to.throw(DatonaErrors.TypeError, "data is missing");
-      });
-
       it("sends the correct create request to the server", function() {
         const server = new Server(requesterKey);
         const vault = new datona.vault.RemoteVault(serverUrl, contractAddress, ownerKey, requester.address);
-        const data = "Hello World!";
-        return vault.create(data)
+        return vault.create()
           .then( function(response){
             server.close();
             expect(response.txn.txnType).to.equal("VaultResponse");
@@ -173,7 +174,6 @@ describe("Vault", function() {
             expect(serverPacket.txn.txnType).to.equal("VaultRequest");
             expect(serverPacket.txn.requestType).to.equal("create");
             expect(serverPacket.txn.contract).to.equal(contractAddress);
-            expect(serverPacket.txn.data).to.equal(data);
           })
           .catch( function(error){
             server.close();
@@ -184,20 +184,27 @@ describe("Vault", function() {
     });
 
 
-    describe("update", function() {
+    describe("write", function() {
 
       it("throws a DatonaError if the data parameter is missing", function() {
         expect(function() {
           const vault = new datona.vault.RemoteVault(serverUrl, contractAddress, ownerKey, requester.address);
-          vault.create();
+          vault.write();
         }).to.throw(DatonaErrors.TypeError, "data is missing");
       });
 
-      it("sends the correct update request to the server", function() {
+      it("throws a DatonaError if the file parameter is not an address", function() {
+        expect(function() {
+          const vault = new datona.vault.RemoteVault(serverUrl, contractAddress, ownerKey, requester.address);
+          vault.write("Hello World!", "not_an_address");
+        }).to.throw(DatonaErrors.TypeError, "file: invalid type. Expected address");
+      });
+
+      it("sends the correct write request to the server when no file specified", function() {
         const server = new Server(requesterKey);
         const vault = new datona.vault.RemoteVault(serverUrl, contractAddress, ownerKey, requester.address);
         const data = "Hello World!";
-        return vault.update(data)
+        return vault.write(data)
           .then( function(response){
             server.close();
             expect(response.txn.txnType).to.equal("VaultResponse");
@@ -206,8 +213,9 @@ describe("Vault", function() {
             const serverPacket = datona.comms.decodeTransaction(server.data);
             expect(serverPacket.signatory).to.equal(owner.address);
             expect(serverPacket.txn.txnType).to.equal("VaultRequest");
-            expect(serverPacket.txn.requestType).to.equal("update");
+            expect(serverPacket.txn.requestType).to.equal("write");
             expect(serverPacket.txn.contract).to.equal(contractAddress);
+            expect(serverPacket.txn.file).to.equal(zeroAddress);
             expect(serverPacket.txn.data).to.equal(data);
           })
           .catch( function(error){
@@ -216,15 +224,115 @@ describe("Vault", function() {
           });
       }).timeout(5000);
 
+      it("sends the correct write request to the server for a specific file", function() {
+        const server = new Server(requesterKey);
+        const vault = new datona.vault.RemoteVault(serverUrl, contractAddress, ownerKey, requester.address);
+        const data = "Hello World!";
+        const randomFile = "0x388b32F2653C1d72043d240A7F938a114Ab69584";
+        return vault.write(data, randomFile)
+            .then( function(response){
+              server.close();
+              expect(response.txn.txnType).to.equal("VaultResponse");
+              expect(response.txn.responseType).to.equal("success");
+              expect(server.data.length).to.be.gt(0);
+              const serverPacket = datona.comms.decodeTransaction(server.data);
+              expect(serverPacket.signatory).to.equal(owner.address);
+              expect(serverPacket.txn.txnType).to.equal("VaultRequest");
+              expect(serverPacket.txn.requestType).to.equal("write");
+              expect(serverPacket.txn.contract).to.equal(contractAddress);
+              expect(serverPacket.txn.file).to.equal(randomFile);
+              expect(serverPacket.txn.data).to.equal(data);
+            })
+            .catch( function(error){
+              server.close();
+              throw error;
+            });
+      }).timeout(5000);
+
     });
 
 
-    describe("access", function() {
+    describe("append", function() {
 
-      it("sends the correct access request to the server", function() {
+      it("throws a DatonaError if the data parameter is missing", function() {
+        expect(function() {
+          const vault = new datona.vault.RemoteVault(serverUrl, contractAddress, ownerKey, requester.address);
+          vault.append();
+        }).to.throw(DatonaErrors.TypeError, "data is missing");
+      });
+
+      it("throws a DatonaError if the file parameter is not an address", function() {
+        expect(function() {
+          const vault = new datona.vault.RemoteVault(serverUrl, contractAddress, ownerKey, requester.address);
+          vault.append("Hello Again World!", "not_an_address");
+        }).to.throw(DatonaErrors.TypeError, "file: invalid type. Expected address");
+      });
+
+      it("sends the correct append request to the server when no file given", function() {
         const server = new Server(requesterKey);
         const vault = new datona.vault.RemoteVault(serverUrl, contractAddress, ownerKey, requester.address);
-        return vault.access()
+        const data = "Hello Again World!";
+        return vault.append(data)
+            .then( function(response){
+              server.close();
+              expect(response.txn.txnType).to.equal("VaultResponse");
+              expect(response.txn.responseType).to.equal("success");
+              expect(server.data.length).to.be.gt(0);
+              const serverPacket = datona.comms.decodeTransaction(server.data);
+              expect(serverPacket.signatory).to.equal(owner.address);
+              expect(serverPacket.txn.txnType).to.equal("VaultRequest");
+              expect(serverPacket.txn.requestType).to.equal("append");
+              expect(serverPacket.txn.contract).to.equal(contractAddress);
+              expect(serverPacket.txn.file).to.equal(zeroAddress);
+              expect(serverPacket.txn.data).to.equal(data);
+            })
+            .catch( function(error){
+              server.close();
+              throw error;
+            });
+      }).timeout(5000);
+
+      it("sends the correct append request to the server for a specific file", function() {
+        const server = new Server(requesterKey);
+        const vault = new datona.vault.RemoteVault(serverUrl, contractAddress, ownerKey, requester.address);
+        const randomFile = "0x388b32F2653C1d72043d240A7F938a114Ab69584";
+        const data = "Hello Again World!";
+        return vault.append(data, randomFile)
+            .then( function(response){
+              server.close();
+              expect(response.txn.txnType).to.equal("VaultResponse");
+              expect(response.txn.responseType).to.equal("success");
+              expect(server.data.length).to.be.gt(0);
+              const serverPacket = datona.comms.decodeTransaction(server.data);
+              expect(serverPacket.signatory).to.equal(owner.address);
+              expect(serverPacket.txn.txnType).to.equal("VaultRequest");
+              expect(serverPacket.txn.requestType).to.equal("append");
+              expect(serverPacket.txn.contract).to.equal(contractAddress);
+              expect(serverPacket.txn.file).to.equal(randomFile);
+              expect(serverPacket.txn.data).to.equal(data);
+            })
+            .catch( function(error){
+              server.close();
+              throw error;
+            });
+      }).timeout(5000);
+
+    });
+
+
+    describe("read", function() {
+
+      it("throws a DatonaError if the file parameter is not an address", function() {
+        expect(function() {
+          const vault = new datona.vault.RemoteVault(serverUrl, contractAddress, ownerKey, requester.address);
+          vault.read("not_an_address");
+        }).to.throw(DatonaErrors.TypeError, "file: invalid type. Expected address");
+      });
+
+      it("sends the correct read request to the server", function() {
+        const server = new Server(requesterKey);
+        const vault = new datona.vault.RemoteVault(serverUrl, contractAddress, ownerKey, requester.address);
+        return vault.read()
           .then( function(data){
             server.close();
             expect(data).to.equal("RemoteVault Server says 'Hello'");
@@ -232,8 +340,9 @@ describe("Vault", function() {
             const serverPacket = datona.comms.decodeTransaction(server.data);
             expect(serverPacket.signatory).to.equal(owner.address);
             expect(serverPacket.txn.txnType).to.equal("VaultRequest");
-            expect(serverPacket.txn.requestType).to.equal("access");
+            expect(serverPacket.txn.requestType).to.equal("read");
             expect(serverPacket.txn.contract).to.equal(contractAddress);
+            expect(serverPacket.txn.file).to.equal(zeroAddress);
           })
           .catch( function(error){
             server.close();
@@ -275,23 +384,27 @@ describe("Vault", function() {
   describe("VaultKeeper", function(){
 
     /*
-     * Stubbed VaultDataServer
+     * Stubbed VaultDataServer.  Simply returns the values of the input parameters so the test case can check correct values were passed.
      */
     class MyDataServer extends datona.vault.VaultDataServer {
 
-      createVault(contract, data){
+      create(contract, data){
         return {request: "create", contract: contract, data: data};
       }
 
-      updateVault(contract, data){
-        return {request: "update", contract: contract, data: data};
+      write(contract, file, data){
+        return {request: "write", contract: contract, file: file, data: data};
       }
 
-      accessVault(contract){
-        return {request: "access", contract: contract};
+      append(contract, file, data){
+        return {request: "append", contract: contract, file: file, data: data};
       }
 
-      deleteVault(contract){
+      read(contract, file){
+        return {request: "read", contract: contract, file: file};
+      }
+
+      delete(contract){
         return {request: "delete", contract: contract};
       }
 
@@ -303,11 +416,22 @@ describe("Vault", function() {
      */
 
     var copyOfGenericSmartDataAccessContract;
-    var contractStub = { owner: undefined, requester: undefined, expired: undefined };
+    var contractStub = { owner: undefined, expired: undefined, permissions: { file: '', requester: '', canRead: false, canWrite: false, canAppend: false } };
 
-    class TestContract {
+    function checkPermission(requester, file, condition) {
+      expect(requester).to.equal(contractStub.permissions.requester);
+      expect(file).to.equal(contractStub.permissions.file);
+      return new Promise( function(resolve, reject){
+        if( condition ) resolve();
+        else( reject(new DatonaErrors.PermissionError()) );
+      });
+    }
 
-      constructor(){}
+    class TestContract extends datona.blockchain.Contract {
+
+      constructor(){
+        super(sdacInterface.abi);
+      }
 
       assertOwner(address){
         return new Promise( function(resolve, reject){
@@ -330,11 +454,16 @@ describe("Vault", function() {
         });
       }
 
-      assertIsPermitted(address){
-        return new Promise( function(resolve, reject){
-          if( address.toLowerCase() == contractStub.requester.toLowerCase() ) resolve();
-          else( reject(new DatonaErrors.PermissionError()) );
-        });
+      assertCanRead(requester, file){
+        return checkPermission(requester, file, contractStub.permissions.canRead);
+      }
+
+      assertCanWrite(requester, file){
+        return checkPermission(requester, file, contractStub.permissions.canWrite);
+      }
+
+      assertCanAppend(requester, file){
+        return checkPermission(requester, file, contractStub.permissions.canAppend);
       }
 
     }
@@ -344,6 +473,7 @@ describe("Vault", function() {
       expect(response.txnType).to.equal("VaultResponse");
       expect(response.responseType).to.equal("error");
       expect(response.error).to.be.an.instanceof(Object);
+      if (response.error.name !== errorName) console.log(response);
       if (errorName) expect(response.error.name).to.equal(errorName);
       if (errorMessage) expect(response.error.message).to.equal(errorMessage);
     }
@@ -358,7 +488,7 @@ describe("Vault", function() {
       // Stub the contract class
       copyOfGenericSmartDataAccessContract = datona.blockchain.GenericSmartDataAccessContract;
       datona.blockchain.GenericSmartDataAccessContract = TestContract;
-    })
+    });
 
 
     describe("constructor", function(){
@@ -511,7 +641,7 @@ describe("Vault", function() {
         const request = {txnType: "VaultRequest", requestType: "barney", contract: contractAddress, data: "Hello World!"};
         return func( request, owner.address )
           .then( function(response){
-            checkErrorResponse(response, "InvalidTransactionError", "attempted to "+requestType+" a vault with in an invalid request type 'barney'");
+            checkErrorResponse(response, "InvalidTransactionError", "attempted to "+requestType+" a vault with an invalid request type 'barney'");
           });
       });
 
@@ -541,17 +671,9 @@ describe("Vault", function() {
 
       testParameters(keeper.createVault.bind(keeper), "create");
 
-      it("resolves an error response with a MalformedTransactionError if the request is missing the data", function() {
-        const request = {txnType: "VaultRequest", requestType: "create", contract: contractAddress};
-        return keeper.createVault( request, owner.address )
-          .then( function(response){
-            checkErrorResponse(response, "MalformedTransactionError");
-          });
-      });
-
       it("resolves an error response with a ContractOwnerError if the signatory is not the owner", function() {
         contractStub = { owner: requester.address, requester: owner.address, expired: false };
-        const request = {txnType: "VaultRequest", requestType: "create", contract: contractAddress, data: "Hello World!"};
+        const request = {txnType: "VaultRequest", requestType: "create", contract: contractAddress};
         const requestStr = datona.comms.encodeTransaction(request, ownerKey);
         return keeper.handleSignedRequest(requestStr)
           .then( function(response){
@@ -561,7 +683,7 @@ describe("Vault", function() {
 
       it("resolves an error response with a ContractExpiryError if the contract has expired", function() {
         contractStub = { owner: owner.address, requester: requester.address, expired: true };
-        const request = {txnType: "VaultRequest", requestType: "create", contract: contractAddress, data: "Hello World!"};
+        const request = {txnType: "VaultRequest", requestType: "create", contract: contractAddress};
         const requestStr = datona.comms.encodeTransaction(request, ownerKey);
         return keeper.handleSignedRequest(requestStr)
           .then( function(response){
@@ -571,83 +693,42 @@ describe("Vault", function() {
 
       it("resolves with a success response if all is well", function() {
         contractStub = { owner: owner.address, requester: requester.address, expired: false };
-        const request = {txnType: "VaultRequest", requestType: "create", contract: contractAddress, data: "Hello World!"};
+        const request = {txnType: "VaultRequest", requestType: "create", contract: contractAddress};
         const requestStr = datona.comms.encodeTransaction(request, ownerKey);
         return keeper.handleSignedRequest(requestStr)
           .then( function(signedResponse){
             const response = datona.comms.decodeTransaction(signedResponse);
             expect(response.txn.txnType).to.equal("VaultResponse");
+            if (response.txn.responseType == "error") { console.log(response) }
+            expect(response.txn.responseType).to.equal("success");
             expect(response.txn.data.request).to.equal("create");
             expect(response.txn.data.contract).to.equal(contractAddress);
-            expect(response.txn.data.data).to.equal("Hello World!");
           });
       });
 
     });
 
 
-    describe("updateVault", function(){
+    describe("readVault", function(){
 
       const dataServer = new MyDataServer();
       const keeper = new datona.vault.VaultKeeper(dataServer, requesterKey);
 
-      testParameters(keeper.updateVault.bind(keeper), "update");
-
-      it("resolves an error response with a MalformedTransactionError if the request is missing the data", function() {
-        const request = {txnType: "VaultRequest", requestType: "update", contract: contractAddress};
-        return keeper.updateVault( request, owner.address )
-          .then( function(response){
-            checkErrorResponse(response, "MalformedTransactionError");
-          });
-      });
-
-      it("resolves an error response with a ContractOwnerError if the signatory is not the owner", function() {
-        contractStub = { owner: requester.address, requester: owner.address, expired: false };
-        const request = {txnType: "VaultRequest", requestType: "update", contract: contractAddress, data: "Hello World!"};
-        const requestStr = datona.comms.encodeTransaction(request, ownerKey);
-        return keeper.handleSignedRequest(requestStr)
-          .then( function(response){
-            checkSignedErrorResponse(response, "ContractOwnerError");
-          });
-      });
+      testParameters(keeper.readVault.bind(keeper), "read");
 
       it("resolves an error response with a ContractExpiryError if the contract has expired", function() {
-        contractStub = { owner: owner.address, requester: requester.address, expired: true };
-        const request = {txnType: "VaultRequest", requestType: "update", contract: contractAddress, data: "Hello World!"};
+        contractStub = { owner: owner.address, expired: true, permissions: { file: zeroAddress, requester: owner.address, canRead: true, canWrite: true, canAppend: true } };
+        const request = {txnType: "VaultRequest", requestType: "read", contract: contractAddress, file: zeroAddress};
         const requestStr = datona.comms.encodeTransaction(request, ownerKey);
         return keeper.handleSignedRequest(requestStr)
-          .then( function(response){
-            checkSignedErrorResponse(response, "ContractExpiryError");
-          });
+            .then( function(response){
+              checkSignedErrorResponse(response, "ContractExpiryError");
+            });
       });
 
-      it("resolves with a success response if all is well", function() {
-        contractStub = { owner: owner.address, requester: requester.address, expired: false };
-        const request = {txnType: "VaultRequest", requestType: "update", contract: contractAddress, data: "Hello World!"};
-        const requestStr = datona.comms.encodeTransaction(request, ownerKey);
-        return keeper.handleSignedRequest(requestStr)
-          .then( function(signedResponse){
-            const response = datona.comms.decodeTransaction(signedResponse);
-            expect(response.txn.txnType).to.equal("VaultResponse");
-            expect(response.txn.data.request).to.equal("update");
-            expect(response.txn.data.contract).to.equal(contractAddress);
-            expect(response.txn.data.data).to.equal("Hello World!");
-          });
-      });
-
-    });
-
-
-    describe("accessVault", function(){
-
-      const dataServer = new MyDataServer();
-      const keeper = new datona.vault.VaultKeeper(dataServer, requesterKey);
-
-      testParameters(keeper.accessVault.bind(keeper), "access");
-
-      it("resolves an error response with a PermissionError if the signatory is not permitted to access the vault", function() {
-        contractStub = { owner: owner.address, requester: requester.address, expired: false };
-        const request = {txnType: "VaultRequest", requestType: "access", contract: contractAddress};
+      it("resolves an error response with a PermissionError if the signatory is not permitted to access the root vault", function() {
+        contractStub = { owner: owner.address, expired: false, permissions: { file: zeroAddress, requester: owner.address, canRead: false, canWrite: true, canAppend: true } };
+        const request = {txnType: "VaultRequest", requestType: "read", contract: contractAddress, file: zeroAddress};
         const requestStr = datona.comms.encodeTransaction(request, ownerKey);
         return keeper.handleSignedRequest(requestStr)
           .then( function(response){
@@ -655,27 +736,210 @@ describe("Vault", function() {
           });
       });
 
-      it("resolves an error response with a ContractExpiryError if the contract has expired", function() {
-        contractStub = { owner: owner.address, requester: requester.address, expired: true };
-        const request = {txnType: "VaultRequest", requestType: "access", contract: contractAddress};
-        const requestStr = datona.comms.encodeTransaction(request, requesterKey);
-        return keeper.handleSignedRequest(requestStr)
-          .then( function(response){
-            checkSignedErrorResponse(response, "ContractExpiryError");
-          });
-      });
-
-      it("resolves with a success response if all is well", function() {
-        contractStub = { owner: owner.address, requester: requester.address, expired: false };
-        const request = {txnType: "VaultRequest", requestType: "access", contract: contractAddress};
-        const requestStr = datona.comms.encodeTransaction(request, requesterKey);
+      it("reading from the root vault resolves with a success response if all is well", function() {
+        contractStub = { owner: owner.address, expired: false, permissions: { file: zeroAddress, requester: owner.address, canRead: true, canWrite: false, canAppend: false } };
+        const request = {txnType: "VaultRequest", requestType: "read", contract: contractAddress, file: zeroAddress};
+        const requestStr = datona.comms.encodeTransaction(request, ownerKey);
         return keeper.handleSignedRequest(requestStr)
           .then( function(signedResponse){
             const response = datona.comms.decodeTransaction(signedResponse);
             expect(response.txn.txnType).to.equal("VaultResponse");
-            expect(response.txn.data.request).to.equal("access");
+            if (response.txn.responseType != "success") { console.log(response) }
+            expect(response.txn.responseType).to.equal("success");
+            expect(response.txn.data.request).to.equal("read");
             expect(response.txn.data.contract).to.equal(contractAddress);
           });
+      });
+
+      it("resolves an error response with a PermissionError if the signatory is not permitted to access a non-root vault", function() {
+        const randomFile = "0x388b32F2653C1d72043d240A7F938a114Ab69584";
+        contractStub = { owner: owner.address, expired: false, permissions: { file: randomFile, requester: owner.address, canRead: false, canWrite: true, canAppend: true } };
+        const request = {txnType: "VaultRequest", requestType: "read", contract: contractAddress, file: randomFile};
+        const requestStr = datona.comms.encodeTransaction(request, ownerKey);
+        return keeper.handleSignedRequest(requestStr)
+            .then( function(response){
+              checkSignedErrorResponse(response, "PermissionError");
+            });
+      });
+
+      it("reading from a non-root file resolves with a success response if all is well", function() {
+        const randomFile = "0x388b32F2653C1d72043d240A7F938a114Ab69584";
+        contractStub = { owner: owner.address, expired: false, permissions: { file: randomFile, requester: owner.address, canRead: true, canWrite: false, canAppend: false } };
+        const request = {txnType: "VaultRequest", requestType: "read", contract: contractAddress, file: randomFile};
+        const requestStr = datona.comms.encodeTransaction(request, ownerKey);
+        return keeper.handleSignedRequest(requestStr)
+            .then( function(signedResponse){
+              const response = datona.comms.decodeTransaction(signedResponse);
+              expect(response.txn.txnType).to.equal("VaultResponse");
+              if (response.txn.responseType != "success") { console.log(response) }
+              expect(response.txn.responseType).to.equal("success");
+              expect(response.txn.data.request).to.equal("read");
+              expect(response.txn.data.contract).to.equal(contractAddress);
+            });
+      });
+
+    });
+
+
+    describe("writeVault", function(){
+
+      const dataServer = new MyDataServer();
+      const keeper = new datona.vault.VaultKeeper(dataServer, requesterKey);
+
+      testParameters(keeper.writeVault.bind(keeper), "write");
+
+      it("resolves an error response with a MalformedTransactionError if the request is missing the data", function() {
+        const request = {txnType: "VaultRequest", requestType: "write", contract: contractAddress, file: zeroAddress};
+        return keeper.writeVault( request, owner.address )
+            .then( function(response){
+              checkErrorResponse(response, "MalformedTransactionError");
+            });
+      });
+
+      it("resolves an error response with a PermissionError if the signatory is not permitted to write to the root file", function() {
+        contractStub = { owner: owner.address, expired: false, permissions: { file: zeroAddress, requester: owner.address, canRead: true, canWrite: false, canAppend: true } };
+        const request = {txnType: "VaultRequest", requestType: "write", contract: contractAddress, file: zeroAddress, data: "Hello World!"};
+        const requestStr = datona.comms.encodeTransaction(request, ownerKey);
+        return keeper.handleSignedRequest(requestStr)
+            .then( function(response){
+              checkSignedErrorResponse(response, "PermissionError");
+            });
+      });
+
+      it("resolves an error response with a ContractExpiryError if the contract has expired", function() {
+        contractStub = { owner: owner.address, expired: true, permissions: { file: zeroAddress, requester: owner.address, canRead: true, canWrite: true, canAppend: true } };
+        const request = {txnType: "VaultRequest", requestType: "write", contract: contractAddress, file: zeroAddress, data: "Hello World!"};
+        const requestStr = datona.comms.encodeTransaction(request, ownerKey);
+        return keeper.handleSignedRequest(requestStr)
+            .then( function(response){
+              checkSignedErrorResponse(response, "ContractExpiryError");
+            });
+      });
+
+      it("writing to the root vault resolves with a success response if all is well", function() {
+        contractStub = { owner: owner.address, expired: false, permissions: { file: zeroAddress, requester: owner.address, canRead: false, canWrite: true, canAppend: false } };
+        const request = {txnType: "VaultRequest", requestType: "write", contract: contractAddress, file: zeroAddress, data: "Hello World!"};
+        const requestStr = datona.comms.encodeTransaction(request, ownerKey);
+        return keeper.handleSignedRequest(requestStr)
+            .then( function(signedResponse){
+              const response = datona.comms.decodeTransaction(signedResponse);
+              expect(response.txn.txnType).to.equal("VaultResponse");
+              if (response.txn.responseType != "success") { console.log(response) }
+              expect(response.txn.responseType).to.equal("success");
+              expect(response.txn.data.request).to.equal("write");
+              expect(response.txn.data.contract).to.equal(contractAddress);
+              expect(response.txn.data.data).to.equal("Hello World!");
+            });
+      });
+
+      it("resolves an error response with a PermissionError if the signatory is not permitted to write to a non-root file", function() {
+        const randomFile = "0x388b32F2653C1d72043d240A7F938a114Ab69584";
+        contractStub = { owner: owner.address, expired: false, permissions: { file: randomFile, requester: owner.address, canRead: true, canWrite: false, canAppend: true } };
+        const request = {txnType: "VaultRequest", requestType: "write", contract: contractAddress, file: randomFile, data: "Hello World!"};
+        const requestStr = datona.comms.encodeTransaction(request, ownerKey);
+        return keeper.handleSignedRequest(requestStr)
+            .then( function(response){
+              checkSignedErrorResponse(response, "PermissionError");
+            });
+      });
+
+      it("writing to a non-root file resolves with a success response if all is well", function() {
+        const randomFile = "0x388b32F2653C1d72043d240A7F938a114Ab69584";
+        contractStub = { owner: owner.address, expired: false, permissions: { file: randomFile, requester: owner.address, canRead: false, canWrite: true, canAppend: false } };
+        const request = {txnType: "VaultRequest", requestType: "write", contract: contractAddress, file: randomFile, data: "Hello World!"};
+        const requestStr = datona.comms.encodeTransaction(request, ownerKey);
+        return keeper.handleSignedRequest(requestStr)
+            .then( function(signedResponse){
+              const response = datona.comms.decodeTransaction(signedResponse);
+              expect(response.txn.txnType).to.equal("VaultResponse");
+              if (response.txn.responseType != "success") { console.log(response) }
+              expect(response.txn.responseType).to.equal("success");
+              expect(response.txn.data.request).to.equal("write");
+              expect(response.txn.data.contract).to.equal(contractAddress);
+              expect(response.txn.data.data).to.equal("Hello World!");
+            });
+      });
+
+    });
+
+
+    describe("appendVault", function(){
+
+      const dataServer = new MyDataServer();
+      const keeper = new datona.vault.VaultKeeper(dataServer, requesterKey);
+
+      testParameters(keeper.appendVault.bind(keeper), "append");
+
+      it("resolves an error response with a MalformedTransactionError if the request is missing the data", function() {
+        const request = {txnType: "VaultRequest", requestType: "append", contract: contractAddress, file: zeroAddress};
+        return keeper.appendVault( request, owner.address )
+            .then( function(response){
+              checkErrorResponse(response, "MalformedTransactionError");
+            });
+      });
+
+      it("resolves an error response with a PermissionError if the signatory is not permitted to append to the root file", function() {
+        contractStub = { owner: owner.address, expired: false, permissions: { file: zeroAddress, requester: owner.address, canRead: true, canWrite: true, canAppend: false } };
+        const request = {txnType: "VaultRequest", requestType: "append", contract: contractAddress, file: zeroAddress, data: "Hello World!"};
+        const requestStr = datona.comms.encodeTransaction(request, ownerKey);
+        return keeper.handleSignedRequest(requestStr)
+            .then( function(response){
+              checkSignedErrorResponse(response, "PermissionError");
+            });
+      });
+
+      it("resolves an error response with a ContractExpiryError if the contract has expired", function() {
+        contractStub = { owner: owner.address, expired: true, permissions: { file: zeroAddress, requester: owner.address, canRead: true, canWrite: true, canAppend: true } };
+        const request = {txnType: "VaultRequest", requestType: "append", contract: contractAddress, file: zeroAddress, data: "Hello World!"};
+        const requestStr = datona.comms.encodeTransaction(request, ownerKey);
+        return keeper.handleSignedRequest(requestStr)
+            .then( function(response){
+              checkSignedErrorResponse(response, "ContractExpiryError");
+            });
+      });
+
+      it("writing to the root vault resolves with a success response if all is well", function() {
+        contractStub = { owner: owner.address, expired: false, permissions: { file: zeroAddress, requester: owner.address, canRead: false, canWrite: false, canAppend: true } };
+        const request = {txnType: "VaultRequest", requestType: "append", contract: contractAddress, file: zeroAddress, data: "Hello World!"};
+        const requestStr = datona.comms.encodeTransaction(request, ownerKey);
+        return keeper.handleSignedRequest(requestStr)
+            .then( function(signedResponse){
+              const response = datona.comms.decodeTransaction(signedResponse);
+              expect(response.txn.txnType).to.equal("VaultResponse");
+              if (response.txn.responseType != "success") { console.log(response) }
+              expect(response.txn.responseType).to.equal("success");
+              expect(response.txn.data.request).to.equal("append");
+              expect(response.txn.data.contract).to.equal(contractAddress);
+              expect(response.txn.data.data).to.equal("Hello World!");
+            });
+      });
+
+      it("resolves an error response with a PermissionError if the signatory is not permitted to append to a non-root file", function() {
+        const randomFile = "0x388b32F2653C1d72043d240A7F938a114Ab69584";
+        contractStub = { owner: owner.address, expired: false, permissions: { file: randomFile, requester: owner.address, canRead: true, canWrite: true, canAppend: false } };
+        const request = {txnType: "VaultRequest", requestType: "append", contract: contractAddress, file: randomFile, data: "Hello World!"};
+        const requestStr = datona.comms.encodeTransaction(request, ownerKey);
+        return keeper.handleSignedRequest(requestStr)
+            .then( function(response){
+              checkSignedErrorResponse(response, "PermissionError");
+            });
+      });
+
+      it("writing to a non-root file resolves with a success response if all is well", function() {
+        const randomFile = "0x388b32F2653C1d72043d240A7F938a114Ab69584";
+        contractStub = { owner: owner.address, expired: false, permissions: { file: randomFile, requester: owner.address, canRead: false, canWrite: false, canAppend: true } };
+        const request = {txnType: "VaultRequest", requestType: "append", contract: contractAddress, file: randomFile, data: "Hello World!"};
+        const requestStr = datona.comms.encodeTransaction(request, ownerKey);
+        return keeper.handleSignedRequest(requestStr)
+            .then( function(signedResponse){
+              const response = datona.comms.decodeTransaction(signedResponse);
+              expect(response.txn.txnType).to.equal("VaultResponse");
+              if (response.txn.responseType != "success") { console.log(response) }
+              expect(response.txn.responseType).to.equal("success");
+              expect(response.txn.data.request).to.equal("append");
+              expect(response.txn.data.contract).to.equal(contractAddress);
+              expect(response.txn.data.data).to.equal("Hello World!");
+            });
       });
 
     });
@@ -689,7 +953,7 @@ describe("Vault", function() {
       testParameters(keeper.deleteVault.bind(keeper), "delete");
 
       it("resolves an error response with a ContractOwnerError if the signatory does not own the vault", function() {
-        contractStub = { owner: owner.address, requester: requester.address, expired: true };
+        contractStub = { owner: owner.address, expired: false, permissions: { file: zeroAddress, requester: owner.address, canRead: true, canWrite: true, canAppend: true } };
         const request = {txnType: "VaultRequest", requestType: "delete", contract: contractAddress};
         const requestStr = datona.comms.encodeTransaction(request, requesterKey);
         return keeper.handleSignedRequest(requestStr)
@@ -699,7 +963,7 @@ describe("Vault", function() {
       });
 
       it("resolves an error response with a ContractExpiryError if the contract has not expired", function() {
-        contractStub = { owner: owner.address, requester: requester.address, expired: false };
+        contractStub = { owner: owner.address, expired: false, permissions: { file: zeroAddress, requester: owner.address, canRead: true, canWrite: true, canAppend: true } };
         const request = {txnType: "VaultRequest", requestType: "delete", contract: contractAddress};
         const requestStr = datona.comms.encodeTransaction(request, ownerKey);
         return keeper.handleSignedRequest(requestStr)
@@ -709,13 +973,15 @@ describe("Vault", function() {
       });
 
       it("resolves with a success response if all is well", function() {
-        contractStub = { owner: owner.address, requester: requester.address, expired: true };
+        contractStub = { owner: owner.address, expired: true, permissions: { file: zeroAddress, requester: owner.address, canRead: false, canWrite: false, canAppend: false } };
         const request = {txnType: "VaultRequest", requestType: "delete", contract: contractAddress};
         const requestStr = datona.comms.encodeTransaction(request, ownerKey);
         return keeper.handleSignedRequest(requestStr)
           .then( function(signedResponse){
             const response = datona.comms.decodeTransaction(signedResponse);
             expect(response.txn.txnType).to.equal("VaultResponse");
+            if (response.txn.responseType != "success") { console.log(response) }
+            expect(response.txn.responseType).to.equal("success");
             expect(response.txn.data.request).to.equal("delete");
             expect(response.txn.data.contract).to.equal(contractAddress);
           });
@@ -726,6 +992,7 @@ describe("Vault", function() {
 
     after( function(){
       datona.blockchain.GenericSmartDataAccessContract = copyOfGenericSmartDataAccessContract;
+      datona.blockchain.close();
     })
 
 

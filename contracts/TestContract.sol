@@ -6,7 +6,6 @@ contract TestContract is SDAC {
 
     string public constant version = "0.1.1";
 
-    address public owner = msg.sender;
     address public permittedRequester;
     uint public contractDuration;
     uint public contractStart;
@@ -35,10 +34,36 @@ contract TestContract is SDAC {
     }
 
 
+    // Permissions are set to support a variety of tests:
+    //   - Vault Root: owner:rwa, requester:r
+    //   - File 1: owner:wa, requester:r
+    //   - File 2: owner:r, requester:w
+    //   - File 3: owner:r, requester:a
+    //   - File 4: owner:r, requester:drwa
+    //   - File 5: owner:rwa, requester:-
     function getPermissions( address requester, address file ) public view override returns (byte) {
         if ( file == address(0) && !hasExpired() ) {
-            if (requester == owner) return NO_PERMISSIONS | READ_BIT | WRITE_BIT | APPEND_BIT;
+            if (requester == owner) return ALL_PERMISSIONS;
             if (requester == permittedRequester) return NO_PERMISSIONS | READ_BIT;
+        }
+        else if ( file == address(1) && !hasExpired() ) {
+            if (requester == owner) return NO_PERMISSIONS | WRITE_BIT | APPEND_BIT;
+            if (requester == permittedRequester) return NO_PERMISSIONS | READ_BIT;
+        }
+        else if ( file == address(2) && !hasExpired() ) {
+            if (requester == owner) return NO_PERMISSIONS | READ_BIT;
+            if (requester == permittedRequester) return NO_PERMISSIONS | WRITE_BIT;
+        }
+        else if ( file == address(3) && !hasExpired() ) {
+            if (requester == owner) return NO_PERMISSIONS | READ_BIT;
+            if (requester == permittedRequester) return NO_PERMISSIONS | APPEND_BIT;
+        }
+        else if ( file == address(4) && !hasExpired() ) {
+            if (requester == owner) return NO_PERMISSIONS | READ_BIT;
+            if (requester == permittedRequester) return NO_PERMISSIONS | DIRECTORY_BIT | READ_BIT | WRITE_BIT | APPEND_BIT;
+        }
+        else if ( file == address(5) && !hasExpired() ) {
+            if (requester == owner) return ALL_PERMISSIONS;
         }
         return NO_PERMISSIONS;
     }
