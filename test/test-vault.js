@@ -24,6 +24,12 @@ describe("Vault", function() {
   };
   const requesterKey = new datona.crypto.Key(requester.privateKey);
 
+  const vaultOwner = { // taken from Ganache
+    privateKey: "ae139af24306ecac804cfe974398d6d76361287d7b96d9e165d9bcb99a64b6ce",
+    address: "0x288b32F2653C1d72043d240A7F938a114Ab69584"
+  };
+  const vaultKey = new datona.crypto.Key(vaultOwner.privateKey);
+
   const contractAddress = "0x288b32F2653C1d72043d240A7F938a114Ab69584";  // random address
 
   const zeroAddress = "0x0000000000000000000000000000000000000000";
@@ -34,6 +40,7 @@ describe("Vault", function() {
   const WRITE_BIT = 0x02;
   const APPEND_BIT = 0x01;
   const DIRECTORY_BIT = 0x80;
+
 
   describe("RemoteVault", function() {
 
@@ -68,6 +75,23 @@ describe("Vault", function() {
       port: portNumber
     };
 
+    // Verifies a vault server response
+    function expectSuccessResponse(response){
+      expect(response.txn.txnType).to.equal("VaultResponse");
+      if (response.txn.responseType !== "success") { console.log(response) }
+      expect(response.txn.responseType).to.equal("success");
+      return response;
+    }
+
+    // Decodes and verifies the packet sent by the RemoteVault class and received by vault server
+    function decodeAndVerifyServerPacket(server){
+      server.close();
+      expect(server.data.length).to.be.gt(0);
+      const serverPacket = datona.comms.decodeTransaction(server.data);
+      expect(serverPacket.signatory).to.equal(owner.address);
+      expect(serverPacket.txn.txnType).to.equal("VaultRequest");
+      return serverPacket;
+    }
 
     describe("constructor", function() {
 
@@ -164,14 +188,9 @@ describe("Vault", function() {
         const server = new Server(requesterKey);
         const vault = new datona.vault.RemoteVault(serverUrl, contractAddress, ownerKey, requester.address);
         return vault.create()
-          .then( function(response){
-            server.close();
-            expect(response.txn.txnType).to.equal("VaultResponse");
-            expect(response.txn.responseType).to.equal("success");
-            expect(server.data.length).to.be.gt(0);
-            const serverPacket = datona.comms.decodeTransaction(server.data);
-            expect(serverPacket.signatory).to.equal(owner.address);
-            expect(serverPacket.txn.txnType).to.equal("VaultRequest");
+          .then( expectSuccessResponse )
+          .then( function(){
+            const serverPacket = decodeAndVerifyServerPacket(server);
             expect(serverPacket.txn.requestType).to.equal("create");
             expect(serverPacket.txn.contract).to.equal(contractAddress);
           })
@@ -205,14 +224,9 @@ describe("Vault", function() {
         const vault = new datona.vault.RemoteVault(serverUrl, contractAddress, ownerKey, requester.address);
         const data = "Hello World!";
         return vault.write(data)
-          .then( function(response){
-            server.close();
-            expect(response.txn.txnType).to.equal("VaultResponse");
-            expect(response.txn.responseType).to.equal("success");
-            expect(server.data.length).to.be.gt(0);
-            const serverPacket = datona.comms.decodeTransaction(server.data);
-            expect(serverPacket.signatory).to.equal(owner.address);
-            expect(serverPacket.txn.txnType).to.equal("VaultRequest");
+          .then( expectSuccessResponse )
+          .then( function(){
+            const serverPacket = decodeAndVerifyServerPacket(server);
             expect(serverPacket.txn.requestType).to.equal("write");
             expect(serverPacket.txn.contract).to.equal(contractAddress);
             expect(serverPacket.txn.file).to.equal(zeroAddress);
@@ -230,14 +244,9 @@ describe("Vault", function() {
         const data = "Hello World!";
         const randomFile = "0x388b32F2653C1d72043d240A7F938a114Ab69584";
         return vault.write(data, randomFile)
-            .then( function(response){
-              server.close();
-              expect(response.txn.txnType).to.equal("VaultResponse");
-              expect(response.txn.responseType).to.equal("success");
-              expect(server.data.length).to.be.gt(0);
-              const serverPacket = datona.comms.decodeTransaction(server.data);
-              expect(serverPacket.signatory).to.equal(owner.address);
-              expect(serverPacket.txn.txnType).to.equal("VaultRequest");
+          .then( expectSuccessResponse )
+          .then( function(){
+            const serverPacket = decodeAndVerifyServerPacket(server);
               expect(serverPacket.txn.requestType).to.equal("write");
               expect(serverPacket.txn.contract).to.equal(contractAddress);
               expect(serverPacket.txn.file).to.equal(randomFile);
@@ -273,14 +282,9 @@ describe("Vault", function() {
         const vault = new datona.vault.RemoteVault(serverUrl, contractAddress, ownerKey, requester.address);
         const data = "Hello Again World!";
         return vault.append(data)
-            .then( function(response){
-              server.close();
-              expect(response.txn.txnType).to.equal("VaultResponse");
-              expect(response.txn.responseType).to.equal("success");
-              expect(server.data.length).to.be.gt(0);
-              const serverPacket = datona.comms.decodeTransaction(server.data);
-              expect(serverPacket.signatory).to.equal(owner.address);
-              expect(serverPacket.txn.txnType).to.equal("VaultRequest");
+          .then( expectSuccessResponse )
+          .then( function(){
+            const serverPacket = decodeAndVerifyServerPacket(server);
               expect(serverPacket.txn.requestType).to.equal("append");
               expect(serverPacket.txn.contract).to.equal(contractAddress);
               expect(serverPacket.txn.file).to.equal(zeroAddress);
@@ -298,14 +302,9 @@ describe("Vault", function() {
         const randomFile = "0x388b32F2653C1d72043d240A7F938a114Ab69584";
         const data = "Hello Again World!";
         return vault.append(data, randomFile)
-            .then( function(response){
-              server.close();
-              expect(response.txn.txnType).to.equal("VaultResponse");
-              expect(response.txn.responseType).to.equal("success");
-              expect(server.data.length).to.be.gt(0);
-              const serverPacket = datona.comms.decodeTransaction(server.data);
-              expect(serverPacket.signatory).to.equal(owner.address);
-              expect(serverPacket.txn.txnType).to.equal("VaultRequest");
+          .then( expectSuccessResponse )
+          .then( function(){
+            const serverPacket = decodeAndVerifyServerPacket(server);
               expect(serverPacket.txn.requestType).to.equal("append");
               expect(serverPacket.txn.contract).to.equal(contractAddress);
               expect(serverPacket.txn.file).to.equal(randomFile);
@@ -334,12 +333,10 @@ describe("Vault", function() {
         const vault = new datona.vault.RemoteVault(serverUrl, contractAddress, ownerKey, requester.address);
         return vault.read()
           .then( function(data){
-            server.close();
             expect(data).to.equal("RemoteVault Server says 'Hello'");
-            expect(server.data.length).to.be.gt(0);
-            const serverPacket = datona.comms.decodeTransaction(server.data);
-            expect(serverPacket.signatory).to.equal(owner.address);
-            expect(serverPacket.txn.txnType).to.equal("VaultRequest");
+          })
+          .then( function(){
+            const serverPacket = decodeAndVerifyServerPacket(server);
             expect(serverPacket.txn.requestType).to.equal("read");
             expect(serverPacket.txn.contract).to.equal(contractAddress);
             expect(serverPacket.txn.file).to.equal(zeroAddress);
@@ -359,14 +356,9 @@ describe("Vault", function() {
         const server = new Server(requesterKey);
         const vault = new datona.vault.RemoteVault(serverUrl, contractAddress, ownerKey, requester.address);
         return vault.delete()
-          .then( function(response){
-            server.close();
-            expect(response.txn.txnType).to.equal("VaultResponse");
-            expect(response.txn.responseType).to.equal("success");
-            expect(server.data.length).to.be.gt(0);
-            const serverPacket = datona.comms.decodeTransaction(server.data);
-            expect(serverPacket.signatory).to.equal(owner.address);
-            expect(serverPacket.txn.txnType).to.equal("VaultRequest");
+          .then( expectSuccessResponse )
+          .then( function(){
+            const serverPacket = decodeAndVerifyServerPacket(server);
             expect(serverPacket.txn.requestType).to.equal("delete");
             expect(serverPacket.txn.contract).to.equal(contractAddress);
           })
@@ -410,6 +402,16 @@ describe("Vault", function() {
 
     }
 
+    function expectSuccessResponse(signedResponse){
+      const response = datona.comms.decodeTransaction(signedResponse);
+      expect(response.signatory.toLowerCase()).to.equal(requester.address.toLowerCase());
+      expect(response.txn.txnType).to.equal("VaultResponse");
+      if (response.txn.responseType !== "success") { console.log(response) }
+      expect(response.txn.responseType).to.equal("success");
+      expect(response.txn.data.contract).to.equal(contractAddress);
+      return response;
+    }
+
 
     /*
      * Stubbed smart contract
@@ -435,7 +437,7 @@ describe("Vault", function() {
 
       assertOwner(address){
         return new Promise( function(resolve, reject){
-          if( address.toLowerCase() == contractStub.owner.toLowerCase() ) resolve();
+          if( address.toLowerCase() === contractStub.owner.toLowerCase() ) resolve();
           else{ reject(new DatonaErrors.ContractOwnerError()) };
         });
       }
@@ -661,7 +663,7 @@ describe("Vault", function() {
           });
       });
 
-    };
+    }
 
 
     describe("createVault", function(){
@@ -696,13 +698,9 @@ describe("Vault", function() {
         const request = {txnType: "VaultRequest", requestType: "create", contract: contractAddress};
         const requestStr = datona.comms.encodeTransaction(request, ownerKey);
         return keeper.handleSignedRequest(requestStr)
-          .then( function(signedResponse){
-            const response = datona.comms.decodeTransaction(signedResponse);
-            expect(response.txn.txnType).to.equal("VaultResponse");
-            if (response.txn.responseType == "error") { console.log(response) }
-            expect(response.txn.responseType).to.equal("success");
+          .then( expectSuccessResponse )
+          .then( function(response){
             expect(response.txn.data.request).to.equal("create");
-            expect(response.txn.data.contract).to.equal(contractAddress);
           });
       });
 
@@ -741,13 +739,9 @@ describe("Vault", function() {
         const request = {txnType: "VaultRequest", requestType: "read", contract: contractAddress, file: zeroAddress};
         const requestStr = datona.comms.encodeTransaction(request, ownerKey);
         return keeper.handleSignedRequest(requestStr)
-          .then( function(signedResponse){
-            const response = datona.comms.decodeTransaction(signedResponse);
-            expect(response.txn.txnType).to.equal("VaultResponse");
-            if (response.txn.responseType != "success") { console.log(response) }
-            expect(response.txn.responseType).to.equal("success");
+          .then( expectSuccessResponse )
+          .then( function(response){
             expect(response.txn.data.request).to.equal("read");
-            expect(response.txn.data.contract).to.equal(contractAddress);
           });
       });
 
@@ -768,13 +762,9 @@ describe("Vault", function() {
         const request = {txnType: "VaultRequest", requestType: "read", contract: contractAddress, file: randomFile};
         const requestStr = datona.comms.encodeTransaction(request, ownerKey);
         return keeper.handleSignedRequest(requestStr)
-            .then( function(signedResponse){
-              const response = datona.comms.decodeTransaction(signedResponse);
-              expect(response.txn.txnType).to.equal("VaultResponse");
-              if (response.txn.responseType != "success") { console.log(response) }
-              expect(response.txn.responseType).to.equal("success");
+          .then( expectSuccessResponse )
+          .then( function(response){
               expect(response.txn.data.request).to.equal("read");
-              expect(response.txn.data.contract).to.equal(contractAddress);
             });
       });
 
@@ -821,13 +811,9 @@ describe("Vault", function() {
         const request = {txnType: "VaultRequest", requestType: "write", contract: contractAddress, file: zeroAddress, data: "Hello World!"};
         const requestStr = datona.comms.encodeTransaction(request, ownerKey);
         return keeper.handleSignedRequest(requestStr)
-            .then( function(signedResponse){
-              const response = datona.comms.decodeTransaction(signedResponse);
-              expect(response.txn.txnType).to.equal("VaultResponse");
-              if (response.txn.responseType != "success") { console.log(response) }
-              expect(response.txn.responseType).to.equal("success");
+          .then( expectSuccessResponse )
+          .then( function(response){
               expect(response.txn.data.request).to.equal("write");
-              expect(response.txn.data.contract).to.equal(contractAddress);
               expect(response.txn.data.data).to.equal("Hello World!");
             });
       });
@@ -849,13 +835,9 @@ describe("Vault", function() {
         const request = {txnType: "VaultRequest", requestType: "write", contract: contractAddress, file: randomFile, data: "Hello World!"};
         const requestStr = datona.comms.encodeTransaction(request, ownerKey);
         return keeper.handleSignedRequest(requestStr)
-            .then( function(signedResponse){
-              const response = datona.comms.decodeTransaction(signedResponse);
-              expect(response.txn.txnType).to.equal("VaultResponse");
-              if (response.txn.responseType != "success") { console.log(response) }
-              expect(response.txn.responseType).to.equal("success");
+          .then( expectSuccessResponse )
+          .then( function(response){
               expect(response.txn.data.request).to.equal("write");
-              expect(response.txn.data.contract).to.equal(contractAddress);
               expect(response.txn.data.data).to.equal("Hello World!");
             });
       });
@@ -903,13 +885,9 @@ describe("Vault", function() {
         const request = {txnType: "VaultRequest", requestType: "append", contract: contractAddress, file: zeroAddress, data: "Hello World!"};
         const requestStr = datona.comms.encodeTransaction(request, ownerKey);
         return keeper.handleSignedRequest(requestStr)
-            .then( function(signedResponse){
-              const response = datona.comms.decodeTransaction(signedResponse);
-              expect(response.txn.txnType).to.equal("VaultResponse");
-              if (response.txn.responseType != "success") { console.log(response) }
-              expect(response.txn.responseType).to.equal("success");
+          .then( expectSuccessResponse )
+          .then( function(response){
               expect(response.txn.data.request).to.equal("append");
-              expect(response.txn.data.contract).to.equal(contractAddress);
               expect(response.txn.data.data).to.equal("Hello World!");
             });
       });
@@ -931,13 +909,9 @@ describe("Vault", function() {
         const request = {txnType: "VaultRequest", requestType: "append", contract: contractAddress, file: randomFile, data: "Hello World!"};
         const requestStr = datona.comms.encodeTransaction(request, ownerKey);
         return keeper.handleSignedRequest(requestStr)
-            .then( function(signedResponse){
-              const response = datona.comms.decodeTransaction(signedResponse);
-              expect(response.txn.txnType).to.equal("VaultResponse");
-              if (response.txn.responseType != "success") { console.log(response) }
-              expect(response.txn.responseType).to.equal("success");
+          .then( expectSuccessResponse )
+          .then( function(response){
               expect(response.txn.data.request).to.equal("append");
-              expect(response.txn.data.contract).to.equal(contractAddress);
               expect(response.txn.data.data).to.equal("Hello World!");
             });
       });
@@ -977,13 +951,9 @@ describe("Vault", function() {
         const request = {txnType: "VaultRequest", requestType: "delete", contract: contractAddress};
         const requestStr = datona.comms.encodeTransaction(request, ownerKey);
         return keeper.handleSignedRequest(requestStr)
-          .then( function(signedResponse){
-            const response = datona.comms.decodeTransaction(signedResponse);
-            expect(response.txn.txnType).to.equal("VaultResponse");
-            if (response.txn.responseType != "success") { console.log(response) }
-            expect(response.txn.responseType).to.equal("success");
+          .then( expectSuccessResponse )
+          .then( function(response){
             expect(response.txn.data.request).to.equal("delete");
-            expect(response.txn.data.contract).to.equal(contractAddress);
           });
       });
 
