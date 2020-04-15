@@ -81,7 +81,7 @@ function fromObject(error) {
   if (toString.call(error) !== '[object Object]') throw new DatonaError("error is invalid type: expecting object.");
   if (error.name === undefined || error.name === "") throw new DatonaError("name missing from error");
   const type = module.exports[error.name];
-  if (type === undefined || ! type instanceof DatonaError) throw new DatonaError("error has invalid name");
+  if (type === undefined || ! type instanceof DatonaError) throw new DeveloperError("Software has thrown "+error.name+" - "+error.message, error);
   return new type(error.message, error.details);
 }
 module.exports.fromObject = fromObject;
