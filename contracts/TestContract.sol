@@ -39,8 +39,9 @@ contract TestContract is SDAC {
     //   - File 1: owner:wa, requester:r
     //   - File 2: owner:r, requester:w
     //   - File 3: owner:r, requester:a
-    //   - File 4: owner:r, requester:drwa
-    //   - File 5: owner:rwa, requester:-
+    //   - File 4: owner:da, requester:dr
+    //   - File 5: owner:dr, requester:dwa
+    //   - File 6: owner:rwa, requester:-
     function getPermissions( address requester, address file ) public view override returns (byte) {
         if ( file == address(0) && !hasExpired() ) {
             if (requester == owner) return ALL_PERMISSIONS;
@@ -59,10 +60,14 @@ contract TestContract is SDAC {
             if (requester == permittedRequester) return NO_PERMISSIONS | APPEND_BIT;
         }
         else if ( file == address(4) && !hasExpired() ) {
-            if (requester == owner) return NO_PERMISSIONS | READ_BIT;
-            if (requester == permittedRequester) return NO_PERMISSIONS | DIRECTORY_BIT | READ_BIT | WRITE_BIT | APPEND_BIT;
+            if (requester == owner) return NO_PERMISSIONS | DIRECTORY_BIT | APPEND_BIT;
+            if (requester == permittedRequester) return NO_PERMISSIONS | DIRECTORY_BIT | READ_BIT;
         }
         else if ( file == address(5) && !hasExpired() ) {
+            if (requester == owner) return NO_PERMISSIONS | DIRECTORY_BIT | READ_BIT;
+            if (requester == permittedRequester) return NO_PERMISSIONS | DIRECTORY_BIT | WRITE_BIT | APPEND_BIT;
+        }
+        else if ( file == address(6) && !hasExpired() ) {
             if (requester == owner) return ALL_PERMISSIONS;
         }
         return NO_PERMISSIONS;

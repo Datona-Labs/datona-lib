@@ -26,6 +26,7 @@
 
 const CONFIG = require('../config.json');
 const crypto = require('./datona-crypto');
+const types = require('./types');
 const errors = require('./errors');
 const assert = require('./assertions');
 const Web3 = require('web3');
@@ -251,10 +252,15 @@ class Contract {
    */
   getPermissions(requester, fileId) {
     assert.isAddress(requester, "Contract getPermissions requester");
-    if (fileId === undefined) fileId = Contract.ROOT_DIRECTORY;
-    else assert.isAddress(fileId, "Contract getPermissions fileId");
+    var fileToCheck = undefined;
+    if (fileId === undefined) fileToCheck = Contract.ROOT_DIRECTORY;
+    else{
+      const vaultFile = new types.VaultFilename(fileId);
+      if (!vaultFile.isValid) throw new errors.TypeError("Contract getPermissions fileId: invalid filename");
+      fileToCheck = vaultFile.hasDirectory ? vaultFile.directory : vaultFile.file;
+    }
     if (this.address === undefined) throw new errors.BlockchainError("Contract.isPermitted: contract has not been deployed or mapped to an existing contract");
-    return this.call("getPermissions", [requester, fileId])
+    return this.call("getPermissions", [requester, fileToCheck])
         .then( function(permissions){
           return new Permissions(permissions);
         });
@@ -430,28 +436,40 @@ class Contract {
 
   /*
    * Promises to reject if the given requester does not have permission to access the given vault file.
+   * Also returns the permissions
    */
   assertCanRead(requester, fileId) {
-    return this.canRead(requester, fileId)
-      .then(_assertPermitted);
+    return this.getPermissions(requester, fileId)
+      .then( function(permissions){
+        _assertPermitted(permissions.canRead());
+        return permissions;
+      });
   }
 
 
   /*
    * Promises to reject if the given requester does not have permission to write to the given vault file.
+   * Also returns the permissions
    */
   assertCanWrite(requester, fileId) {
-    return this.canWrite(requester, fileId)
-      .then(_assertPermitted);
+    return this.getPermissions(requester, fileId)
+      .then( function(permissions){
+        _assertPermitted(permissions.canWrite());
+        return permissions;
+      });
   }
 
 
   /*
    * Promises to reject if the given requester does not have permission to append to the given vault file.
+   * Also returns the permissions
    */
   assertCanAppend(requester, fileId) {
-    return this.canAppend(requester, fileId)
-      .then(_assertPermitted);
+    return this.getPermissions(requester, fileId)
+      .then( function(permissions){
+        _assertPermitted(permissions.canAppend());
+        return permissions;
+      });
   }
 
 }
@@ -585,6 +603,7 @@ module.exports = {
   ZERO_ADDRESS: ZERO_ADDRESS,
   setProvider: setProvider,
   Contract: Contract,
+  Permissions: Permissions,
   GenericSmartDataAccessContract: GenericSmartDataAccessContract,
   subscribe: subscribe,
   unsubscribe: unsubscribe,

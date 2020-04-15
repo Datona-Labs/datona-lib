@@ -23,6 +23,7 @@
  *
  */
 
+const types = require('./types');
 const errors = require('./errors');
 const assert = require('./assertions');
 const crypto = require('./datona-crypto');
@@ -73,7 +74,7 @@ class RemoteVault extends comms.DatonaConnector {
    * Promises to write or rewrite the given file of this vault.
    */
   write(data, file = blockchain.ZERO_ADDRESS) {
-    assert.isAddress(file, "file");
+    assert.isVaultFilename(file, "file");
     assert.isPresent(data, "data");
     const request = {
       txnType: "VaultRequest",
@@ -95,7 +96,7 @@ class RemoteVault extends comms.DatonaConnector {
    * Promises to append to the given file of this vault.
    */
   append(data, file = blockchain.ZERO_ADDRESS) {
-    assert.isAddress(file, "file");
+    assert.isVaultFilename(file, "file");
     assert.isPresent(data, "data");
     const request = {
       txnType: "VaultRequest",
@@ -117,7 +118,7 @@ class RemoteVault extends comms.DatonaConnector {
    * Promises to retrieve the data held in this vault, if permitted by the contract.
    */
   read(file = blockchain.ZERO_ADDRESS) {
-    assert.isAddress(file, "file");
+    assert.isVaultFilename(file, "file");
     const request = {
       txnType: "VaultRequest",
       requestType: "read",
@@ -214,11 +215,11 @@ class VaultKeeper {
       return contract.assertOwner(signatory).then(contract.assertNotExpired.bind(contract));
     }
 
-    function callDataServer(contractAddress, file, data) { // bound to vaultDataServer instance
-      return this.create(contractAddress);
+    function callDataServer(contractAddress, file, data) { // bound to this instance
+      return this.vaultDataServer.create(contractAddress);
     }
 
-    return _handleVaultKeeperRequest("create", request, signatory, checkPermissions, callDataServer.bind(this.vaultDataServer));
+    return _handleVaultKeeperRequest("create", request, signatory, checkPermissions, callDataServer.bind(this));
   }
 
 
@@ -233,11 +234,11 @@ class VaultKeeper {
       return contract.assertCanWrite(signatory, file).then(contract.assertNotExpired.bind(contract));
     }
 
-    function callDataServer(contractAddress, file, data) { // bound to vaultDataServer instance
-      return this.write(contractAddress, file, data);
+    function callDataServer(contractAddress, file, data) { // bound to this instance
+      return this.vaultDataServer.write(contractAddress, file, data);
     }
 
-    return _handleVaultKeeperRequest("write", request, signatory, checkPermissions, callDataServer.bind(this.vaultDataServer));
+    return _handleVaultKeeperRequest("write", request, signatory, checkPermissions, callDataServer.bind(this));
   }
 
 
@@ -252,11 +253,11 @@ class VaultKeeper {
       return contract.assertCanAppend(signatory, file).then(contract.assertNotExpired.bind(contract));
     }
 
-    function callDataServer(contractAddress, file, data) { // bound to vaultDataServer instance
-      return this.append(contractAddress, file, data);
+    function callDataServer(contractAddress, file, data) { // bound to this instance
+      return this.vaultDataServer.append(contractAddress, file, data);
     }
 
-    return _handleVaultKeeperRequest("append", request, signatory, checkPermissions, callDataServer.bind(this.vaultDataServer));
+    return _handleVaultKeeperRequest("append", request, signatory, checkPermissions, callDataServer.bind(this));
   }
 
 
@@ -266,15 +267,25 @@ class VaultKeeper {
    */
   readVault(request, signatory) {
 
+    var filePermissions;
+
     function checkPermissions(contract, signatory, file) {
-      return contract.assertCanRead(signatory, file).then(contract.assertNotExpired.bind(contract));
+      return contract.assertCanRead(signatory, file)
+        .then( function(permissions){ filePermissions = permissions; })
+        .then(contract.assertNotExpired.bind(contract));
+     }
+
+    function callDataServer(contractAddress, file, data) { // bound to this instance
+      const vaultFile = new types.VaultFilename(file);
+      if (filePermissions.isDirectory() && !vaultFile.hasDirectory) {
+        return this.vaultDataServer.readDir(contractAddress, file);
+      }
+      else{
+        return this.vaultDataServer.read(contractAddress, file);
+      }
     }
 
-    function callDataServer(contractAddress, file, data) { // bound to vaultDataServer instance
-      return this.read(contractAddress, file);
-    }
-
-    return _handleVaultKeeperRequest("read", request, signatory, checkPermissions, callDataServer.bind(this.vaultDataServer));
+    return _handleVaultKeeperRequest("read", request, signatory, checkPermissions, callDataServer.bind(this));
   }
 
 
@@ -288,11 +299,11 @@ class VaultKeeper {
       return contract.assertOwner(signatory).then(contract.assertHasExpired.bind(contract));
     }
 
-    function callDataServer(contractAddress, file, data) { // bound to vaultDataServer instance
-      return this.delete(contractAddress);
+    function callDataServer(contractAddress, file, data) { // bound to this instance
+      return this.vaultDataServer.delete(contractAddress);
     }
 
-    return _handleVaultKeeperRequest("delete", request, signatory, checkPermissions, callDataServer.bind(this.vaultDataServer));
+    return _handleVaultKeeperRequest("delete", request, signatory, checkPermissions, callDataServer.bind(this));
   }
 
 }
@@ -325,6 +336,14 @@ class VaultDataServer {
    * Unconditionally reads the data from a file within the vault controlled by the given contract.
    */
   read(contract, file) { throw new errors.DeveloperError("Vault server's read function has not been implemented"); };
+
+  /*
+   * Unconditionally reads a list of the files from a directory within the vault controlled by the given contract.
+   * Returns the list as a '\n' separated string of the form
+   *    [<file1>][\n<file2>]...
+   * If no files exist then the empty string is returned.
+   */
+  readDir(contract, dir) { throw new errors.DeveloperError("Vault server's readDir function has not been implemented"); };
 
   /*
    * Unconditionally deletes a file controlled by the given contract.  If the file is null then the
@@ -386,7 +405,7 @@ function _handleVaultKeeperRequest(requestType, request, signatory, permissionFu
     if (!assert.isAddress(request.contract)) throw new errors.MalformedTransactionError("Invalid request contract field", request.contract);
     const contract = new blockchain.GenericSmartDataAccessContract(request.contract);
     const file = (request.file !== undefined) ? request.file : blockchain.ZERO_ADDRESS;
-    // Verify the signatory is permitted to write to the contract and the contract has
+    // Verify the signatory is permitted to write to the file/directory and the contract has
     // not expired then write or append the vault
     return permissionFunction(contract, signatory, file)
       .then( function(){ return dataServerFunction(request.contract, file, request.data) })

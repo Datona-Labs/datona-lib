@@ -23,6 +23,7 @@
 
 
 const errors = require('./errors');
+const types = require('./types');
 
 
 function isNotEmpty(value, name) {
@@ -102,21 +103,27 @@ exports.isHexString = function(value, name) {
 };
 
 exports.isHash = function(value, name) {
-  const result = isNotEmpty(value, name) && /^[0-9a-fA-F]{64}$/.test(value);
+  const result = isNotEmpty(value, name) && types.VALID_HASH_REGEX.test(value);
   if (name !== undefined && !result) throw new errors.TypeError(name + ": invalid type. Expected hex string of length 64");
   else return result;
 };
 
 exports.isPrivateKey = function(value, name) {
-  const result = isNotEmpty(value, name) && /^[0-9a-fA-F]{64}$/.test(value);
+  const result = isNotEmpty(value, name) && types.VALID_PRIVATE_KEY_REGEX.test(value);
   if (name !== undefined && !result) throw new errors.TypeError(name + ": invalid type. Expected hex string of length 64");
   else return result;
 };
 
 exports.isAddress = function(value, name) {
-  const result = isNotEmpty(value, name) && /^0x[0-9a-fA-F]{40}$/.test(value);
+  const result = isNotEmpty(value, name) && types.VALID_BLOCKCHAIN_ADDRESS_REGEX.test(value);
   if (name !== undefined && !result) throw new errors.TypeError(name + ": invalid type. Expected address");
   else return result;
+};
+
+exports.isVaultFilename = function(value, name) {
+  const vaultFile = new types.VaultFilename(value);
+  if (name !== undefined && !vaultFile.isValid) throw new errors.TypeError(name + ": invalid filename");
+  else return vaultFile.isValid;
 };
 
 exports.isUrl = function(value, name) {

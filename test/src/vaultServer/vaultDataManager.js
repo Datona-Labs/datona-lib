@@ -27,6 +27,7 @@ class RamBasedVaultDataServer extends datona.vault.VaultDataServer {
    * Creates or overwrites the given vault file.
    *
    * @param {address} contract address of the contract that controls the vault
+   * @param {file} the POSIX filename of the file
    * @param {Object} data the data to store in the vault
    * @returns {Promise} A promise to update the data in the vault.
    */
@@ -41,6 +42,7 @@ class RamBasedVaultDataServer extends datona.vault.VaultDataServer {
    * Creats or appends the given vault file
    *
    * @param {address} contract address of the contract that controls the vault
+   * @param {file} the POSIX filename of the file
    * @param {Object} data the data to store in the vault
    * @returns {Promise} A promise to update the data in the vault.
    */
@@ -56,6 +58,7 @@ class RamBasedVaultDataServer extends datona.vault.VaultDataServer {
    * Obtains the data from the vault controlled by the given contract.
    *
    * @param {address} contract address of the contract that controls the vault
+   * @param {file} the POSIX filename of the file
    * @returns {Promise} A promise to return the data within the vault.
    */
   read(contract, file) {
@@ -66,6 +69,27 @@ class RamBasedVaultDataServer extends datona.vault.VaultDataServer {
       throw new datona.errors.VaultError("attempt to access a file that does not exist: " + contract+"/"+file);
     }
     return this.vaults[contract][file];
+  };
+
+  /**
+   * Obtains a list of filenames from the vault controlled by the given contract.
+   * Returns the list as a '\n' separated string of the form
+   *    [<file1>][\n<file2>]...
+   * If no files exist then the empty string is returned.
+   * *
+   * @param {address} contract address of the contract that controls the vault
+   * @param {dir} the POSIX filename of the directory
+   * @returns {Promise} A promise to return the data within the vault.
+   */
+  readDir(contract, dir) {
+    if (this.vaults[contract] === undefined) {
+      throw new datona.errors.VaultError("attempt to access a vault that does not exist: " + contract);
+    }
+    var contents = "";
+    for (var file in this.vaults[contract]) {
+      if (file.substring(0,43) === dir+"/") contents += (contents.length===0) ? file.substring(43) : "\n"+file.substring(43);
+    }
+    return contents;
   };
 
   /**
