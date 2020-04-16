@@ -62,19 +62,13 @@ Promises to create a new vault on the remote data vault server containing the gi
 
 .. code-block:: javascript
 
-    create(data);
-
-----------
-Parameters
-----------
-
-1. ``data`` *(Object)* - the data to be stored
+    create();
 
 -------
 Returns
 -------
 
-``Promise`` - A promise to store the data in this vault and resolve if successful.  Promises to reject if the vault was not created for any reason.
+``Promise`` - A promise to create this vault and resolve if successful.  Promises to reject if the vault was not created for any reason.
 
 Resolves With
 ~~~~~~~~~~~~~
@@ -100,32 +94,33 @@ Example
 
   const remoteVault = new RemoteVault(url, myContractAddress, myKey, remoteAddress);
 
-  remoteVault.create("Hello World!")
+  remoteVault.create()
     .then( () => { console.log("vault created successfully") })
     .catch( console.error );
 
 -----------------------------------------------------------------------------
 
-update
-======
+write
+=====
 
-Promises to rewrite the data held in this vault.  This method creates the data request, signs it, initiates the vault request and handles the vault response.
+Promises to write data to the vault, to a specific file if specified. This method creates the data request, signs it, initiates the vault request and handles the vault response.
 
 .. code-block:: javascript
 
-    update(data);
+    write(data, [file]);
 
 ----------
 Parameters
 ----------
 
 1. ``data`` *(Object)* - the data to be stored
+2. ``file`` *(Address)* - (Optional) the specific file to write to.  Defaults to the :ref:`ROOT_DIRECTORY<Contract>` if not given.
 
 -------
 Returns
 -------
 
-``Promise`` - A promise to update the data in this vault and resolve if successful.  Promises to reject if the vault was not updated for any reason.
+``Promise`` - A promise to write the data to the given file in this vault and resolve if successful.  Promises to reject if the vault was not updated for any reason.
 
 Resolves With
 ~~~~~~~~~~~~~
@@ -151,20 +146,80 @@ Example
 
   const remoteVault = new RemoteVault(url, myContractAddress, myKey, remoteAddress);
 
-  remoteVault.update("Bye World!")
+  remoteVault.write("Hello World", "0xF000000000000000000000000000000000000002")
     .then( () => { console.log("vault updated successfully") })
     .catch( console.error );
 
 -----------------------------------------------------------------------------
 
-access
+append
 ======
+
+Promises to append data to the vault, to a specific file or directory if specified. This method creates the data request, signs it, initiates the vault request and handles the vault response.
+
+When appending data to a directory, the data is written to a new file in that directory.  The ``file`` parameter must contain a unique file name, e.g. "0x0000000000000000000000000000000000000001/myfile1.txt"
+
+.. code-block:: javascript
+
+    append(data, [file]);
+
+----------
+Parameters
+----------
+
+1. ``data`` *(Object)* - the data to be appended
+2. ``file`` *(Address)* - (Optional) the specific file to write to.  Defaults to the :ref:`ROOT_DIRECTORY<Contract>` if not given.
+
+-------
+Returns
+-------
+
+``Promise`` - A promise to write the data to the given file in this vault and resolve if successful.  Promises to reject if the vault was not updated for any reason.
+
+Resolves With
+~~~~~~~~~~~~~
+
+``{ txn: VaultResponse, signatory: Address }`` - the server response transaction and signatory's address, validated to confirm it was sent by the ``remoteAddress`` given in the constructor.  See :ref:`VaultResponse`.  If the response is an error type then the promise will reject instead.
+
+Rejects With
+~~~~~~~~~~~~
+
+* ``ContractOwnerError`` - if you are not the vault owner (the contract owner)
+* ``ContractExpiryError`` - if the contract has expired
+* ``VaultError`` - if the vault server failed to update the vault for any reason.
+* ``CommunicationError`` - if communication with the vault server failed
+* ``TransactionError`` - if the structure of the server response was invalid or was not signed by the vault server's remote.
+* ``MalformedRequestError`` - if the request form is invalid or fields are missing or invalid
+* ``InvalidSignatureError`` - if the signatory cannot be recovered from the signature
+
+-------
+Example
+-------
+
+.. code-block:: javascript
+
+  const remoteVault = new RemoteVault(url, myContractAddress, myKey, remoteAddress);
+
+  remoteVault.append("some additional info", "0xF000000000000000000000000000000000000002")
+    .then( () => { console.log("vault appended successfully") })
+    .catch( console.error );
+
+-----------------------------------------------------------------------------
+
+read
+=====
 
 Promises to retrieve the data from this vault if permitted.  This method creates the data request, signs it, initiates the vault request and handles the vault response.
 
 .. code-block:: javascript
 
-    access();
+    read([file]);
+
+----------
+Parameters
+----------
+
+1. ``file`` *(Address)* - (Optional) the specific file or directory to read from.  Defaults to the :ref:`ROOT_DIRECTORY<Contract>` if not given.
 
 -------
 Returns
@@ -175,7 +230,7 @@ Returns
 Resolves With
 ~~~~~~~~~~~~~
 
-``Object`` - the data returned from the vault exactly as it was originally passed to the create_ or update_ method.
+``Object`` - the data returned from the vault in whatever format it was written.
 
 Rejects With
 ~~~~~~~~~~~~
@@ -196,7 +251,7 @@ Example
 
   const remoteVault = new RemoteVault(url, myContractAddress, myKey, remoteAddress);
 
-  remoteVault.access()
+  remoteVault.read("0xF000000000000000000000000000000000000002")
     .then( (data) => { console.log("vault contains: "+data) )
     .catch( console.error );
 
@@ -348,7 +403,7 @@ Example
 createVault
 ===========
 
-Handles a valid create request.  This method checks the validity of the signature and validates the request before creating a new vault via the VaultDataServer.
+Can be used if handleSignedRequest_ is not appropriate.  Handles a valid create request.  This method checks the validity of the signature and validates the request before creating a new vault via the VaultDataServer.
 
 .. code-block:: javascript
 
@@ -400,27 +455,27 @@ Example
 
 -----------------------------------------------------------------------------
 
-updateVault
+writeVault
 ===========
 
-Handles a valid update request.  This method checks the validity of the signature and validates the request before updating the vault via the VaultDataServer.
+Can be used if handleSignedRequest_ is not appropriate.  Handles a valid write request.  This method checks the validity of the signature and validates the request before updating the vault via the VaultDataServer.
 
 .. code-block:: javascript
 
-    updateVault(request, signatory);
+    writeVault(request, signatory);
 
 ----------
 Parameters
 ----------
 
-1. ``request`` *(VaultRequest)* - VaultRequest of type 'update' containing the contract address and data to put in the vault
+1. ``request`` *(VaultRequest)* - VaultRequest of type 'write' containing the contract address, file to write and data to put in the vault
 2. ``signatory`` *(Address)* - signatory the address that signed the request.  Must be the owner of the contract.
 
 -------
 Returns
 -------
 
-``Promise`` - A promise to update the vault and resolve a success or error response.
+``Promise`` - A promise to write to the vault and resolve a success or error response.
 
 Resolves With
 ~~~~~~~~~~~~~
@@ -434,7 +489,7 @@ Does not reject.  Any error is converted to signed error VaultResponse and resol
 
 An error response will be resolved if:
 
-(a) the request is not a valid "update" request
+(a) the request is not a valid "create" request
 (b) the signature is invalid;
 (c) the signatory is not the owner of the contract
 (d) the contract has expired
@@ -447,28 +502,83 @@ Example
 .. code-block:: javascript
 
   const {txn, signatory} = comms.decodeTransaction(signedRequestStr);
-  if (txn.requestType == "update") {
-    vaultKeeper.updateVault(txn, signatory)
+  if (txn.requestType == "write") {
+    vaultKeeper.writeVault(txn, signatory)
       .then( myServer.sendResponse )
       .catch( console.error );  // should never happen
   }
 
 -----------------------------------------------------------------------------
 
-accessVault
+appendVault
 ===========
 
-Handles a valid access request.  This method checks the validity of the signature and validates the request before accessing the vault via the VaultDataServer.
+Can be used if handleSignedRequest_ is not appropriate.  Handles a valid append request.  This method checks the validity of the signature and validates the request before updating the vault via the VaultDataServer.
 
 .. code-block:: javascript
 
-    accessVault(request, signatory);
+    appendVault(request, signatory);
 
 ----------
 Parameters
 ----------
 
-1. ``request`` *(VaultRequest)* - VaultRequest of type 'access' containing the contract address and data to put in the vault
+1. ``request`` *(VaultRequest)* - VaultRequest of type 'append' containing the contract address, file to append and data to put in the vault
+2. ``signatory`` *(Address)* - signatory the address that signed the request.  Must be the owner of the contract.
+
+-------
+Returns
+-------
+
+``Promise`` - A promise to append to the vault and resolve a success or error response.
+
+Resolves With
+~~~~~~~~~~~~~
+
+``SignedTransaction`` - containing the VaultResponse and transaction signature, ready to send back to the client.
+
+Rejects With
+~~~~~~~~~~~~
+
+Does not reject.  Any error is converted to signed error VaultResponse and resolved.
+
+An error response will be resolved if:
+
+(a) the request is not a valid "append" request
+(b) the signature is invalid;
+(c) the signatory is not the owner of the contract
+(d) the contract has expired
+(e) the VaultDataServer returns an error
+
+-------
+Example
+-------
+
+.. code-block:: javascript
+
+  const {txn, signatory} = comms.decodeTransaction(signedRequestStr);
+  if (txn.requestType == "append") {
+    vaultKeeper.appendVault(txn, signatory)
+      .then( myServer.sendResponse )
+      .catch( console.error );  // should never happen
+  }
+
+-----------------------------------------------------------------------------
+
+readVault
+=========
+
+Can be used if handleSignedRequest_ is not appropriate.  Handles a valid read request.  This method checks the validity of the signature and validates the request before accessing the vault via the VaultDataServer.
+
+.. code-block:: javascript
+
+    readVault(request, signatory);
+
+----------
+Parameters
+----------
+
+1. ``request`` *(VaultRequest)* - VaultRequest of type 'read' containing the contract address and file to read
 2. ``signatory`` *(Address)* - signatory the address that signed the request.  Must be permitted to access the vault.
 
 -------
@@ -502,8 +612,8 @@ Example
 .. code-block:: javascript
 
   const {txn, signatory} = comms.decodeTransaction(signedRequestStr);
-  if (txn.requestType == "access") {
-    vaultKeeper.accessVault(txn, signatory)
+  if (txn.requestType == "read") {
+    vaultKeeper.readVault(txn, signatory)
       .then( myServer.sendResponse )
       .catch( console.error );  // should never happen
   }
@@ -513,7 +623,7 @@ Example
 deleteVault
 ===========
 
-Handles a valid delete request.  This method checks the validity of the signature and validates the request before deleting the vault via the VaultDataServer.  The contract must have expired (contract's hasExpired function returns true) before a vault can be deleted.
+Can be used if handleSignedRequest_ is not appropriate.  Handles a valid delete request.  This method checks the validity of the signature and validates the request before deleting the vault via the VaultDataServer.  The contract must have expired (contract's hasExpired function returns true) before a vault can be deleted.
 
 .. code-block:: javascript
 
@@ -558,7 +668,7 @@ Example
 
   const {txn, signatory} = comms.decodeTransaction(signedRequestStr);
   if (txn.requestType == "create") {
-    vaultKeeper.createVault(txn, signatory)
+    vaultKeeper.deleteVault(txn, signatory)
       .then( myServer.sendResponse )
       .catch( console.error );  // should never happen
   }
@@ -575,81 +685,137 @@ To use the Datona VaultKeeper_, data vault developers must develop a class of th
 
 -----------------------------------------------------------------------------
 
-createVault
-===========
+create
+======
 
-Must promise to create a new vault identified by the given contract address and containing the given data.  Must fail if the vault already exists.
+Must create a new vault identified by the given contract address.  Must fail if the vault already exists.
 
 .. code-block:: javascript
 
-    createVault(contract, data);
+    create(contract);
 
 ----------
 Parameters
 ----------
 
-1. ``contract`` *(Address)* - the address of the contract to identify the vault.  Future update, access and delete requests will identify the vault using this contract address.
-2. ``data`` *(Object)* - the data to store in the vault
+1. ``contract`` *(Address)* - the address of the contract to identify the vault.  Future write, append, read and delete requests will identify the vault using this contract address.
 
 -------
 Returns
 -------
 
-``Promise`` - A promise to resolve if successful or reject with an Error object if unsuccessful.
+``Promise`` - A promise to create the vault.  Must reject with a VaultError object if unsuccessful.
 
 -----------------------------------------------------------------------------
 
-updateVault
-===========
+write
+=====
 
-Must promise to unconditionally update the vault identified by the given contract address, overwriting its contents with the given data.  Will fail if the vault does not exist.
-
-.. code-block:: javascript
-
-    updateVault(contract, data);
-
-----------
-Parameters
-----------
-
-1. ``contract`` *(Address)* - the address of the contract to identify the vault.
-2. ``data`` *(Object)* - the data to store in the vault
-
--------
-Returns
--------
-
-``Promise`` - A promise to resolve if successful or reject with an Error object if unsuccessful.
-
------------------------------------------------------------------------------
-
-accessVault
-===========
-
-Must promise to unconditionally return the data from the vault identified by the given contract address.  Will fail if the vault does not exist.
+Must unconditionally write the given data to the given file in the vault identified by the given contract address, overwriting its contents if it already exists.  Will fail if the vault does not exist.
 
 .. code-block:: javascript
 
-    accessVault(contract);
+    write(contract, file, data);
 
 ----------
 Parameters
 ----------
 
 1. ``contract`` *(Address)* - the address of the contract to identify the vault.
+2. ``file`` *(Address)* - the specific file to write to.
+3. ``data`` *(Object)* - the data to store in the vault
 
 -------
 Returns
 -------
 
-``Promise`` - A promise to resolve the vault contents in the same form given when the vault was created.  Must reject with an Error object if unsuccessful.
+``Promise`` - A promise to write the data to the file.  Must reject with a VaultError object if unsuccessful.
 
 -----------------------------------------------------------------------------
 
-deleteVault
-===========
+append
+======
 
-Must promise to unconditionally delete the vault identified by the given contract address, overwriting its contents with the given data.  Will fail if the vault does not exist.
+Must unconditionally append the given data to the given file in the vault identified by the given contract address, creating the file if it does not exist.  Will fail if the vault does not exist.
+
+.. code-block:: javascript
+
+    append(contract, file, data);
+
+----------
+Parameters
+----------
+
+1. ``contract`` *(Address)* - the address of the contract to identify the vault.
+2. ``file`` *(Address)* - the specific file to write to.
+3. ``data`` *(Object)* - the data to append to the file
+
+-------
+Returns
+-------
+
+``Promise`` - A promise to append the data to the file.  Must reject with a VaultError object if unsuccessful.
+
+-----------------------------------------------------------------------------
+
+read
+====
+
+Must unconditionally return the data from the given file in the vault identified by the given contract address.  Will fail if the vault or file does not exist.
+
+.. code-block:: javascript
+
+    read(contract, file);
+
+----------
+Parameters
+----------
+
+1. ``contract`` *(Address)* - the address of the contract to identify the vault.
+2. ``file`` *(Address)* - the specific file to write to.
+
+-------
+Returns
+-------
+
+``Promise`` - A promise to resolve the vault contents in the same form given when the file was written.  Must reject with a VaultError object if unsuccessful.
+
+-----------------------------------------------------------------------------
+
+readDir
+=======
+
+Must promise to unconditionally return a list of the names of files in the given directory within the vault identified by the given contract address.  Will fail if the vault does not exist.
+
+.. code-block:: javascript
+
+    read(contract, file);
+
+----------
+Parameters
+----------
+
+1. ``contract`` *(Address)* - the address of the contract to identify the vault.
+2. ``file`` *(Address)* - the specific file to write to.
+
+------
+Throws
+------
+
+``VaultError`` - if the vault does not exist.
+
+-------
+Returns
+-------
+
+``Promise`` - A promise to resolve the directory listing in the format ``[<filename1>][\n<filename2>]...``   Equivalent to ``ls -c1`` in linux.  If the directory does not exist then then the empty string is resolved. Must reject with a VaultError object if unsuccessful.
+
+-----------------------------------------------------------------------------
+
+delete
+======
+
+Must promise to unconditionally delete the vault identified by the given contract address, including all files within.  Will fail if the vault does not exist.
 
 .. code-block:: javascript
 
@@ -665,4 +831,4 @@ Parameters
 Returns
 -------
 
-``Promise`` - A promise to resolve if successful or reject with an Error object if unsuccessful.
+``Promise`` - A promise to delete the vault and all data within it.  Must reject with a VaultError object if unsuccessful.

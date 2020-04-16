@@ -28,46 +28,172 @@ Here is an example of a simple contract that automatically terminates after a gi
 
 .. code-block:: solidity
 
-  pragma solidity ^0.5.1;
+    pragma solidity ^0.6.3;
 
-  contract Duration_SDAC is SDAC {
+    import "SDAC.sol";
 
-      address public owner = msg.sender;
-      address public permittedRequester;
-      uint public contractDuration;
-      uint public contractStart;
-      bool terminated = false;
+    contract Duration_SDAC is SDAC {
 
-      modifier onlyOwnerOrRequester {
-          require( msg.sender == owner || msg.sender == permittedRequester );
-          _;
-      }
+        address public owner = msg.sender;
+        address public permittedRequester;
+        uint public contractDuration;
+        uint public contractStart;
+        bool terminated = false;
 
-      constructor( address _permittedRequester, uint _contractDuration ) public {
-          permittedRequester = _permittedRequester;
-          contractDuration = _contractDuration;
-          contractStart = block.timestamp;
-      }
 
-      function isPermitted( address requester ) public view returns (bool) {
-          return ( requester == permittedRequester ) &&
-                 ( ! hasExpired() );
-      }
+        modifier onlyOwnerOrRequester {
+            require( msg.sender == owner || msg.sender == permittedRequester );
+            _;
+        }
 
-      function hasExpired() public view returns (bool) {
-          return terminated ||
-                 (block.timestamp - contractStart) >= (contractDuration * 1 days);
-      }
+        constructor( address _permittedRequester, uint _contractDuration ) public {
+            permittedRequester = _permittedRequester;
+            contractDuration = _contractDuration;
+            contractStart = block.timestamp;
+        }
 
-      function terminate() public onlyOwnerOrRequester {
-          terminated = true;
-      }
+        function getPermissions( address requester, address file ) public view override returns (byte) {
+            if ( file == address(0) && !hasExpired() ) {
+                if (requester == owner) return NO_PERMISSIONS | READ_BIT | WRITE_BIT | APPEND_BIT;
+                if (requester == permittedRequester) return NO_PERMISSIONS | READ_BIT;
+            }
+            return NO_PERMISSIONS;
+        }
 
-      function getOwner() public view returns (address) {
-          return owner;
-      }
+        function hasExpired() public view override returns (bool) {
+            return terminated ||
+                   (block.timestamp - contractStart) >= (contractDuration * 1 days);
+        }
 
-  }
+        function terminate() public override onlyOwnerOrRequester {
+            terminated = true;
+        }
+     }
+
+File Permissions
+----------------
+
+:ref:`Protocol v0.0.2<SdacInterface>` introduced file-based read, write and append permissions to S-DACs.  This allows a vault to be split into compartments (files and directories) each having different access permissions for different actors.  This could be used, for example, to allow the Owner's name to be accessible to the Requester while their name and address is accessible to a third-party delivery company.
+
+The S-DAC interface does not support standard file names. Each file and directory is instead uniquely identified by a hash. What hash name is given to each file is at the discretion of the user and should form part of the Smart Data Access Request.
+
+The getPermissions function in the S-DAC is responsible for returning the correct permissions for the requester and file passed as its input parameters.  Permissions are returned as a single byte of the binary form ``d----rwa``, where d is the most significant bit and if set (1) indicates the file is a directory.  The read-bit, write-bit and append-bit will be set (1) if that permission is granted.
+
+*Read* and *write* file permissions behave in the standard way.  The *append* permission allows the user to append data to a file but not to overwrite what has been written before.  This can be useful for log files and audit trails.  The append permission for a directory allows new files to be written to that directory but does not allow existing files to be overwritten.  There is no execute permission since files cannot be executed on a vault server.
+
+The distinction between files and directories is in how the vault server responds to an access request.  For files the response will contain the data within the file, if the requester is permitted to access it. For directories it will contain a list of filenames. The files within a directory inherit their permissions from the parent directory and must be accessed with separate requests.
+
+Here is an example abstract S-DAC that implements UNIX-like user/group/others permissions for individual files.
+
+.. code-block:: solidity
+
+    pragma solidity ^0.6.3;
+
+    import "SDAC.sol";
+
+
+    /*
+     * Abstract file based SDAC that allows a vault server to manage multiple files and directories within a vault.
+     * Each file or directory has its own unix-like user/group/others permissions of the form rwa (read, write, append).
+     *
+     * Groups and files are set on construction and remain static throughout the life of the contract. File owner, group and
+     * permissions are also set on construction but can be modified later. As with unix file systems only the file's owner
+     * can modify its group and permissions. Unlike unix systems there is no admin, root or sudo group.
+     */
+
+    struct FilePermissions {
+        address user;
+        address group;
+        bytes2 permissions;
+    }
+
+
+    abstract contract FileBasedSdac is SDAC {
+
+        mapping (address => FilePermissions) internal files;
+        mapping (address => mapping(address => bool)) internal groups;
+
+        // Internal permissions bitmap
+        uint8 internal constant INTERNAL_PERMISSIONS_USER_BIT = 6;
+        uint8 internal constant INTERNAL_PERMISSIONS_GROUP_BIT = 3;
+        uint8 internal constant INTERNAL_PERMISSIONS_OTHERS_BIT = 0;
+        bytes2 internal constant INTERNAL_PERMISSIONS_DIRECTORY_MASK = 0x0200;
+        bytes2 internal constant INTERNAL_PERMISSIONS_USER_WRITE_MASK = 0x0080;
+
+
+        // create a new user group
+        function addGroup(address id, address[] memory users) internal {
+            for (uint i=0; i<users.length; i++) {
+                groups[id][users[i]] = true;
+            }
+        }
+
+
+        // add a new file with the given permissions.  Permissions are a 2-byte field with the bit form ------dr warw arwa,
+        // reflecting unix-like permissions for user, group, other.
+        //   e.g. 0x01E0 describes a file (not a directory) with permissions rwar-----
+        //   i.e. user (owner) has read, write, append permissions, group has read permissions and others have no permissions.
+        function addFile(address id, FilePermissions memory permissions) internal {
+            files[id] = permissions;
+        }
+
+
+        // File based permissions returned as a byte with the form d----rwa.
+        // Mimics unix file permissions:
+        //   - returns the owner permissions if the requester is the owner of the file
+        //   - returns the group permissions if the requester is not the owner but belongs to the file's group
+        //   - returns the other permissions if the requester is neither the owner nor a group member
+        // Deliberately does not throw if a file does not exist, returns 0 instead.
+        function getPermissions( address requester, address file ) public view override returns (byte) {
+            address fileOwner = files[file].user;
+            address fileGroup = files[file].group;
+            byte directoryFlag = files[file].permissions & INTERNAL_PERMISSIONS_DIRECTORY_MASK > 0 ? DIRECTORY_BIT : byte(0);
+            if ( fileOwner == address(0) || this.hasExpired() ) {
+                return NO_PERMISSIONS;
+            }
+            else if (requester == fileOwner) {
+                return (byte)(files[file].permissions >> INTERNAL_PERMISSIONS_USER_BIT) & ALL_PERMISSIONS | directoryFlag;
+            }
+            else if (groups[fileGroup][requester]) {
+                return (byte)(files[file].permissions >> INTERNAL_PERMISSIONS_GROUP_BIT) & ALL_PERMISSIONS | directoryFlag;
+            }
+            else {
+                return (byte)(files[file].permissions >> INTERNAL_PERMISSIONS_OTHERS_BIT) & ALL_PERMISSIONS | directoryFlag;
+            }
+        }
+
+
+        // change a file's permissions
+        function chmod(address file, bytes2 permissions) public {
+            require( files[file].user == msg.sender, 'Operation not permitted' );
+            require( (files[file].permissions & INTERNAL_PERMISSIONS_USER_WRITE_MASK) > 0, 'Operation not permitted' );
+            files[file].permissions = permissions;
+        }
+
+
+        // change a file's owner
+         function chown(address file, address user) public {
+            require( files[file].user == msg.sender, 'Operation not permitted' );
+            require( (files[file].permissions & INTERNAL_PERMISSIONS_USER_WRITE_MASK) > 0, 'Operation not permitted' );
+            files[file].user = user;
+        }
+
+
+        // change a file's owner and group
+        function chown(address file, address user, address group) public {
+            chown(file, user);
+            files[file].group = group;
+        }
+
+
+        // change a file's group
+        function chgrp(address file, address group) public {
+            require( files[file].user == msg.sender, 'Operation not permitted' );
+            require( (files[file].permissions & INTERNAL_PERMISSIONS_USER_WRITE_MASK) > 0, 'Operation not permitted' );
+            files[file].group = group;
+        }
+
+    }
 
 
 Building a Smart Data Access Request
@@ -112,6 +238,7 @@ Example of a basic server.  When handling a response the server must perform som
 .. code-block:: javascript
 
   const datona = require('datona-lib');
+  const assert = datona.assertions;
 
   //
   // Constants
@@ -119,7 +246,7 @@ Example of a basic server.  When handling a response the server must perform som
 
   const myKey = new datona.crypto.key("e68e40257cfee330038c49637fcffff82fae04b9c563f4ea071c20f2eb55063c");
   const sdacHash = "5573012304cc4d87a7a07253c728e08250db6821a3dfdbbbcac9a24f8cd89ad4";
-  const sdacSourceCode = require("./contracts/" + sdacHash);
+  const sdacSourceCode = require("./contracts/" + sdacHash + ".json");
 
 
   //
@@ -136,28 +263,38 @@ Example of a basic server.  When handling a response the server must perform som
     c.on('data', (buffer) => {
       try {
         // Decode the transaction and validate the structure of the response packet.  These will throw if not valid
-        const txn = datona.comms.decodeTransaction(buffer.toString());
-        validateResponse(txn.data, "SmartDataAccessResponse");
+        const txn = datona.comms.decodeTransaction(data);
+        const sdaResponse = txn.txn;
+        assert.equals(sdaResponse.txnType, "SmartDataAccessResponse", "SDA Response is invalid: txnType")
 
-        // Ignore if a rejection else validate the contract
-        if (txn.data.responseType != "success") {
-          sendResponse(datona.comms.createSuccessResponse());
-        }
-        else {
-          // Connect to the Owner's S-DAC on the blockchain
-          const contract = new datona.blockchain.Contract(sdacSourceCode.abi, txn.data.contract);
+        // Handle depending on the response type
+        switch (sdaResponse.responseType) {
+          case "accept":
+            assert.isAddress(sdaResponse.contract, "SDA Response is invalid: contract")
+            assert.isAddress(sdaResponse.vaultAddress, "SDA Response is invalid: vaultAddress")
+            assert.isUrl(sdaResponse.vaultUrl, "SDA Response is invalid: vaultUrl")
 
-          // Verify the signatory is the owner of the contract and that the correct contract has been deployed,
-          contract.assertOwner(txn.signatory)
-            .then( () => { contract.assertBytecode(sdacSourceCode.runtimeBytecode) })
-            .then( () => {
-              // Contract is valid so record the new customer and return a success response
-              customers.push(txn.data);
-              sendResponse(datona.comms.createSuccessResponse());
-            })
-            .catch( (error) => {
-              sendResponse(datona.comms.createErrorResponse(error));
-            });
+            // Connect to the Owner's S-DAC on the blockchain
+            const contract = new datona.blockchain.Contract(sdacSourceCode.abi, sdaResponse.contract);
+
+            // Verify the signatory is the owner of the contract and that the correct contract has been deployed,
+            contract.assertOwner(txn.signatory)
+              .then( () => { contract.assertBytecode(sdacSourceCode.runtimeBytecode) })
+              .then( () => {
+                // Contract is valid so record the new customer and return a success response
+                customers.push(txn.data);
+                sendResponse(datona.comms.createSuccessResponse());
+              })
+              .catch( (error) => {
+                sendResponse(datona.comms.createErrorResponse(error));
+              });
+            break;
+          case "reject":
+            logger.log("Customer reject: "+sdaResponse.reason);
+            sendResponse(datona.comms.createSuccessResponse());
+            break;
+          default:
+            throw new datona.errors.TransactionError("Invalid responseType: "+sdaResponse.responseType);
         }
       }
       catch (error) {
@@ -203,10 +340,27 @@ To access a data from a customer's vault you will need the contract address, vau
   const customer = customers[0];
   const remoteVault = new RemoteVault(customer.vaultUrl, customer.contract, myKey, customer.vaultAddress);
 
-  remoteVault.access()
+  remoteVault.read()
     .then( (data) => { console.log("vault contains: "+data) )
     .catch( console.error );
 
+If the vault contains specific files then they should be read individually:
+
+.. code-block:: javascript
+
+  const customersFolder = "0xF000000000000000000000000000000000000001"
+
+  remoteVault.read(customersFolder)
+    .then( (data) => { console.log("folder contains files:\n"+data) )
+    .catch( console.error );
+
+  remoteVault.read(customersFolder+"/name")
+    .then( (data) => { console.log("Customer name: "+data) )
+    .catch( console.error );
+
+  remoteVault.read(customersFolder+"/email")
+    .then( (data) => { console.log("Customer email: "+data) )
+    .catch( console.error );
 
 
 ********************
@@ -255,7 +409,8 @@ The following example demonstrates the use of the :ref:`Contract<Contract>` clas
   // Function to create a new vault and store the data.  Returns a Promise.
   function createAndDeployVault(){
     const vault = new datona.vault.RemoteVault( vaultUrl, sdac.address, myKey, vaultServerAddress );
-    return vault.create("Hello World!");
+    return vault.create()
+      .then( vault.write("Hello World!") );
   }
 
   // Function to send the contract address and vault URL to the requester.  Returns a Promise.
@@ -288,15 +443,40 @@ To access all data in the vault use the datona-vault :ref:`RemoteVault<RemoteVau
 
   const remoteVault = new RemoteVault(dataShare.vault.url, dataShare.contract, myKey, dataShare.vault.address);
 
-  remoteVault.access()
+  remoteVault.read()
     .then( (data) => { console.log("vault contains: "+data) )
     .catch( console.error );
 
+Reading from a Specific Vault File
+----------------------------------
 
-Updating a Vault
-================
+To read the data from a specific file in the vault include the filename as part of the read request.
 
-To update the data in the vault use the :ref:`RemoteVault<RemoteVault>` class.
+.. code-block:: javascript
+
+  remoteVault.read("0xF000000000000000000000000000000000000001/name.txt")
+    .catch( console.error );
+
+In this case the file is ``name.txt`` and it inherits its permissions from the parent directory ``0xF000000000000000000000000000000000000001``.  The permissions for this directory must be encoded in the contract.
+
+Listing a Directory
+-------------------
+
+If the contract supports directories then its possible to list the files held a directory by simply reading it.
+
+.. code-block:: javascript
+
+  remoteVault.read("0xF000000000000000000000000000000000000001")
+    .then( console.log );
+    .catch( console.error );
+
+If ``0xF000000000000000000000000000000000000001`` is a directory (has the directory bit set in its contract permissions) then the vault server will return a list of names of all the files in the vault directory, separated by newlines.  If the file is not a directory then the contents of the file will be returned.
+
+
+Writing to a Vault
+==================
+
+To write (or overwrite) the data in the vault use the :ref:`RemoteVault<RemoteVault>` class.
 
 .. code-block:: javascript
 
@@ -304,7 +484,33 @@ To update the data in the vault use the :ref:`RemoteVault<RemoteVault>` class.
 
   const remoteVault = new RemoteVault(dataShare.vault.url, dataShare.contract, myKey, dataShare.vault.address);
 
-  remoteVault.update("Hi World!")
+  remoteVault.write("Hi World!")
+    .catch( console.error );
+
+
+Writing to a Specific Vault File
+--------------------------------
+
+To write (or overwrite) the data in a file include the filename as part of the write request.
+
+.. code-block:: javascript
+
+  remoteVault.write("Barney Rubble", "0xF000000000000000000000000000000000000001/name.txt")
+    .catch( console.error );
+
+In this case the file is ``name.txt`` and it inherits its permissions from the parent directory ``0xF000000000000000000000000000000000000001``.  The permissions for this directory must be encoded in the contract.
+
+
+Appending to a Specific Vault File
+----------------------------------
+
+Appending data to a file is done in the same way as writing but uses the ``append`` method.
+
+.. code-block:: javascript
+
+  const logfile = "0xF000000000000000000000000000000000000002";
+
+  remoteVault.append("\nThu 16 Apr 2020 14:34:47 BST - Name updated", logfile)
     .catch( console.error );
 
 
@@ -389,28 +595,49 @@ Example bare-minimal server and VaultDataServer implementation.
       this.vaults = {};
     }
 
-    createVault(contract, data) {
+    create(contract) {
       if (this.vaults[contract] != undefined) {
         throw new datona.errors.VaultError("attempt to create a vault that already exists: " + contract);
       }
-      this.vaults[contract] = data;
     }
 
-    updateVault(contract, data) {
+    write(contract, file, data) {
       if (this.vaults[contract] == undefined) {
-        throw new datona.errors.VaultError("attempt to update a vault that does not exist: " + contract);
+        throw new datona.errors.VaultError("attempt to write to a vault that does not exist: " + contract);
       }
-      this.vaults[contract] = data;
+      this.vaults[contract][file] = data;
     };
 
-    accessVault(contract) {
+    append(contract, file, data) {
+      if (this.vaults[contract] == undefined) {
+        throw new datona.errors.VaultError("attempt to append to a vault that does not exist: " + contract);
+      }
+      if (this.vaults[contract][file] === undefined) { this.vaults[contract][file] = data; }
+      else this.vaults[contract][file] += data;
+    };
+
+    read(contract, file) {
       if (this.vaults[contract] == undefined) {
         throw new datona.errors.VaultError("attempt to access a vault that does not exist: " + contract);
+      }
+      if (this.vaults[contract][file] === undefined) {
+        throw new datona.errors.VaultError("attempt to access a file that does not exist: " + contract+"/"+file);
       }
       return this.vaults[contract];
     };
 
-    deleteVault(contract) {
+    readDir(contract, dir) {
+      if (this.vaults[contract] === undefined) {
+        throw new datona.errors.VaultError("attempt to access a vault that does not exist: " + contract);
+      }
+      var contents = "";
+      for (var file in this.vaults[contract]) {
+        if (file.substring(0,43) === dir+"/") contents += (contents.length===0) ? file.substring(43) : "\n"+file.substring(43);
+      }
+      return contents;
+    };
+
+    delete(contract) {
       if (this.vaults[contract] == undefined) {
         throw new datona.errors.VaultError("attempt to delete a vault that does not exist: " + contract);
       }

@@ -91,7 +91,10 @@
 <li class="toctree-l1"><a class="reference internal" href="datona-vault.html">datona-vault</a></li>
 <li class="toctree-l1"><a class="reference internal" href="datona-crypto.html">datona-crypto</a></li>
 <li class="toctree-l1"><a class="reference internal" href="datona-comms.html">datona-comms</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Core Types</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Core Types</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#vaultfile">VaultFile</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="#application-layer-protocol">Application Layer Protocol</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#smart-data-access-contract-interface">Smart Data Access Contract Interface</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#general-protocol">General Protocol</a><ul>
@@ -112,8 +115,9 @@
 <li class="toctree-l2"><a class="reference internal" href="#vault-request-protocol">Vault Request Protocol</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#vaultrequest">VaultRequest</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#create">create</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#update">update</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#access">access</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#write">write</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#append">append</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#read">read</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#delete">delete</a></li>
 </ul>
 </li>
@@ -215,35 +219,68 @@
 <tr class="row-even"><td><p><em>URL</em></p></td>
 <td><p>Server URL of the form: <code class="docutils literal notranslate"><span class="pre">{</span> <span class="pre">scheme:</span> <span class="pre">String,</span> <span class="pre">host:</span> <span class="pre">String,</span> <span class="pre">port:</span> <span class="pre">Number</span> <span class="pre">}</span></code></p></td>
 </tr>
+<tr class="row-odd"><td><p><em>VaultFile</em></p></td>
+<td><p>Name of a file or directory in a vault.  See <a class="reference internal" href="#vaultfile">VaultFile</a> below.</p></td>
+</tr>
 </tbody>
 </table>
+<div class="section" id="vaultfile">
+<h2>VaultFile<a class="headerlink" href="#vaultfile" title="Permalink to this headline">¶</a></h2>
+<p>A VaultFile has the form <code class="docutils literal notranslate"><span class="pre">[directory/]&lt;file&gt;</span></code></p>
+<p>If the directory part is present it must be a single blockchain address and the file part can be any POSIX file name except <code class="docutils literal notranslate"><span class="pre">.</span></code> and <code class="docutils literal notranslate"><span class="pre">..</span></code>
+If not present then the file part must be a single blockchain address.
+Nested directories are not permitted.</p>
+<p>Example valid files:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">0x0000000000000000000000000000000000000001</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">0x0000000000000000000000000000000000000002/my_file.txt</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">0x0000000000000000000000000000000000000002/0x0000000000000000000000000000000000000001</span></code></p></li>
+</ul>
+</div></blockquote>
+<p>Example invalid files:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">my_file.txt</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">0x0000000000000000000000000000000000000002/0x0000000000000000000000000000000000000001/my_file.txt</span></code></p></li>
+</ul>
+</div></blockquote>
 <hr class="docutils" />
+</div>
 </div>
 <div class="section" id="application-layer-protocol">
 <span id="applicationlayerprotocol"></span><h1>Application Layer Protocol<a class="headerlink" href="#application-layer-protocol" title="Permalink to this headline">¶</a></h1>
-<p><em>Version: 0.0.1</em></p>
+<p><em>Version: 0.0.2</em></p>
 <p><em>WARNING - This protocol is experimental and subject to change without notice.  The version will be updated if any change is made.</em></p>
 <p>This protocol uses <a class="reference external" href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
 <div class="section" id="smart-data-access-contract-interface">
 <span id="sdacinterface"></span><h2>Smart Data Access Contract Interface<a class="headerlink" href="#smart-data-access-contract-interface" title="Permalink to this headline">¶</a></h2>
 <p>All S-DACs must comply with the following interface.  In future the protocolVersion may be used to support backward compatibility.</p>
-<div class="highlight-solidity notranslate"><div class="highlight"><pre><span></span><span class="k">pragma solidity</span><span class=" -WhiteSpace"> </span><span class="o">^</span><span class="k">0.5.1</span><span class="p">;</span><span class=" -WhiteSpace"></span>
+<div class="highlight-solidity notranslate"><div class="highlight"><pre><span></span><span class="k">pragma solidity</span><span class=" -WhiteSpace"> </span><span class="o">^</span><span class="k">0.6.3</span><span class="p">;</span><span class=" -WhiteSpace"></span>
 
-<span class="k">contract</span><span class=" -WhiteSpace"> </span><span class="ni">SDAC</span><span class=" -WhiteSpace"> </span><span class="p">{</span><span class=" -WhiteSpace"></span>
+abstract<span class=" -WhiteSpace"> </span><span class="k">contract</span><span class=" -WhiteSpace"> </span><span class="ni">SDAC</span><span class=" -WhiteSpace"> </span><span class="p">{</span><span class=" -WhiteSpace"></span>
 
-<span class=" -WhiteSpace">    </span><span class="kt">string</span><span class=" -WhiteSpace"> </span><span class="k">public </span><span class="nv">constant</span><span class=" -WhiteSpace"> </span>version<span class=" -WhiteSpace"> </span><span class="o">=</span><span class=" -WhiteSpace"> </span><span class="s2">&quot;0.0.1&quot;</span><span class="p">;</span><span class=" -WhiteSpace"></span>
+<span class=" -WhiteSpace">    </span><span class="kt">string</span><span class=" -WhiteSpace"> </span><span class="k">public </span><span class="nv">constant</span><span class=" -WhiteSpace"> </span>DatonaProtocolVersion<span class=" -WhiteSpace"> </span><span class="o">=</span><span class=" -WhiteSpace"> </span><span class="s2">&quot;0.0.2&quot;</span><span class="p">;</span><span class=" -WhiteSpace"></span>
 
-<span class=" -WhiteSpace">    </span><span class="c1">// returns the owner of this contract</span>
-<span class=" -WhiteSpace">    </span><span class="kt">function</span><span class=" -WhiteSpace"> </span><span class="nv">getOwner</span><span class="p">()</span><span class=" -WhiteSpace"> </span><span class="kt">public</span><span class=" -WhiteSpace"> </span>view<span class=" -WhiteSpace"> </span><span class="kt">returns</span><span class=" -WhiteSpace"> </span><span class="p">(</span><span class="kt">address</span><span class="p">);</span><span class=" -WhiteSpace"></span>
+<span class=" -WhiteSpace">    </span><span class="c1">// constants describing the permissions-byte structure of the form d----rwa.</span>
+<span class=" -WhiteSpace">    </span>byte<span class=" -WhiteSpace"> </span><span class="kt">public</span><span class=" -WhiteSpace"> </span><span class="kt">constant</span><span class=" -WhiteSpace"> </span>NO_PERMISSIONS<span class=" -WhiteSpace"> </span><span class="o">=</span><span class=" -WhiteSpace"> </span><span class="mh">0x00</span><span class="p">;</span><span class=" -WhiteSpace"></span>
+<span class=" -WhiteSpace">    </span>byte<span class=" -WhiteSpace"> </span><span class="kt">public</span><span class=" -WhiteSpace"> </span><span class="kt">constant</span><span class=" -WhiteSpace"> </span>ALL_PERMISSIONS<span class=" -WhiteSpace"> </span><span class="o">=</span><span class=" -WhiteSpace"> </span><span class="mh">0x07</span><span class="p">;</span><span class=" -WhiteSpace"></span>
+<span class=" -WhiteSpace">    </span>byte<span class=" -WhiteSpace"> </span><span class="kt">public</span><span class=" -WhiteSpace"> </span><span class="kt">constant</span><span class=" -WhiteSpace"> </span>READ_BIT<span class=" -WhiteSpace"> </span><span class="o">=</span><span class=" -WhiteSpace"> </span><span class="mh">0x04</span><span class="p">;</span><span class=" -WhiteSpace"></span>
+<span class=" -WhiteSpace">    </span>byte<span class=" -WhiteSpace"> </span><span class="kt">public</span><span class=" -WhiteSpace"> </span><span class="kt">constant</span><span class=" -WhiteSpace"> </span>WRITE_BIT<span class=" -WhiteSpace"> </span><span class="o">=</span><span class=" -WhiteSpace"> </span><span class="mh">0x02</span><span class="p">;</span><span class=" -WhiteSpace"></span>
+<span class=" -WhiteSpace">    </span>byte<span class=" -WhiteSpace"> </span><span class="kt">public</span><span class=" -WhiteSpace"> </span><span class="kt">constant</span><span class=" -WhiteSpace"> </span>APPEND_BIT<span class=" -WhiteSpace"> </span><span class="o">=</span><span class=" -WhiteSpace"> </span><span class="mh">0x01</span><span class="p">;</span><span class=" -WhiteSpace"></span>
+<span class=" -WhiteSpace">    </span>byte<span class=" -WhiteSpace"> </span><span class="kt">public</span><span class=" -WhiteSpace"> </span><span class="kt">constant</span><span class=" -WhiteSpace"> </span>DIRECTORY_BIT<span class=" -WhiteSpace"> </span><span class="o">=</span><span class=" -WhiteSpace"> </span><span class="mh">0x80</span><span class="p">;</span><span class=" -WhiteSpace"></span>
 
-<span class=" -WhiteSpace">    </span><span class="c1">// basic permission.  Assumes the data vault has validated the requester&#39;s ID&#39;</span>
-<span class=" -WhiteSpace">    </span><span class="kt">function</span><span class=" -WhiteSpace"> </span><span class="nv">isPermitted</span><span class="p">(</span><span class=" -WhiteSpace"> </span><span class="kt">address</span><span class=" -WhiteSpace"> </span><span class="nv">requester</span><span class=" -WhiteSpace"> </span><span class="p">)</span><span class=" -WhiteSpace"> </span><span class="kt">public</span><span class=" -WhiteSpace"> </span>view<span class=" -WhiteSpace"> </span><span class="kt">returns</span><span class=" -WhiteSpace"> </span><span class="p">(</span><span class="kt">bool</span><span class="p">);</span><span class=" -WhiteSpace"></span>
+<span class=" -WhiteSpace">    </span><span class="kt">address</span><span class=" -WhiteSpace"> </span><span class="k">public </span><span class="nv">owner</span><span class=" -WhiteSpace"> </span><span class="o">=</span><span class=" -WhiteSpace"> </span><span class="k">msg.sender</span><span class="p">;</span><span class=" -WhiteSpace"></span>
 
-<span class=" -WhiteSpace">    </span><span class="c1">// returns true if the contract has expired either automatically or manually</span>
-<span class=" -WhiteSpace">    </span><span class="kt">function</span><span class=" -WhiteSpace"> </span><span class="nv">hasExpired</span><span class="p">()</span><span class=" -WhiteSpace"> </span><span class="kt">public</span><span class=" -WhiteSpace"> </span>view<span class=" -WhiteSpace"> </span><span class="kt">returns</span><span class=" -WhiteSpace"> </span><span class="p">(</span><span class="kt">bool</span><span class="p">);</span><span class=" -WhiteSpace"></span>
+<span class=" -WhiteSpace">    </span><span class="c1">// File based d----rwa permissions.  Assumes the data vault has validated the requester&#39;s ID.</span>
+<span class=" -WhiteSpace">    </span><span class="c1">// Address(0) is a special file representing the vault&#39;s root</span>
+<span class=" -WhiteSpace">    </span><span class="kt">function</span><span class=" -WhiteSpace"> </span><span class="nv">getPermissions</span><span class="p">(</span><span class=" -WhiteSpace"> </span><span class="kt">address</span><span class=" -WhiteSpace"> </span><span class="nv">requester</span><span class="p">,</span><span class=" -WhiteSpace"> </span><span class="kt">address</span><span class=" -WhiteSpace"> </span><span class="nv">file</span><span class=" -WhiteSpace"> </span><span class="p">)</span><span class=" -WhiteSpace"> </span><span class="kt">public</span><span class=" -WhiteSpace"> </span>virtual<span class=" -WhiteSpace"> </span>view<span class=" -WhiteSpace"> </span><span class="kt">returns</span><span class=" -WhiteSpace"> </span><span class="p">(</span>byte<span class="p">);</span><span class=" -WhiteSpace"></span>
+
+<span class=" -WhiteSpace">    </span><span class="c1">// returns true if the contract has expired either automatically or has been manually terminated</span>
+<span class=" -WhiteSpace">    </span><span class="kt">function</span><span class=" -WhiteSpace"> </span><span class="nv">hasExpired</span><span class="p">()</span><span class=" -WhiteSpace"> </span><span class="kt">public</span><span class=" -WhiteSpace"> </span>virtual<span class=" -WhiteSpace"> </span>view<span class=" -WhiteSpace"> </span><span class="kt">returns</span><span class=" -WhiteSpace"> </span><span class="p">(</span><span class="kt">bool</span><span class="p">);</span><span class=" -WhiteSpace"></span>
 
 <span class=" -WhiteSpace">    </span><span class="c1">// terminates the contract if the sender is permitted and any termination conditions are met</span>
-<span class=" -WhiteSpace">    </span><span class="kt">function</span><span class=" -WhiteSpace"> </span><span class="nv">terminate</span><span class="p">()</span><span class=" -WhiteSpace"> </span><span class="kt">public</span><span class="p">;</span><span class=" -WhiteSpace"></span>
+<span class=" -WhiteSpace">    </span><span class="kt">function</span><span class=" -WhiteSpace"> </span><span class="nv">terminate</span><span class="p">()</span><span class=" -WhiteSpace"> </span><span class="kt">public</span><span class=" -WhiteSpace"> </span>virtual<span class="p">;</span><span class=" -WhiteSpace"></span>
 
 <span class="p">}</span><span class=" -WhiteSpace"></span>
 </pre></div>
@@ -489,7 +526,7 @@
 </div>
 <div class="section" id="vault-request-protocol">
 <span id="vaultrequestprotocol"></span><h2>Vault Request Protocol<a class="headerlink" href="#vault-request-protocol" title="Permalink to this headline">¶</a></h2>
-<p>VaultRequest packets are sent to a Data Vault Server to create, update, access or delete a vault.  The server promises to respond to any request with a VaultResponse packet indicating success or error.  The protocol consists of a single request and response.</p>
+<p>VaultRequest packets are sent to a Data Vault Server to create, write, append, read or delete a vault.  The server promises to respond to any request with a VaultResponse packet indicating success or error.  The protocol consists of a single request and response.</p>
 <div class="section" id="vaultrequest">
 <span id="id6"></span><h3>VaultRequest<a class="headerlink" href="#vaultrequest" title="Permalink to this headline">¶</a></h3>
 <p>One of the following JSON requests:</p>
@@ -499,27 +536,37 @@
   &quot;txnType&quot;: &quot;VaultRequest&quot;,
   &quot;requestType&quot;: &quot;create&quot;,
   &quot;contract&quot;: Address,
-  &quot;data&quot;: Object
 }
 </pre></div>
 </div>
 </div>
-<div class="section" id="update">
-<h4>update<a class="headerlink" href="#update" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="write">
+<h4>write<a class="headerlink" href="#write" title="Permalink to this headline">¶</a></h4>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
   &quot;txnType&quot;: &quot;VaultRequest&quot;,
-  &quot;requestType&quot;: &quot;update&quot;,
+  &quot;requestType&quot;: &quot;write&quot;,
   &quot;contract&quot;: Address,
   &quot;data&quot;: Object
 }
 </pre></div>
 </div>
 </div>
-<div class="section" id="access">
-<h4>access<a class="headerlink" href="#access" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="append">
+<h4>append<a class="headerlink" href="#append" title="Permalink to this headline">¶</a></h4>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
   &quot;txnType&quot;: &quot;VaultRequest&quot;,
-  &quot;requestType&quot;: &quot;access&quot;,
+  &quot;requestType&quot;: &quot;append&quot;,
+  &quot;contract&quot;: Address,
+  &quot;data&quot;: Object
+}
+</pre></div>
+</div>
+</div>
+<div class="section" id="read">
+<h4>read<a class="headerlink" href="#read" title="Permalink to this headline">¶</a></h4>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
+  &quot;txnType&quot;: &quot;VaultRequest&quot;,
+  &quot;requestType&quot;: &quot;read&quot;,
   &quot;contract&quot;: Address
 }
 </pre></div>
@@ -546,7 +593,7 @@
 </thead>
 <tbody>
 <tr class="row-even"><td><p>type</p></td>
-<td><p><em>(String)</em>  The type of request: either “create”, “update”, “access” or “delete”</p></td>
+<td><p><em>(String)</em>  The type of request: either “create”, “write”, “append”, “read” or “delete”</p></td>
 </tr>
 <tr class="row-odd"><td><p>contract</p></td>
 <td><p><em>(Address)</em>  The blockchain address of the Smart Data Access Contract that controls the vault.  The S-DAC must already be deployed on the blockchain.</p></td>
@@ -564,7 +611,7 @@
 <p>Every Vault Request from the client is responded to with a Vault Response.  There are two types of response - success and error.</p>
 <div class="section" id="success">
 <h4>success<a class="headerlink" href="#success" title="Permalink to this headline">¶</a></h4>
-<p>A success response conforms with the <a class="reference internal" href="#generalserverresponse">GeneralServerResponse</a> Acknowledgement format.  If responding to an access request, the response will additionally contain a <code class="docutils literal notranslate"><span class="pre">data</span></code> field with returned vault contents.</p>
+<p>A success response conforms with the <a class="reference internal" href="#generalserverresponse">GeneralServerResponse</a> Acknowledgement format.  If responding to a read request, the response will additionally contain a <code class="docutils literal notranslate"><span class="pre">data</span></code> field with returned vault contents.</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
   &quot;txnType&quot;: &quot;VaultResponse&quot;,
   &quot;responseType&quot;:&quot;success&quot;,

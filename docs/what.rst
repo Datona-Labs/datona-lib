@@ -59,4 +59,6 @@ Whenever the requester needs to use the data it can **Access** the vault.  The v
 
 If the Owner's information changes, they can **Update** the data through the vault server's public api.  The vault server will check the S-DAC to ensure the owner is permitted to update the data before updating the vault.
 
+If the use case requires it, the Requester can **Write Records** back to the vault, for example to pass a policy certificate back to the Owner or to append to a log file.  The S-DAC can be configured to give different actors permission to write to different files and directories in the vault.
+
 If the S-DAC permits, the Owner can **Delete** the data at any time by terminating the contract.  Once terminated, any attempt by the Requester to access the vault will be denied.  The vault server will periodically check for contract expiry and when found will permanently delete the vault.

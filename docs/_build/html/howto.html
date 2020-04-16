@@ -85,7 +85,10 @@
 <li class="toctree-l1"><a class="reference internal" href="what.html">What Is Smart Data Access?</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">How To Use</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#requesters">Requesters</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#building-a-smart-data-access-contract">Building a Smart Data Access Contract</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#building-a-smart-data-access-contract">Building a Smart Data Access Contract</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#file-permissions">File Permissions</a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="#building-a-smart-data-access-request">Building a Smart Data Access Request</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#creating-a-server-to-handle-a-smart-data-access-response">Creating a Server to Handle a Smart Data Access Response</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#monitoring-for-new-contracts">Monitoring For New Contracts</a></li>
@@ -95,8 +98,16 @@
 <li class="toctree-l2"><a class="reference internal" href="#owner-app-developers">Owner App Developers</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#receiving-a-smart-data-access-request">Receiving a Smart Data Access Request</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#accepting-a-smart-data-access-request">Accepting a Smart Data Access Request</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#accessing-a-vault">Accessing a Vault</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#updating-a-vault">Updating a Vault</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#accessing-a-vault">Accessing a Vault</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#reading-from-a-specific-vault-file">Reading from a Specific Vault File</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#listing-a-directory">Listing a Directory</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#writing-to-a-vault">Writing to a Vault</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#writing-to-a-specific-vault-file">Writing to a Specific Vault File</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#appending-to-a-specific-vault-file">Appending to a Specific Vault File</a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="#deleting-a-vault">Deleting a Vault</a></li>
 </ul>
 </li>
@@ -200,7 +211,7 @@
 <li><p><a class="reference internal" href="#receiving-a-smart-data-access-request" id="id8">Receiving a Smart Data Access Request</a></p></li>
 <li><p><a class="reference internal" href="#accepting-a-smart-data-access-request" id="id9">Accepting a Smart Data Access Request</a></p></li>
 <li><p><a class="reference internal" href="#accessing-a-vault" id="id10">Accessing a Vault</a></p></li>
-<li><p><a class="reference internal" href="#updating-a-vault" id="id11">Updating a Vault</a></p></li>
+<li><p><a class="reference internal" href="#writing-to-a-vault" id="id11">Writing to a Vault</a></p></li>
 <li><p><a class="reference internal" href="#deleting-a-vault" id="id12">Deleting a Vault</a></p></li>
 </ul>
 </li>
@@ -217,7 +228,9 @@
 <span id="buildsdac"></span><h3><a class="toc-backref" href="#id2">Building a Smart Data Access Contract</a><a class="headerlink" href="#building-a-smart-data-access-contract" title="Permalink to this headline">¶</a></h3>
 <p>All S-DACs must comply with the <a class="reference internal" href="types.html#sdacinterface"><span class="std std-ref">Smart Data Access Contract Interface</span></a> but the implementation will depend on the use case.  S-DACs can be simple, for example to give indefinite access until terminated; or they can be highly complex giving access to different Requesters depending on a complex workflow supported by external blockchain oracles.</p>
 <p>Here is an example of a simple contract that automatically terminates after a given number of days.  It permits access for a single Requester and permits the Owner or Requester to terminate at any time.</p>
-<div class="highlight-solidity notranslate"><div class="highlight"><pre><span></span>pragma solidity ^0.5.1;
+<div class="highlight-solidity notranslate"><div class="highlight"><pre><span></span>pragma solidity ^0.6.3;
+
+import &quot;SDAC.sol&quot;;
 
 contract Duration_SDAC is SDAC {
 
@@ -226,6 +239,7 @@ contract Duration_SDAC is SDAC {
     uint public contractDuration;
     uint public contractStart;
     bool terminated = false;
+
 
     modifier onlyOwnerOrRequester {
         require( msg.sender == owner || msg.sender == permittedRequester );
@@ -238,26 +252,142 @@ contract Duration_SDAC is SDAC {
         contractStart = block.timestamp;
     }
 
-    function isPermitted( address requester ) public view returns (bool) {
-        return ( requester == permittedRequester ) &amp;&amp;
-               ( ! hasExpired() );
+    function getPermissions( address requester, address file ) public view override returns (byte) {
+        if ( file == address(0) &amp;&amp; !hasExpired() ) {
+            if (requester == owner) return NO_PERMISSIONS | READ_BIT | WRITE_BIT | APPEND_BIT;
+            if (requester == permittedRequester) return NO_PERMISSIONS | READ_BIT;
+        }
+        return NO_PERMISSIONS;
     }
 
-    function hasExpired() public view returns (bool) {
+    function hasExpired() public view override returns (bool) {
         return terminated ||
                (block.timestamp - contractStart) &gt;= (contractDuration * 1 days);
     }
 
-    function terminate() public onlyOwnerOrRequester {
+    function terminate() public override onlyOwnerOrRequester {
         terminated = true;
     }
+ }
+</pre></div>
+</div>
+<div class="section" id="file-permissions">
+<h4>File Permissions<a class="headerlink" href="#file-permissions" title="Permalink to this headline">¶</a></h4>
+<p><a class="reference internal" href="types.html#sdacinterface"><span class="std std-ref">Protocol v0.0.2</span></a> introduced file-based read, write and append permissions to S-DACs.  This allows a vault to be split into compartments (files and directories) each having different access permissions for different actors.  This could be used, for example, to allow the Owner’s name to be accessible to the Requester while their name and address is accessible to a third-party delivery company.</p>
+<p>The S-DAC interface does not support standard file names. Each file and directory is instead uniquely identified by a hash. What hash name is given to each file is at the discretion of the user and should form part of the Smart Data Access Request.</p>
+<p>The getPermissions function in the S-DAC is responsible for returning the correct permissions for the requester and file passed as its input parameters.  Permissions are returned as a single byte of the binary form <code class="docutils literal notranslate"><span class="pre">d----rwa</span></code>, where d is the most significant bit and if set (1) indicates the file is a directory.  The read-bit, write-bit and append-bit will be set (1) if that permission is granted.</p>
+<p><em>Read</em> and <em>write</em> file permissions behave in the standard way.  The <em>append</em> permission allows the user to append data to a file but not to overwrite what has been written before.  This can be useful for log files and audit trails.  The append permission for a directory allows new files to be written to that directory but does not allow existing files to be overwritten.  There is no execute permission since files cannot be executed on a vault server.</p>
+<p>The distinction between files and directories is in how the vault server responds to an access request.  For files the response will contain the data within the file, if the requester is permitted to access it. For directories it will contain a list of filenames. The files within a directory inherit their permissions from the parent directory and must be accessed with separate requests.</p>
+<p>Here is an example abstract S-DAC that implements UNIX-like user/group/others permissions for individual files.</p>
+<div class="highlight-solidity notranslate"><div class="highlight"><pre><span></span>pragma solidity ^0.6.3;
 
-    function getOwner() public view returns (address) {
-        return owner;
+import &quot;SDAC.sol&quot;;
+
+
+/*
+ * Abstract file based SDAC that allows a vault server to manage multiple files and directories within a vault.
+ * Each file or directory has its own unix-like user/group/others permissions of the form rwa (read, write, append).
+ *
+ * Groups and files are set on construction and remain static throughout the life of the contract. File owner, group and
+ * permissions are also set on construction but can be modified later. As with unix file systems only the file&#39;s owner
+ * can modify its group and permissions. Unlike unix systems there is no admin, root or sudo group.
+ */
+
+struct FilePermissions {
+    address user;
+    address group;
+    bytes2 permissions;
+}
+
+
+abstract contract FileBasedSdac is SDAC {
+
+    mapping (address =&gt; FilePermissions) internal files;
+    mapping (address =&gt; mapping(address =&gt; bool)) internal groups;
+
+    // Internal permissions bitmap
+    uint8 internal constant INTERNAL_PERMISSIONS_USER_BIT = 6;
+    uint8 internal constant INTERNAL_PERMISSIONS_GROUP_BIT = 3;
+    uint8 internal constant INTERNAL_PERMISSIONS_OTHERS_BIT = 0;
+    bytes2 internal constant INTERNAL_PERMISSIONS_DIRECTORY_MASK = 0x0200;
+    bytes2 internal constant INTERNAL_PERMISSIONS_USER_WRITE_MASK = 0x0080;
+
+
+    // create a new user group
+    function addGroup(address id, address[] memory users) internal {
+        for (uint i=0; i&lt;users.length; i++) {
+            groups[id][users[i]] = true;
+        }
+    }
+
+
+    // add a new file with the given permissions.  Permissions are a 2-byte field with the bit form ------dr warw arwa,
+    // reflecting unix-like permissions for user, group, other.
+    //   e.g. 0x01E0 describes a file (not a directory) with permissions rwar-----
+    //   i.e. user (owner) has read, write, append permissions, group has read permissions and others have no permissions.
+    function addFile(address id, FilePermissions memory permissions) internal {
+        files[id] = permissions;
+    }
+
+
+    // File based permissions returned as a byte with the form d----rwa.
+    // Mimics unix file permissions:
+    //   - returns the owner permissions if the requester is the owner of the file
+    //   - returns the group permissions if the requester is not the owner but belongs to the file&#39;s group
+    //   - returns the other permissions if the requester is neither the owner nor a group member
+    // Deliberately does not throw if a file does not exist, returns 0 instead.
+    function getPermissions( address requester, address file ) public view override returns (byte) {
+        address fileOwner = files[file].user;
+        address fileGroup = files[file].group;
+        byte directoryFlag = files[file].permissions &amp; INTERNAL_PERMISSIONS_DIRECTORY_MASK &gt; 0 ? DIRECTORY_BIT : byte(0);
+        if ( fileOwner == address(0) || this.hasExpired() ) {
+            return NO_PERMISSIONS;
+        }
+        else if (requester == fileOwner) {
+            return (byte)(files[file].permissions &gt;&gt; INTERNAL_PERMISSIONS_USER_BIT) &amp; ALL_PERMISSIONS | directoryFlag;
+        }
+        else if (groups[fileGroup][requester]) {
+            return (byte)(files[file].permissions &gt;&gt; INTERNAL_PERMISSIONS_GROUP_BIT) &amp; ALL_PERMISSIONS | directoryFlag;
+        }
+        else {
+            return (byte)(files[file].permissions &gt;&gt; INTERNAL_PERMISSIONS_OTHERS_BIT) &amp; ALL_PERMISSIONS | directoryFlag;
+        }
+    }
+
+
+    // change a file&#39;s permissions
+    function chmod(address file, bytes2 permissions) public {
+        require( files[file].user == msg.sender, &#39;Operation not permitted&#39; );
+        require( (files[file].permissions &amp; INTERNAL_PERMISSIONS_USER_WRITE_MASK) &gt; 0, &#39;Operation not permitted&#39; );
+        files[file].permissions = permissions;
+    }
+
+
+    // change a file&#39;s owner
+     function chown(address file, address user) public {
+        require( files[file].user == msg.sender, &#39;Operation not permitted&#39; );
+        require( (files[file].permissions &amp; INTERNAL_PERMISSIONS_USER_WRITE_MASK) &gt; 0, &#39;Operation not permitted&#39; );
+        files[file].user = user;
+    }
+
+
+    // change a file&#39;s owner and group
+    function chown(address file, address user, address group) public {
+        chown(file, user);
+        files[file].group = group;
+    }
+
+
+    // change a file&#39;s group
+    function chgrp(address file, address group) public {
+        require( files[file].user == msg.sender, &#39;Operation not permitted&#39; );
+        require( (files[file].permissions &amp; INTERNAL_PERMISSIONS_USER_WRITE_MASK) &gt; 0, &#39;Operation not permitted&#39; );
+        files[file].group = group;
     }
 
 }
 </pre></div>
+</div>
 </div>
 </div>
 <div class="section" id="building-a-smart-data-access-request">
@@ -292,6 +422,7 @@ contract Duration_SDAC is SDAC {
 <p>If the Owner accepts the Smart Data Access Request then they will inform the Requester of the S-DAC’s blockchain address and where the data is being held.  To do this the Requester must run a server to handle the <a class="reference internal" href="types.html#smartdataaccessresponse"><span class="std std-ref">Smart Data Access Response Packet</span></a>.</p>
 <p>Example of a basic server.  When handling a response the server must perform some validation on the deployed contract.  As a minimum it must check that the deployed contract is of the expected type by checking its runtime bytecode.  In this example it also checks that the signatory of the response is the owner of the contract.</p>
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="kr">const</span> <span class="nx">datona</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;datona-lib&#39;</span><span class="p">);</span>
+<span class="kr">const</span> <span class="nx">assert</span> <span class="o">=</span> <span class="nx">datona</span><span class="p">.</span><span class="nx">assertions</span><span class="p">;</span>
 
 <span class="c1">//</span>
 <span class="c1">// Constants</span>
@@ -299,7 +430,7 @@ contract Duration_SDAC is SDAC {
 
 <span class="kr">const</span> <span class="nx">myKey</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">datona</span><span class="p">.</span><span class="nx">crypto</span><span class="p">.</span><span class="nx">key</span><span class="p">(</span><span class="s2">&quot;e68e40257cfee330038c49637fcffff82fae04b9c563f4ea071c20f2eb55063c&quot;</span><span class="p">);</span>
 <span class="kr">const</span> <span class="nx">sdacHash</span> <span class="o">=</span> <span class="s2">&quot;5573012304cc4d87a7a07253c728e08250db6821a3dfdbbbcac9a24f8cd89ad4&quot;</span><span class="p">;</span>
-<span class="kr">const</span> <span class="nx">sdacSourceCode</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">&quot;./contracts/&quot;</span> <span class="o">+</span> <span class="nx">sdacHash</span><span class="p">);</span>
+<span class="kr">const</span> <span class="nx">sdacSourceCode</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">&quot;./contracts/&quot;</span> <span class="o">+</span> <span class="nx">sdacHash</span> <span class="o">+</span> <span class="s2">&quot;.json&quot;</span><span class="p">);</span>
 
 
 <span class="c1">//</span>
@@ -316,28 +447,38 @@ contract Duration_SDAC is SDAC {
   <span class="nx">c</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="p">(</span><span class="nx">buffer</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span>
     <span class="k">try</span> <span class="p">{</span>
       <span class="c1">// Decode the transaction and validate the structure of the response packet.  These will throw if not valid</span>
-      <span class="kr">const</span> <span class="nx">txn</span> <span class="o">=</span> <span class="nx">datona</span><span class="p">.</span><span class="nx">comms</span><span class="p">.</span><span class="nx">decodeTransaction</span><span class="p">(</span><span class="nx">buffer</span><span class="p">.</span><span class="nx">toString</span><span class="p">());</span>
-      <span class="nx">validateResponse</span><span class="p">(</span><span class="nx">txn</span><span class="p">.</span><span class="nx">data</span><span class="p">,</span> <span class="s2">&quot;SmartDataAccessResponse&quot;</span><span class="p">);</span>
+      <span class="kr">const</span> <span class="nx">txn</span> <span class="o">=</span> <span class="nx">datona</span><span class="p">.</span><span class="nx">comms</span><span class="p">.</span><span class="nx">decodeTransaction</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+      <span class="kr">const</span> <span class="nx">sdaResponse</span> <span class="o">=</span> <span class="nx">txn</span><span class="p">.</span><span class="nx">txn</span><span class="p">;</span>
+      <span class="nx">assert</span><span class="p">.</span><span class="nx">equals</span><span class="p">(</span><span class="nx">sdaResponse</span><span class="p">.</span><span class="nx">txnType</span><span class="p">,</span> <span class="s2">&quot;SmartDataAccessResponse&quot;</span><span class="p">,</span> <span class="s2">&quot;SDA Response is invalid: txnType&quot;</span><span class="p">)</span>
 
-      <span class="c1">// Ignore if a rejection else validate the contract</span>
-      <span class="k">if</span> <span class="p">(</span><span class="nx">txn</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">responseType</span> <span class="o">!=</span> <span class="s2">&quot;success&quot;</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">sendResponse</span><span class="p">(</span><span class="nx">datona</span><span class="p">.</span><span class="nx">comms</span><span class="p">.</span><span class="nx">createSuccessResponse</span><span class="p">());</span>
-      <span class="p">}</span>
-      <span class="k">else</span> <span class="p">{</span>
-        <span class="c1">// Connect to the Owner&#39;s S-DAC on the blockchain</span>
-        <span class="kr">const</span> <span class="nx">contract</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">datona</span><span class="p">.</span><span class="nx">blockchain</span><span class="p">.</span><span class="nx">Contract</span><span class="p">(</span><span class="nx">sdacSourceCode</span><span class="p">.</span><span class="nx">abi</span><span class="p">,</span> <span class="nx">txn</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">contract</span><span class="p">);</span>
+      <span class="c1">// Handle depending on the response type</span>
+      <span class="k">switch</span> <span class="p">(</span><span class="nx">sdaResponse</span><span class="p">.</span><span class="nx">responseType</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">case</span> <span class="s2">&quot;accept&quot;</span><span class="o">:</span>
+          <span class="nx">assert</span><span class="p">.</span><span class="nx">isAddress</span><span class="p">(</span><span class="nx">sdaResponse</span><span class="p">.</span><span class="nx">contract</span><span class="p">,</span> <span class="s2">&quot;SDA Response is invalid: contract&quot;</span><span class="p">)</span>
+          <span class="nx">assert</span><span class="p">.</span><span class="nx">isAddress</span><span class="p">(</span><span class="nx">sdaResponse</span><span class="p">.</span><span class="nx">vaultAddress</span><span class="p">,</span> <span class="s2">&quot;SDA Response is invalid: vaultAddress&quot;</span><span class="p">)</span>
+          <span class="nx">assert</span><span class="p">.</span><span class="nx">isUrl</span><span class="p">(</span><span class="nx">sdaResponse</span><span class="p">.</span><span class="nx">vaultUrl</span><span class="p">,</span> <span class="s2">&quot;SDA Response is invalid: vaultUrl&quot;</span><span class="p">)</span>
 
-        <span class="c1">// Verify the signatory is the owner of the contract and that the correct contract has been deployed,</span>
-        <span class="nx">contract</span><span class="p">.</span><span class="nx">assertOwner</span><span class="p">(</span><span class="nx">txn</span><span class="p">.</span><span class="nx">signatory</span><span class="p">)</span>
-          <span class="p">.</span><span class="nx">then</span><span class="p">(</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">{</span> <span class="nx">contract</span><span class="p">.</span><span class="nx">assertBytecode</span><span class="p">(</span><span class="nx">sdacSourceCode</span><span class="p">.</span><span class="nx">runtimeBytecode</span><span class="p">)</span> <span class="p">})</span>
-          <span class="p">.</span><span class="nx">then</span><span class="p">(</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">{</span>
-            <span class="c1">// Contract is valid so record the new customer and return a success response</span>
-            <span class="nx">customers</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">txn</span><span class="p">.</span><span class="nx">data</span><span class="p">);</span>
-            <span class="nx">sendResponse</span><span class="p">(</span><span class="nx">datona</span><span class="p">.</span><span class="nx">comms</span><span class="p">.</span><span class="nx">createSuccessResponse</span><span class="p">());</span>
-          <span class="p">})</span>
-          <span class="p">.</span><span class="k">catch</span><span class="p">(</span> <span class="p">(</span><span class="nx">error</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span>
-            <span class="nx">sendResponse</span><span class="p">(</span><span class="nx">datona</span><span class="p">.</span><span class="nx">comms</span><span class="p">.</span><span class="nx">createErrorResponse</span><span class="p">(</span><span class="nx">error</span><span class="p">));</span>
-          <span class="p">});</span>
+          <span class="c1">// Connect to the Owner&#39;s S-DAC on the blockchain</span>
+          <span class="kr">const</span> <span class="nx">contract</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">datona</span><span class="p">.</span><span class="nx">blockchain</span><span class="p">.</span><span class="nx">Contract</span><span class="p">(</span><span class="nx">sdacSourceCode</span><span class="p">.</span><span class="nx">abi</span><span class="p">,</span> <span class="nx">sdaResponse</span><span class="p">.</span><span class="nx">contract</span><span class="p">);</span>
+
+          <span class="c1">// Verify the signatory is the owner of the contract and that the correct contract has been deployed,</span>
+          <span class="nx">contract</span><span class="p">.</span><span class="nx">assertOwner</span><span class="p">(</span><span class="nx">txn</span><span class="p">.</span><span class="nx">signatory</span><span class="p">)</span>
+            <span class="p">.</span><span class="nx">then</span><span class="p">(</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">{</span> <span class="nx">contract</span><span class="p">.</span><span class="nx">assertBytecode</span><span class="p">(</span><span class="nx">sdacSourceCode</span><span class="p">.</span><span class="nx">runtimeBytecode</span><span class="p">)</span> <span class="p">})</span>
+            <span class="p">.</span><span class="nx">then</span><span class="p">(</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">{</span>
+              <span class="c1">// Contract is valid so record the new customer and return a success response</span>
+              <span class="nx">customers</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">txn</span><span class="p">.</span><span class="nx">data</span><span class="p">);</span>
+              <span class="nx">sendResponse</span><span class="p">(</span><span class="nx">datona</span><span class="p">.</span><span class="nx">comms</span><span class="p">.</span><span class="nx">createSuccessResponse</span><span class="p">());</span>
+            <span class="p">})</span>
+            <span class="p">.</span><span class="k">catch</span><span class="p">(</span> <span class="p">(</span><span class="nx">error</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span>
+              <span class="nx">sendResponse</span><span class="p">(</span><span class="nx">datona</span><span class="p">.</span><span class="nx">comms</span><span class="p">.</span><span class="nx">createErrorResponse</span><span class="p">(</span><span class="nx">error</span><span class="p">));</span>
+            <span class="p">});</span>
+          <span class="k">break</span><span class="p">;</span>
+        <span class="k">case</span> <span class="s2">&quot;reject&quot;</span><span class="o">:</span>
+          <span class="nx">logger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Customer reject: &quot;</span><span class="o">+</span><span class="nx">sdaResponse</span><span class="p">.</span><span class="nx">reason</span><span class="p">);</span>
+          <span class="nx">sendResponse</span><span class="p">(</span><span class="nx">datona</span><span class="p">.</span><span class="nx">comms</span><span class="p">.</span><span class="nx">createSuccessResponse</span><span class="p">());</span>
+          <span class="k">break</span><span class="p">;</span>
+        <span class="k">default</span><span class="o">:</span>
+          <span class="k">throw</span> <span class="k">new</span> <span class="nx">datona</span><span class="p">.</span><span class="nx">errors</span><span class="p">.</span><span class="nx">TransactionError</span><span class="p">(</span><span class="s2">&quot;Invalid responseType: &quot;</span><span class="o">+</span><span class="nx">sdaResponse</span><span class="p">.</span><span class="nx">responseType</span><span class="p">);</span>
       <span class="p">}</span>
     <span class="p">}</span>
     <span class="k">catch</span> <span class="p">(</span><span class="nx">error</span><span class="p">)</span> <span class="p">{</span>
@@ -374,8 +515,24 @@ contract Duration_SDAC is SDAC {
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="kr">const</span> <span class="nx">customer</span> <span class="o">=</span> <span class="nx">customers</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
 <span class="kr">const</span> <span class="nx">remoteVault</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">RemoteVault</span><span class="p">(</span><span class="nx">customer</span><span class="p">.</span><span class="nx">vaultUrl</span><span class="p">,</span> <span class="nx">customer</span><span class="p">.</span><span class="nx">contract</span><span class="p">,</span> <span class="nx">myKey</span><span class="p">,</span> <span class="nx">customer</span><span class="p">.</span><span class="nx">vaultAddress</span><span class="p">);</span>
 
-<span class="nx">remoteVault</span><span class="p">.</span><span class="nx">access</span><span class="p">()</span>
+<span class="nx">remoteVault</span><span class="p">.</span><span class="nx">read</span><span class="p">()</span>
   <span class="p">.</span><span class="nx">then</span><span class="p">(</span> <span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;vault contains: &quot;</span><span class="o">+</span><span class="nx">data</span><span class="p">)</span> <span class="p">)</span>
+  <span class="p">.</span><span class="k">catch</span><span class="p">(</span> <span class="nx">console</span><span class="p">.</span><span class="nx">error</span> <span class="p">);</span>
+</pre></div>
+</div>
+<p>If the vault contains specific files then they should be read individually:</p>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="kr">const</span> <span class="nx">customersFolder</span> <span class="o">=</span> <span class="s2">&quot;0xF000000000000000000000000000000000000001&quot;</span>
+
+<span class="nx">remoteVault</span><span class="p">.</span><span class="nx">read</span><span class="p">(</span><span class="nx">customersFolder</span><span class="p">)</span>
+  <span class="p">.</span><span class="nx">then</span><span class="p">(</span> <span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;folder contains files:\n&quot;</span><span class="o">+</span><span class="nx">data</span><span class="p">)</span> <span class="p">)</span>
+  <span class="p">.</span><span class="k">catch</span><span class="p">(</span> <span class="nx">console</span><span class="p">.</span><span class="nx">error</span> <span class="p">);</span>
+
+<span class="nx">remoteVault</span><span class="p">.</span><span class="nx">read</span><span class="p">(</span><span class="nx">customersFolder</span><span class="o">+</span><span class="s2">&quot;/name&quot;</span><span class="p">)</span>
+  <span class="p">.</span><span class="nx">then</span><span class="p">(</span> <span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Customer name: &quot;</span><span class="o">+</span><span class="nx">data</span><span class="p">)</span> <span class="p">)</span>
+  <span class="p">.</span><span class="k">catch</span><span class="p">(</span> <span class="nx">console</span><span class="p">.</span><span class="nx">error</span> <span class="p">);</span>
+
+<span class="nx">remoteVault</span><span class="p">.</span><span class="nx">read</span><span class="p">(</span><span class="nx">customersFolder</span><span class="o">+</span><span class="s2">&quot;/email&quot;</span><span class="p">)</span>
+  <span class="p">.</span><span class="nx">then</span><span class="p">(</span> <span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Customer email: &quot;</span><span class="o">+</span><span class="nx">data</span><span class="p">)</span> <span class="p">)</span>
   <span class="p">.</span><span class="k">catch</span><span class="p">(</span> <span class="nx">console</span><span class="p">.</span><span class="nx">error</span> <span class="p">);</span>
 </pre></div>
 </div>
@@ -418,7 +575,8 @@ contract Duration_SDAC is SDAC {
 <span class="c1">// Function to create a new vault and store the data.  Returns a Promise.</span>
 <span class="kd">function</span> <span class="nx">createAndDeployVault</span><span class="p">(){</span>
   <span class="kr">const</span> <span class="nx">vault</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">datona</span><span class="p">.</span><span class="nx">vault</span><span class="p">.</span><span class="nx">RemoteVault</span><span class="p">(</span> <span class="nx">vaultUrl</span><span class="p">,</span> <span class="nx">sdac</span><span class="p">.</span><span class="nx">address</span><span class="p">,</span> <span class="nx">myKey</span><span class="p">,</span> <span class="nx">vaultServerAddress</span> <span class="p">);</span>
-  <span class="k">return</span> <span class="nx">vault</span><span class="p">.</span><span class="nx">create</span><span class="p">(</span><span class="s2">&quot;Hello World!&quot;</span><span class="p">);</span>
+  <span class="k">return</span> <span class="nx">vault</span><span class="p">.</span><span class="nx">create</span><span class="p">()</span>
+    <span class="p">.</span><span class="nx">then</span><span class="p">(</span> <span class="nx">vault</span><span class="p">.</span><span class="nx">write</span><span class="p">(</span><span class="s2">&quot;Hello World!&quot;</span><span class="p">)</span> <span class="p">);</span>
 <span class="p">}</span>
 
 <span class="c1">// Function to send the contract address and vault URL to the requester.  Returns a Promise.</span>
@@ -448,22 +606,60 @@ contract Duration_SDAC is SDAC {
 
 <span class="kr">const</span> <span class="nx">remoteVault</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">RemoteVault</span><span class="p">(</span><span class="nx">dataShare</span><span class="p">.</span><span class="nx">vault</span><span class="p">.</span><span class="nx">url</span><span class="p">,</span> <span class="nx">dataShare</span><span class="p">.</span><span class="nx">contract</span><span class="p">,</span> <span class="nx">myKey</span><span class="p">,</span> <span class="nx">dataShare</span><span class="p">.</span><span class="nx">vault</span><span class="p">.</span><span class="nx">address</span><span class="p">);</span>
 
-<span class="nx">remoteVault</span><span class="p">.</span><span class="nx">access</span><span class="p">()</span>
+<span class="nx">remoteVault</span><span class="p">.</span><span class="nx">read</span><span class="p">()</span>
   <span class="p">.</span><span class="nx">then</span><span class="p">(</span> <span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;vault contains: &quot;</span><span class="o">+</span><span class="nx">data</span><span class="p">)</span> <span class="p">)</span>
   <span class="p">.</span><span class="k">catch</span><span class="p">(</span> <span class="nx">console</span><span class="p">.</span><span class="nx">error</span> <span class="p">);</span>
 </pre></div>
 </div>
+<div class="section" id="reading-from-a-specific-vault-file">
+<h4>Reading from a Specific Vault File<a class="headerlink" href="#reading-from-a-specific-vault-file" title="Permalink to this headline">¶</a></h4>
+<p>To read the data from a specific file in the vault include the filename as part of the read request.</p>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="nx">remoteVault</span><span class="p">.</span><span class="nx">read</span><span class="p">(</span><span class="s2">&quot;0xF000000000000000000000000000000000000001/name.txt&quot;</span><span class="p">)</span>
+  <span class="p">.</span><span class="k">catch</span><span class="p">(</span> <span class="nx">console</span><span class="p">.</span><span class="nx">error</span> <span class="p">);</span>
+</pre></div>
 </div>
-<div class="section" id="updating-a-vault">
-<h3><a class="toc-backref" href="#id11">Updating a Vault</a><a class="headerlink" href="#updating-a-vault" title="Permalink to this headline">¶</a></h3>
-<p>To update the data in the vault use the <a class="reference internal" href="datona-vault.html#remotevault"><span class="std std-ref">RemoteVault</span></a> class.</p>
+<p>In this case the file is <code class="docutils literal notranslate"><span class="pre">name.txt</span></code> and it inherits its permissions from the parent directory <code class="docutils literal notranslate"><span class="pre">0xF000000000000000000000000000000000000001</span></code>.  The permissions for this directory must be encoded in the contract.</p>
+</div>
+<div class="section" id="listing-a-directory">
+<h4>Listing a Directory<a class="headerlink" href="#listing-a-directory" title="Permalink to this headline">¶</a></h4>
+<p>If the contract supports directories then its possible to list the files held a directory by simply reading it.</p>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="nx">remoteVault</span><span class="p">.</span><span class="nx">read</span><span class="p">(</span><span class="s2">&quot;0xF000000000000000000000000000000000000001&quot;</span><span class="p">)</span>
+  <span class="p">.</span><span class="nx">then</span><span class="p">(</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span> <span class="p">);</span>
+  <span class="p">.</span><span class="k">catch</span><span class="p">(</span> <span class="nx">console</span><span class="p">.</span><span class="nx">error</span> <span class="p">);</span>
+</pre></div>
+</div>
+<p>If <code class="docutils literal notranslate"><span class="pre">0xF000000000000000000000000000000000000001</span></code> is a directory (has the directory bit set in its contract permissions) then the vault server will return a list of names of all the files in the vault directory, separated by newlines.  If the file is not a directory then the contents of the file will be returned.</p>
+</div>
+</div>
+<div class="section" id="writing-to-a-vault">
+<h3><a class="toc-backref" href="#id11">Writing to a Vault</a><a class="headerlink" href="#writing-to-a-vault" title="Permalink to this headline">¶</a></h3>
+<p>To write (or overwrite) the data in the vault use the <a class="reference internal" href="datona-vault.html#remotevault"><span class="std std-ref">RemoteVault</span></a> class.</p>
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="kr">const</span> <span class="nx">dataShare</span> <span class="o">=</span> <span class="nx">myDataShares</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
 
 <span class="kr">const</span> <span class="nx">remoteVault</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">RemoteVault</span><span class="p">(</span><span class="nx">dataShare</span><span class="p">.</span><span class="nx">vault</span><span class="p">.</span><span class="nx">url</span><span class="p">,</span> <span class="nx">dataShare</span><span class="p">.</span><span class="nx">contract</span><span class="p">,</span> <span class="nx">myKey</span><span class="p">,</span> <span class="nx">dataShare</span><span class="p">.</span><span class="nx">vault</span><span class="p">.</span><span class="nx">address</span><span class="p">);</span>
 
-<span class="nx">remoteVault</span><span class="p">.</span><span class="nx">update</span><span class="p">(</span><span class="s2">&quot;Hi World!&quot;</span><span class="p">)</span>
+<span class="nx">remoteVault</span><span class="p">.</span><span class="nx">write</span><span class="p">(</span><span class="s2">&quot;Hi World!&quot;</span><span class="p">)</span>
   <span class="p">.</span><span class="k">catch</span><span class="p">(</span> <span class="nx">console</span><span class="p">.</span><span class="nx">error</span> <span class="p">);</span>
 </pre></div>
+</div>
+<div class="section" id="writing-to-a-specific-vault-file">
+<h4>Writing to a Specific Vault File<a class="headerlink" href="#writing-to-a-specific-vault-file" title="Permalink to this headline">¶</a></h4>
+<p>To write (or overwrite) the data in a file include the filename as part of the write request.</p>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="nx">remoteVault</span><span class="p">.</span><span class="nx">write</span><span class="p">(</span><span class="s2">&quot;Barney Rubble&quot;</span><span class="p">,</span> <span class="s2">&quot;0xF000000000000000000000000000000000000001/name.txt&quot;</span><span class="p">)</span>
+  <span class="p">.</span><span class="k">catch</span><span class="p">(</span> <span class="nx">console</span><span class="p">.</span><span class="nx">error</span> <span class="p">);</span>
+</pre></div>
+</div>
+<p>In this case the file is <code class="docutils literal notranslate"><span class="pre">name.txt</span></code> and it inherits its permissions from the parent directory <code class="docutils literal notranslate"><span class="pre">0xF000000000000000000000000000000000000001</span></code>.  The permissions for this directory must be encoded in the contract.</p>
+</div>
+<div class="section" id="appending-to-a-specific-vault-file">
+<h4>Appending to a Specific Vault File<a class="headerlink" href="#appending-to-a-specific-vault-file" title="Permalink to this headline">¶</a></h4>
+<p>Appending data to a file is done in the same way as writing but uses the <code class="docutils literal notranslate"><span class="pre">append</span></code> method.</p>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="kr">const</span> <span class="nx">logfile</span> <span class="o">=</span> <span class="s2">&quot;0xF000000000000000000000000000000000000002&quot;</span><span class="p">;</span>
+
+<span class="nx">remoteVault</span><span class="p">.</span><span class="nx">append</span><span class="p">(</span><span class="s2">&quot;\nThu 16 Apr 2020 14:34:47 BST - Name updated&quot;</span><span class="p">,</span> <span class="nx">logfile</span><span class="p">)</span>
+  <span class="p">.</span><span class="k">catch</span><span class="p">(</span> <span class="nx">console</span><span class="p">.</span><span class="nx">error</span> <span class="p">);</span>
+</pre></div>
+</div>
 </div>
 </div>
 <div class="section" id="deleting-a-vault">
@@ -536,28 +732,49 @@ contract Duration_SDAC is SDAC {
     <span class="k">this</span><span class="p">.</span><span class="nx">vaults</span> <span class="o">=</span> <span class="p">{};</span>
   <span class="p">}</span>
 
-  <span class="nx">createVault</span><span class="p">(</span><span class="nx">contract</span><span class="p">,</span> <span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+  <span class="nx">create</span><span class="p">(</span><span class="nx">contract</span><span class="p">)</span> <span class="p">{</span>
     <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">vaults</span><span class="p">[</span><span class="nx">contract</span><span class="p">]</span> <span class="o">!=</span> <span class="kc">undefined</span><span class="p">)</span> <span class="p">{</span>
       <span class="k">throw</span> <span class="k">new</span> <span class="nx">datona</span><span class="p">.</span><span class="nx">errors</span><span class="p">.</span><span class="nx">VaultError</span><span class="p">(</span><span class="s2">&quot;attempt to create a vault that already exists: &quot;</span> <span class="o">+</span> <span class="nx">contract</span><span class="p">);</span>
     <span class="p">}</span>
-    <span class="k">this</span><span class="p">.</span><span class="nx">vaults</span><span class="p">[</span><span class="nx">contract</span><span class="p">]</span> <span class="o">=</span> <span class="nx">data</span><span class="p">;</span>
   <span class="p">}</span>
 
-  <span class="nx">updateVault</span><span class="p">(</span><span class="nx">contract</span><span class="p">,</span> <span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+  <span class="nx">write</span><span class="p">(</span><span class="nx">contract</span><span class="p">,</span> <span class="nx">file</span><span class="p">,</span> <span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
     <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">vaults</span><span class="p">[</span><span class="nx">contract</span><span class="p">]</span> <span class="o">==</span> <span class="kc">undefined</span><span class="p">)</span> <span class="p">{</span>
-      <span class="k">throw</span> <span class="k">new</span> <span class="nx">datona</span><span class="p">.</span><span class="nx">errors</span><span class="p">.</span><span class="nx">VaultError</span><span class="p">(</span><span class="s2">&quot;attempt to update a vault that does not exist: &quot;</span> <span class="o">+</span> <span class="nx">contract</span><span class="p">);</span>
+      <span class="k">throw</span> <span class="k">new</span> <span class="nx">datona</span><span class="p">.</span><span class="nx">errors</span><span class="p">.</span><span class="nx">VaultError</span><span class="p">(</span><span class="s2">&quot;attempt to write to a vault that does not exist: &quot;</span> <span class="o">+</span> <span class="nx">contract</span><span class="p">);</span>
     <span class="p">}</span>
-    <span class="k">this</span><span class="p">.</span><span class="nx">vaults</span><span class="p">[</span><span class="nx">contract</span><span class="p">]</span> <span class="o">=</span> <span class="nx">data</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">vaults</span><span class="p">[</span><span class="nx">contract</span><span class="p">][</span><span class="nx">file</span><span class="p">]</span> <span class="o">=</span> <span class="nx">data</span><span class="p">;</span>
   <span class="p">};</span>
 
-  <span class="nx">accessVault</span><span class="p">(</span><span class="nx">contract</span><span class="p">)</span> <span class="p">{</span>
+  <span class="nx">append</span><span class="p">(</span><span class="nx">contract</span><span class="p">,</span> <span class="nx">file</span><span class="p">,</span> <span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">vaults</span><span class="p">[</span><span class="nx">contract</span><span class="p">]</span> <span class="o">==</span> <span class="kc">undefined</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">throw</span> <span class="k">new</span> <span class="nx">datona</span><span class="p">.</span><span class="nx">errors</span><span class="p">.</span><span class="nx">VaultError</span><span class="p">(</span><span class="s2">&quot;attempt to append to a vault that does not exist: &quot;</span> <span class="o">+</span> <span class="nx">contract</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">vaults</span><span class="p">[</span><span class="nx">contract</span><span class="p">][</span><span class="nx">file</span><span class="p">]</span> <span class="o">===</span> <span class="kc">undefined</span><span class="p">)</span> <span class="p">{</span> <span class="k">this</span><span class="p">.</span><span class="nx">vaults</span><span class="p">[</span><span class="nx">contract</span><span class="p">][</span><span class="nx">file</span><span class="p">]</span> <span class="o">=</span> <span class="nx">data</span><span class="p">;</span> <span class="p">}</span>
+    <span class="k">else</span> <span class="k">this</span><span class="p">.</span><span class="nx">vaults</span><span class="p">[</span><span class="nx">contract</span><span class="p">][</span><span class="nx">file</span><span class="p">]</span> <span class="o">+=</span> <span class="nx">data</span><span class="p">;</span>
+  <span class="p">};</span>
+
+  <span class="nx">read</span><span class="p">(</span><span class="nx">contract</span><span class="p">,</span> <span class="nx">file</span><span class="p">)</span> <span class="p">{</span>
     <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">vaults</span><span class="p">[</span><span class="nx">contract</span><span class="p">]</span> <span class="o">==</span> <span class="kc">undefined</span><span class="p">)</span> <span class="p">{</span>
       <span class="k">throw</span> <span class="k">new</span> <span class="nx">datona</span><span class="p">.</span><span class="nx">errors</span><span class="p">.</span><span class="nx">VaultError</span><span class="p">(</span><span class="s2">&quot;attempt to access a vault that does not exist: &quot;</span> <span class="o">+</span> <span class="nx">contract</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">vaults</span><span class="p">[</span><span class="nx">contract</span><span class="p">][</span><span class="nx">file</span><span class="p">]</span> <span class="o">===</span> <span class="kc">undefined</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">throw</span> <span class="k">new</span> <span class="nx">datona</span><span class="p">.</span><span class="nx">errors</span><span class="p">.</span><span class="nx">VaultError</span><span class="p">(</span><span class="s2">&quot;attempt to access a file that does not exist: &quot;</span> <span class="o">+</span> <span class="nx">contract</span><span class="o">+</span><span class="s2">&quot;/&quot;</span><span class="o">+</span><span class="nx">file</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">vaults</span><span class="p">[</span><span class="nx">contract</span><span class="p">];</span>
   <span class="p">};</span>
 
-  <span class="nx">deleteVault</span><span class="p">(</span><span class="nx">contract</span><span class="p">)</span> <span class="p">{</span>
+  <span class="nx">readDir</span><span class="p">(</span><span class="nx">contract</span><span class="p">,</span> <span class="nx">dir</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">vaults</span><span class="p">[</span><span class="nx">contract</span><span class="p">]</span> <span class="o">===</span> <span class="kc">undefined</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">throw</span> <span class="k">new</span> <span class="nx">datona</span><span class="p">.</span><span class="nx">errors</span><span class="p">.</span><span class="nx">VaultError</span><span class="p">(</span><span class="s2">&quot;attempt to access a vault that does not exist: &quot;</span> <span class="o">+</span> <span class="nx">contract</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="kd">var</span> <span class="nx">contents</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">;</span>
+    <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">file</span> <span class="k">in</span> <span class="k">this</span><span class="p">.</span><span class="nx">vaults</span><span class="p">[</span><span class="nx">contract</span><span class="p">])</span> <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">file</span><span class="p">.</span><span class="nx">substring</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">43</span><span class="p">)</span> <span class="o">===</span> <span class="nx">dir</span><span class="o">+</span><span class="s2">&quot;/&quot;</span><span class="p">)</span> <span class="nx">contents</span> <span class="o">+=</span> <span class="p">(</span><span class="nx">contents</span><span class="p">.</span><span class="nx">length</span><span class="o">===</span><span class="mi">0</span><span class="p">)</span> <span class="o">?</span> <span class="nx">file</span><span class="p">.</span><span class="nx">substring</span><span class="p">(</span><span class="mi">43</span><span class="p">)</span> <span class="o">:</span> <span class="s2">&quot;\n&quot;</span><span class="o">+</span><span class="nx">file</span><span class="p">.</span><span class="nx">substring</span><span class="p">(</span><span class="mi">43</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="nx">contents</span><span class="p">;</span>
+  <span class="p">};</span>
+
+  <span class="k">delete</span><span class="p">(</span><span class="nx">contract</span><span class="p">)</span> <span class="p">{</span>
     <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">vaults</span><span class="p">[</span><span class="nx">contract</span><span class="p">]</span> <span class="o">==</span> <span class="kc">undefined</span><span class="p">)</span> <span class="p">{</span>
       <span class="k">throw</span> <span class="k">new</span> <span class="nx">datona</span><span class="p">.</span><span class="nx">errors</span><span class="p">.</span><span class="nx">VaultError</span><span class="p">(</span><span class="s2">&quot;attempt to delete a vault that does not exist: &quot;</span> <span class="o">+</span> <span class="nx">contract</span><span class="p">);</span>
     <span class="p">}</span>
