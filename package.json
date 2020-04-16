@@ -12,7 +12,7 @@
     "test": "./node_modules/.bin/mocha --reporter spec -i -g 'Blockchain subscribe/unsubscribe'",
     "test-realtime": "./node_modules/.bin/mocha --reporter spec -g 'Blockchain subscribe/unsubscribe'",
     "test-all": "./node_modules/.bin/mocha --reporter spec",
-    "test-cov": "istanbul cover node_modules/mocha/bin/_mocha -- -R spec"
+    "test-cov": "nyc --reporter=lcov node_modules/mocha/bin/_mocha -- -R spec"
   },
   "repository": {
     "type": "git",
@@ -44,6 +44,7 @@
     "diff": ">=3.5.0",
     "growl": ">=1.10.0",
     "istanbul": "^0.4.3",
-    "mocha": "^7.0.1"
+    "mocha": "^7.0.1",
+    "nyc": "^15.0.1"
   }
 }
