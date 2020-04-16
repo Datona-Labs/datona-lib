@@ -108,7 +108,7 @@ class TcpClient extends DatonaClient {
 class DatonaConnector {
 
   constructor(url, localPrivateKey, remoteAddress) {
-    assert.isObject(url, "url");
+    assert.isUrl(url, "url");
     assert.isString(url.scheme, "url.scheme");
     assert.isInstanceOf(localPrivateKey, "localPrivateKey", crypto.Key);
     assert.isAddress(remoteAddress, "remoteAddress");

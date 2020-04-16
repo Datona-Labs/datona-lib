@@ -259,7 +259,7 @@ class Contract {
       if (!vaultFile.isValid) throw new errors.TypeError("Contract getPermissions fileId: invalid filename");
       fileToCheck = vaultFile.hasDirectory ? vaultFile.directory : vaultFile.file;
     }
-    if (this.address === undefined) throw new errors.BlockchainError("Contract.isPermitted: contract has not been deployed or mapped to an existing contract");
+    if (this.address === undefined) throw new errors.BlockchainError("Contract.getPermissions: contract has not been deployed or mapped to an existing contract");
     return this.call("getPermissions", [requester, fileToCheck])
         .then( function(permissions){
           return new Permissions(permissions);
