@@ -557,7 +557,13 @@ describe("Blockchain", function() {
           expect(function() {
             contract.canRead(requester.address, FILE_WITH_PERMISSIONS_RWA+"0");
           })
-              .to.throw(DatonaErrors.TypeError, "Contract getPermissions fileId: invalid filename");
+              .to.throw(DatonaErrors.TypeError, "Contract getPermissions fileId: invalid type. Expected address");
+        });
+
+        it("throws a DatonaError if passed a file with directory part", function() {
+          const localContract = new datona.blockchain.Contract(sdacInterface.abi, contract.address);
+          expect( function() { localContract.canRead(requester.address, file4+"/myfile") })
+            .to.throw(DatonaErrors.TypeError, "Contract getPermissions fileId: invalid type. Expected address");
         });
 
         it("return the correct value for a second time from the same contract", function() {
@@ -600,18 +606,6 @@ describe("Blockchain", function() {
           const localContract = new datona.blockchain.Contract(sdacInterface.abi, contract.address);
           return localContract.canRead(requester.address, file4)
             .should.eventually.equal(true);
-        });
-
-        it("returns true if the requester tries to access a specific file within a readable directory", function() {
-          const localContract = new datona.blockchain.Contract(sdacInterface.abi, contract.address);
-          return localContract.canRead(requester.address, file4+"/myfile")
-            .should.eventually.equal(true);
-        });
-
-        it("returns false if the requester tries to access a specific file within a non-readable directory", function() {
-          const localContract = new datona.blockchain.Contract(sdacInterface.abi, contract.address);
-          return localContract.canRead(requester.address, file5+"/myfile")
-            .should.eventually.equal(false);
         });
 
       });
@@ -660,7 +654,13 @@ describe("Blockchain", function() {
         expect(function() {
           contract.canWrite(requester.address, FILE_WITH_PERMISSIONS_RWA+"0");
         })
-            .to.throw(DatonaErrors.TypeError, "Contract getPermissions fileId: invalid filename");
+            .to.throw(DatonaErrors.TypeError, "Contract getPermissions fileId: invalid type. Expected address");
+      });
+
+      it("throws a DatonaError if passed a file with directory part", function() {
+        const localContract = new datona.blockchain.Contract(sdacInterface.abi, contract.address);
+        expect( function() { localContract.canWrite(requester.address, file4+"/myfile") })
+          .to.throw(DatonaErrors.TypeError, "Contract getPermissions fileId: invalid type. Expected address");
       });
 
       it("return the correct vaule for a second time from the same contract", function() {
@@ -703,18 +703,6 @@ describe("Blockchain", function() {
         const localContract = new datona.blockchain.Contract(sdacInterface.abi, contract.address);
         return localContract.canWrite(requester.address, file5)
           .should.eventually.equal(true);
-      });
-
-      it("returns true if the requester tries to write to a specific file within a writable directory", function() {
-        const localContract = new datona.blockchain.Contract(sdacInterface.abi, contract.address);
-        return localContract.canWrite(requester.address, file5+"/myfile")
-          .should.eventually.equal(true);
-      });
-
-      it("returns false if the requester tries to write to a specific file within a non-writable directory", function() {
-        const localContract = new datona.blockchain.Contract(sdacInterface.abi, contract.address);
-        return localContract.canWrite(requester.address, file4+"/myfile")
-          .should.eventually.equal(false);
       });
 
     });
@@ -763,7 +751,13 @@ describe("Blockchain", function() {
         expect(function() {
           contract.canAppend(requester.address, FILE_WITH_PERMISSIONS_RWA+"0");
         })
-            .to.throw(DatonaErrors.TypeError, "Contract getPermissions fileId: invalid filename");
+            .to.throw(DatonaErrors.TypeError, "Contract getPermissions fileId: invalid type. Expected address");
+      });
+
+      it("throws a DatonaError if passed a file with directory part", function() {
+        const localContract = new datona.blockchain.Contract(sdacInterface.abi, contract.address);
+        expect( function() { localContract.canAppend(requester.address, file4+"/myfile") })
+          .to.throw(DatonaErrors.TypeError, "Contract getPermissions fileId: invalid type. Expected address");
       });
 
       it("return the correct vaule for a second time from the same contract", function() {
@@ -806,18 +800,6 @@ describe("Blockchain", function() {
         const localContract = new datona.blockchain.Contract(sdacInterface.abi, contract.address);
         return localContract.canAppend(requester.address, file5)
           .should.eventually.equal(true);
-      });
-
-      it("returns true if the requester tries to append to a specific file within a appendable directory", function() {
-        const localContract = new datona.blockchain.Contract(sdacInterface.abi, contract.address);
-        return localContract.canAppend(requester.address, file5+"/myfile")
-          .should.eventually.equal(true);
-      });
-
-      it("returns false if the requester tries to append to a specific file within a non-appendable directory", function() {
-        const localContract = new datona.blockchain.Contract(sdacInterface.abi, contract.address);
-        return localContract.canAppend(requester.address, file4+"/myfile")
-          .should.eventually.equal(false);
       });
 
     });

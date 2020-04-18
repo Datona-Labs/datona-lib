@@ -274,7 +274,9 @@ describe("System Scenarios", function() {
 
 
   /*
-   * Scenario 2 - One file for owner data, another for Requester to append log entries
+   * Scenario 2 - Specific file rwa access
+   *
+   * One file for owner data, another for Requester to append log entries
    *
    *   - Owner deploys a vault with 'Hello World!' in a file.
    *   - Requester reads the owner's vault file
@@ -421,10 +423,16 @@ describe("System Scenarios", function() {
 
 
   /*
-   * Scenario 3 - KYC Verification
+   * Scenario 3 - Files in Directories
    *
-   * An online verification company verifies a customer's ID and provides a cryptographic signature of their name, age and address.
-   * During this scenario, the verifier rejects the customer's proof of address and the customer uploads a new one.
+   * KYC Verification:
+   *   An online verification company verifies a customer's ID and provides a cryptographic signature of their name, age and address.
+   *   During this scenario, the verifier rejects the customer's proof of address and the customer uploads a new one.
+   *
+   * Customer has his own directory that he can append files to but cannot overwrite.  (Verifier has read-only access).
+   * Verifier has:
+   *   1) a log file that he can append data to but cannot overwrite.  (Customer has read-only access)
+   *   2) a writeable file to save his cryptographic signature to.  (Customer has read-only access)
    *
    * TODO: Update to write files instead of strings, once file support is in place
    *
@@ -445,7 +453,9 @@ describe("System Scenarios", function() {
    *   - Owner instructs the vault service to delete the vault
    *
    * During this test scenario, various negative checks are made:
-   *   - Customer tries to overwrite his photo ID file mid way through
+   *   - Customer tries to append data directly to his directory
+   *   - Customer tries to overwrite his photo ID file
+   *   - Verifier tries to overwrite his log file
    *
    * Customer's directory uses TestContract file 4: owner:da, requester:dr
    * Verifiers's log uses TestContract File 3: owner:r, requester:a
@@ -475,6 +485,12 @@ describe("System Scenarios", function() {
       const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
       return vault.create()
         .then( expectSuccessResponse );
+    });
+
+    it( "[Customer tries to append data directly to his directory]", function(){
+      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
+      return vault.append("My passport", customersDirectory)
+        .should.eventually.be.rejectedWith(DatonaErrors.PermissionError, "Cannot append data to a directory");
     });
 
     it( "Customer writes his photo ID to his directory", function(){
@@ -533,6 +549,12 @@ describe("System Scenarios", function() {
         });
     });
 
+    it( "[Customer tries to overwrite his existing proof of address]", function(){
+      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
+      return vault.write("My new proof of address", customersDirectory+"/proof_of_address.pdf")
+        .should.eventually.be.rejectedWith(DatonaErrors.PermissionError, "permission denied");
+    });
+
     it( "Customer adds new proof of address to his directory", function(){
       const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
       return vault.append("My new proof of address", customersDirectory+"/proof_of_address2.pdf")
@@ -553,6 +575,12 @@ describe("System Scenarios", function() {
         .then( function(data){
           expect(data).to.equal("My new proof of address");
         });
+    });
+
+    it( "[Verifier tries to overwrite his logfile]", function(){
+      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, requesterKey, vaultOwner.address);
+      return vault.write("sinister re-write of history", verifiersLog)
+        .should.eventually.be.rejectedWith(DatonaErrors.PermissionError, "permission denied");
     });
 
     it( "Verifier logs verification complete", function(){

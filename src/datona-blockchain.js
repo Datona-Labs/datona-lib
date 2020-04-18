@@ -26,7 +26,6 @@
 
 const CONFIG = require('../config.json');
 const crypto = require('./datona-crypto');
-const types = require('./types');
 const errors = require('./errors');
 const assert = require('./assertions');
 const Web3 = require('web3');
@@ -252,15 +251,10 @@ class Contract {
    */
   getPermissions(requester, fileId) {
     assert.isAddress(requester, "Contract getPermissions requester");
-    var fileToCheck = undefined;
-    if (fileId === undefined) fileToCheck = Contract.ROOT_DIRECTORY;
-    else{
-      const vaultFile = new types.VaultFilename(fileId);
-      if (!vaultFile.isValid) throw new errors.TypeError("Contract getPermissions fileId: invalid filename");
-      fileToCheck = vaultFile.hasDirectory ? vaultFile.directory : vaultFile.file;
-    }
+    if (fileId === undefined) fileId = Contract.ROOT_DIRECTORY;
+    else assert.isAddress(fileId, "Contract getPermissions fileId");
     if (this.address === undefined) throw new errors.BlockchainError("Contract.getPermissions: contract has not been deployed or mapped to an existing contract");
-    return this.call("getPermissions", [requester, fileToCheck])
+    return this.call("getPermissions", [requester, fileId])
         .then( function(permissions){
           return new Permissions(permissions);
         });

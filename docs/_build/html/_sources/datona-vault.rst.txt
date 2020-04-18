@@ -7,6 +7,48 @@ datona-vault
 .. _RemoteVault:
 
 ****************************
+Class VaultFilename
+****************************
+
+A parsed vault filename with extracted file and directory parts and other properties.  See the :ref:`VaultFile<Types>` type.
+
+Properties
+==========
+
+* ``fullFilename`` *(String)* - the original filename passed to the constructor
+* ``file`` *(String)* - the file part of the filename.
+* ``directory`` *(String)* - the directory part of the filename (an Address).
+* ``hasDirectory`` *(boolean)* - true if the filename has a directory part.
+* ``isValid`` *(boolean)* - true if the filename is valid in accordance with the :ref:`protocol<VaultFilename>`.
+
+Constructor
+===========
+
+Parses and validates a filename string, setting the properties above.
+
+.. code-block:: javascript
+
+    new VaultFilename(filename);
+
+----------
+Parameters
+----------
+
+1. ``filename`` *(String)* - name of the vault file to parse
+
+-------
+Example
+-------
+
+.. code-block:: javascript
+
+    const vaultFile = new VaultFilename("0x0000000000000000000000000000000000000002/my_file.txt");
+    if (!vaultFile.isValid) throw new datona.errors.TypeError("invalid filename");
+
+-----------------------------------------------------------------------------
+
+
+****************************
 Class RemoteVault
 ****************************
 

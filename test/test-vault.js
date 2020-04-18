@@ -844,65 +844,172 @@ describe("Vault", function() {
     });
 
 
+    function commonRWATests({ keeper, requestType, command, permission, inversePermissions, dataToWrite }){
+
+      describe("Malformed Transactions", function() {
+
+        it("resolves an error response with a MalformedTransactionError if the request has a invalid file", function () {
+          const request = {
+            txnType: "VaultRequest",
+            requestType: requestType,
+            contract: contractAddress,
+            file: zeroAddress + "0",
+            data: dataToWrite
+          };
+          return keeper[command](request, owner.address)
+            .then(function (response) {
+              checkErrorResponse(response, "MalformedTransactionError");
+            });
+        });
+
+        it("resolves an error response with a MalformedTransactionError if the request file has nested directories", function () {
+          const invalidFile = zeroAddress + "/" + zeroAddress + "/myfile.txt";
+          const request = {
+            txnType: "VaultRequest",
+            requestType: requestType,
+            contract: contractAddress,
+            file: invalidFile,
+            data: dataToWrite
+          };
+          return keeper[command](request, owner.address)
+            .then(function (response) {
+              checkErrorResponse(response, "MalformedTransactionError");
+            });
+        });
+
+      });
+
+
+      describe("Contract Expiry", function() {
+
+        it("resolves an error response with a ContractExpiryError if the contract has expired", function() {
+          contractStub = { owner: owner.address, expired: true, permissions: createPermissions( zeroAddress, owner.address, "rwa") };
+          const request = {txnType: "VaultRequest", requestType: requestType, contract: contractAddress, file: zeroAddress, data: dataToWrite};
+          const requestStr = datona.comms.encodeTransaction(request, ownerKey);
+          return keeper.handleSignedRequest(requestStr)
+            .then( function(response){
+              checkSignedErrorResponse(response, "ContractExpiryError");
+            });
+        });
+
+      });
+
+
+      describe("Requests on the root vault (i.e. with no file specified in the request)", function() {
+
+        it("resolves an error response with a PermissionError if the signatory is not permitted to " + requestType + " the root vault", function () {
+          contractStub = { owner: owner.address, expired: false, permissions: createPermissions(zeroAddress, owner.address, inversePermissions) };
+          const request = { txnType: "VaultRequest", requestType: requestType, contract: contractAddress, data: dataToWrite };
+          const requestStr = datona.comms.encodeTransaction(request, ownerKey);
+          return keeper.handleSignedRequest(requestStr)
+            .then(function (response) {
+              checkSignedErrorResponse(response, "PermissionError");
+            });
+        });
+
+        it(requestType + " the root vault resolves with a success response if all is well", function () {
+          contractStub = { owner: owner.address, expired: false, permissions: createPermissions(zeroAddress, owner.address, permission) };
+          const request = { txnType: "VaultRequest", requestType: requestType, contract: contractAddress, data: dataToWrite };
+          const requestStr = datona.comms.encodeTransaction(request, ownerKey);
+          return keeper.handleSignedRequest(requestStr)
+            .then(expectSuccessResponse)
+            .then(function (response) {
+              expect(response.txn.data.request).to.equal(requestType);
+            });
+        });
+
+      });
+
+
+      describe("Requests for a specific file", function() {
+
+        it("resolves an error response with a PermissionError if the signatory does not have permission to "+requestType, function() {
+          const randomFile = "0x388b32F2653C1d72043d240A7F938a114Ab69584";
+          contractStub = { owner: owner.address, expired: false, permissions: createPermissions( randomFile, owner.address, inversePermissions) };
+          const request = {txnType: "VaultRequest", requestType: requestType, contract: contractAddress, file: randomFile, data: dataToWrite};
+          const requestStr = datona.comms.encodeTransaction(request, ownerKey);
+          return keeper.handleSignedRequest(requestStr)
+            .then( function(response){
+              checkSignedErrorResponse(response, "PermissionError");
+            });
+        });
+
+        it(requestType+" a specific file resolves with a success response if all is well", function() {
+          const randomFile = "0x388b32F2653C1d72043d240A7F938a114Ab69584";
+          contractStub = { owner: owner.address, expired: false, permissions: createPermissions( randomFile, owner.address, permission) };
+          const request = {txnType: "VaultRequest", requestType: requestType, contract: contractAddress, file: randomFile, data: dataToWrite};
+          const requestStr = datona.comms.encodeTransaction(request, ownerKey);
+          return keeper.handleSignedRequest(requestStr)
+            .then( expectSuccessResponse )
+            .then( function(response){
+              expect(response.txn.data.request).to.equal(requestType);
+            });
+        });
+
+      });
+
+
+      describe("A file within a directory inherits its permissions from its parent directory", function() {
+
+        it("resolves an error response with a PermissionError if the signatory is not permitted to "+requestType+" the parent directory", function() {
+          const randomDir = "0x388b32F2653C1d72043d240A7F938a114Ab69584";
+          const fileToAccess = randomDir+"/file1.txt";
+          contractStub = { owner: owner.address, expired: false, permissions: createPermissions( randomDir, owner.address, "d"+inversePermissions) };
+          const request = {txnType: "VaultRequest", requestType: requestType, contract: contractAddress, file: fileToAccess, data: dataToWrite};
+          const requestStr = datona.comms.encodeTransaction(request, ownerKey);
+          return keeper.handleSignedRequest(requestStr)
+            .then( function(response){
+              checkSignedErrorResponse(response, "PermissionError");
+            });
+        });
+
+        it(requestType+" a file within a directory resolves with a success response if the signatory is permitted to "+requestType+" the parent directory", function() {
+          const randomDir = "0x388b32F2653C1d72043d240A7F938a114Ab69584";
+          const fileToAccess = randomDir+"/file1.txt";
+          contractStub = { owner: owner.address, expired: false, permissions: createPermissions( randomDir, owner.address, "d"+permission) };
+          const request = {txnType: "VaultRequest", requestType: requestType, contract: contractAddress, file: fileToAccess, data: dataToWrite};
+          const requestStr = datona.comms.encodeTransaction(request, ownerKey);
+          return keeper.handleSignedRequest(requestStr)
+            .then( expectSuccessResponse )
+            .then( function(response){
+              expect(response.txn.data.request).to.equal(requestType);
+              expect(response.txn.data.file).to.equal(fileToAccess);
+              expect(response.txn.data.data).to.equal(dataToWrite);
+            });
+        });
+
+      });
+
+    }
+
+
+
     describe("readVault", function(){
 
       const dataServer = new MyDataServer();
       const keeper = new datona.vault.VaultKeeper(dataServer, requesterKey);
 
-      testParameters(keeper.readVault.bind(keeper), "read");
+      describe("parameters", () => { testParameters(keeper.readVault.bind(keeper), "read") });
 
-      it("resolves an error response with a ContractExpiryError if the contract has expired", function() {
-        contractStub = { owner: owner.address, expired: true, permissions: createPermissions( zeroAddress, owner.address, "rwa") };
-        const request = {txnType: "VaultRequest", requestType: "read", contract: contractAddress, file: zeroAddress};
-        const requestStr = datona.comms.encodeTransaction(request, ownerKey);
-        return keeper.handleSignedRequest(requestStr)
-            .then( function(response){
-              checkSignedErrorResponse(response, "ContractExpiryError");
-            });
-      });
+      commonRWATests({
+        keeper: keeper,
+        requestType: "read",
+        command: "readVault",
+        permission: "r",
+        inversePermissions: "wa",
+        dataToWrite: undefined });
 
-      it("resolves an error response with a PermissionError if the signatory is not permitted to access the root vault", function() {
-        contractStub = { owner: owner.address, expired: false, permissions: createPermissions( zeroAddress, owner.address, "wa") };
-        const request = {txnType: "VaultRequest", requestType: "read", contract: contractAddress, file: zeroAddress};
-        const requestStr = datona.comms.encodeTransaction(request, ownerKey);
-        return keeper.handleSignedRequest(requestStr)
-          .then( function(response){
-            checkSignedErrorResponse(response, "PermissionError");
-          });
-      });
-
-      it("reading from the root vault resolves with a success response if all is well", function() {
-        contractStub = { owner: owner.address, expired: false, permissions: createPermissions( zeroAddress, owner.address, "r") };
-        const request = {txnType: "VaultRequest", requestType: "read", contract: contractAddress, file: zeroAddress};
+      it("Reading a directory causes the VaultDataServer's readDir function to be called", function() {
+        const randomDir = "0x388b32F2653C1d72043d240A7F938a114Ab69584";
+        contractStub = { owner: owner.address, expired: false, permissions: createPermissions( randomDir, owner.address, "dr") };
+        const request = {txnType: "VaultRequest", requestType: "read", contract: contractAddress, file: randomDir};
         const requestStr = datona.comms.encodeTransaction(request, ownerKey);
         return keeper.handleSignedRequest(requestStr)
           .then( expectSuccessResponse )
           .then( function(response){
-            expect(response.txn.data.request).to.equal("read");
+            expect(response.txn.data.request).to.equal("readDir");
+            expect(response.txn.data.dir).to.equal(randomDir);
           });
-      });
-
-      it("resolves an error response with a PermissionError if the signatory is not permitted to access a non-root vault", function() {
-        const randomFile = "0x388b32F2653C1d72043d240A7F938a114Ab69584";
-        contractStub = { owner: owner.address, expired: false, permissions: createPermissions( randomFile, owner.address, "wa") };
-        const request = {txnType: "VaultRequest", requestType: "read", contract: contractAddress, file: randomFile};
-        const requestStr = datona.comms.encodeTransaction(request, ownerKey);
-        return keeper.handleSignedRequest(requestStr)
-            .then( function(response){
-              checkSignedErrorResponse(response, "PermissionError");
-            });
-      });
-
-      it("reading from a non-root file resolves with a success response if all is well", function() {
-        const randomFile = "0x388b32F2653C1d72043d240A7F938a114Ab69584";
-        contractStub = { owner: owner.address, expired: false, permissions: createPermissions( randomFile, owner.address, "r") };
-        const request = {txnType: "VaultRequest", requestType: "read", contract: contractAddress, file: randomFile};
-        const requestStr = datona.comms.encodeTransaction(request, ownerKey);
-        return keeper.handleSignedRequest(requestStr)
-          .then( expectSuccessResponse )
-          .then( function(response){
-              expect(response.txn.data.request).to.equal("read");
-            });
       });
 
     });
@@ -913,7 +1020,15 @@ describe("Vault", function() {
       const dataServer = new MyDataServer();
       const keeper = new datona.vault.VaultKeeper(dataServer, requesterKey);
 
-      testParameters(keeper.writeVault.bind(keeper), "write");
+      describe("parameters", () => { testParameters(keeper.writeVault.bind(keeper), "write") });
+
+      commonRWATests({
+        keeper: keeper,
+        requestType: "write",
+        command: "writeVault",
+        permission: "w",
+        inversePermissions: "ra",
+        dataToWrite: "Hello World!" });
 
       it("resolves an error response with a MalformedTransactionError if the request is missing the data", function() {
         const request = {txnType: "VaultRequest", requestType: "write", contract: contractAddress, file: zeroAddress};
@@ -923,60 +1038,16 @@ describe("Vault", function() {
             });
       });
 
-      it("resolves an error response with a PermissionError if the signatory is not permitted to write to the root file", function() {
-        contractStub = { owner: owner.address, expired: false, permissions: createPermissions( zeroAddress, owner.address, "ra") };
-        const request = {txnType: "VaultRequest", requestType: "write", contract: contractAddress, file: zeroAddress, data: "Hello World!"};
+      it("resolves an error response with a PermissionError if trying to write directly to a directory", function() {
+        const randomDir = "0x388b32F2653C1d72043d240A7F938a114Ab69584";
+        const fileToWriteTo = randomDir;
+        contractStub = { owner: owner.address, expired: false, permissions: createPermissions( randomDir, owner.address, "dw") };
+        const request = {txnType: "VaultRequest", requestType: "write", contract: contractAddress, file: fileToWriteTo, data: "Hello World!"};
         const requestStr = datona.comms.encodeTransaction(request, ownerKey);
         return keeper.handleSignedRequest(requestStr)
-            .then( function(response){
-              checkSignedErrorResponse(response, "PermissionError");
-            });
-      });
-
-      it("resolves an error response with a ContractExpiryError if the contract has expired", function() {
-        contractStub = { owner: owner.address, expired: true, permissions: createPermissions( zeroAddress, owner.address, "rwa") };
-        const request = {txnType: "VaultRequest", requestType: "write", contract: contractAddress, file: zeroAddress, data: "Hello World!"};
-        const requestStr = datona.comms.encodeTransaction(request, ownerKey);
-        return keeper.handleSignedRequest(requestStr)
-            .then( function(response){
-              checkSignedErrorResponse(response, "ContractExpiryError");
-            });
-      });
-
-      it("writing to the root vault resolves with a success response if all is well", function() {
-        contractStub = { owner: owner.address, expired: false, permissions: createPermissions( zeroAddress, owner.address, "w") };
-        const request = {txnType: "VaultRequest", requestType: "write", contract: contractAddress, file: zeroAddress, data: "Hello World!"};
-        const requestStr = datona.comms.encodeTransaction(request, ownerKey);
-        return keeper.handleSignedRequest(requestStr)
-          .then( expectSuccessResponse )
           .then( function(response){
-              expect(response.txn.data.request).to.equal("write");
-              expect(response.txn.data.data).to.equal("Hello World!");
-            });
-      });
-
-      it("resolves an error response with a PermissionError if the signatory is not permitted to write to a non-root file", function() {
-        const randomFile = "0x388b32F2653C1d72043d240A7F938a114Ab69584";
-        contractStub = { owner: owner.address, expired: false, permissions: createPermissions( randomFile, owner.address, "ra") };
-        const request = {txnType: "VaultRequest", requestType: "write", contract: contractAddress, file: randomFile, data: "Hello World!"};
-        const requestStr = datona.comms.encodeTransaction(request, ownerKey);
-        return keeper.handleSignedRequest(requestStr)
-            .then( function(response){
-              checkSignedErrorResponse(response, "PermissionError");
-            });
-      });
-
-      it("writing to a non-root file resolves with a success response if all is well", function() {
-        const randomFile = "0x388b32F2653C1d72043d240A7F938a114Ab69584";
-        contractStub = { owner: owner.address, expired: false, permissions: createPermissions( randomFile, owner.address, "w") };
-        const request = {txnType: "VaultRequest", requestType: "write", contract: contractAddress, file: randomFile, data: "Hello World!"};
-        const requestStr = datona.comms.encodeTransaction(request, ownerKey);
-        return keeper.handleSignedRequest(requestStr)
-          .then( expectSuccessResponse )
-          .then( function(response){
-              expect(response.txn.data.request).to.equal("write");
-              expect(response.txn.data.data).to.equal("Hello World!");
-            });
+            checkSignedErrorResponse(response, "PermissionError", "Cannot write to a directory");
+          });
       });
 
     });
@@ -987,7 +1058,15 @@ describe("Vault", function() {
       const dataServer = new MyDataServer();
       const keeper = new datona.vault.VaultKeeper(dataServer, requesterKey);
 
-      testParameters(keeper.appendVault.bind(keeper), "append");
+      describe("parameters", () => { testParameters(keeper.appendVault.bind(keeper), "append") });
+
+      commonRWATests({
+        keeper: keeper,
+        requestType: "append",
+        command: "appendVault",
+        permission: "a",
+        inversePermissions: "rw",
+        dataToWrite: "Hello World!" });
 
       it("resolves an error response with a MalformedTransactionError if the request is missing the data", function() {
         const request = {txnType: "VaultRequest", requestType: "append", contract: contractAddress, file: zeroAddress};
@@ -997,60 +1076,16 @@ describe("Vault", function() {
             });
       });
 
-      it("resolves an error response with a PermissionError if the signatory is not permitted to append to the root file", function() {
-        contractStub = { owner: owner.address, expired: false, permissions: createPermissions( zeroAddress, owner.address, "rw") };
-        const request = {txnType: "VaultRequest", requestType: "append", contract: contractAddress, file: zeroAddress, data: "Hello World!"};
+      it("resolves an error response with a PermissionError if trying to append directly to a directory", function() {
+        const randomDir = "0x388b32F2653C1d72043d240A7F938a114Ab69584";
+        const fileToWriteTo = randomDir;
+        contractStub = { owner: owner.address, expired: false, permissions: createPermissions( randomDir, owner.address, "da") };
+        const request = {txnType: "VaultRequest", requestType: "append", contract: contractAddress, file: fileToWriteTo, data: "Hello World!"};
         const requestStr = datona.comms.encodeTransaction(request, ownerKey);
         return keeper.handleSignedRequest(requestStr)
-            .then( function(response){
-              checkSignedErrorResponse(response, "PermissionError");
-            });
-      });
-
-      it("resolves an error response with a ContractExpiryError if the contract has expired", function() {
-        contractStub = { owner: owner.address, expired: true, permissions: createPermissions( zeroAddress, owner.address, "rwa") };
-        const request = {txnType: "VaultRequest", requestType: "append", contract: contractAddress, file: zeroAddress, data: "Hello World!"};
-        const requestStr = datona.comms.encodeTransaction(request, ownerKey);
-        return keeper.handleSignedRequest(requestStr)
-            .then( function(response){
-              checkSignedErrorResponse(response, "ContractExpiryError");
-            });
-      });
-
-      it("writing to the root vault resolves with a success response if all is well", function() {
-        contractStub = { owner: owner.address, expired: false, permissions: createPermissions( zeroAddress, owner.address, "a") };
-        const request = {txnType: "VaultRequest", requestType: "append", contract: contractAddress, file: zeroAddress, data: "Hello World!"};
-        const requestStr = datona.comms.encodeTransaction(request, ownerKey);
-        return keeper.handleSignedRequest(requestStr)
-          .then( expectSuccessResponse )
           .then( function(response){
-              expect(response.txn.data.request).to.equal("append");
-              expect(response.txn.data.data).to.equal("Hello World!");
-            });
-      });
-
-      it("resolves an error response with a PermissionError if the signatory is not permitted to append to a non-root file", function() {
-        const randomFile = "0x388b32F2653C1d72043d240A7F938a114Ab69584";
-        contractStub = { owner: owner.address, expired: false, permissions: createPermissions( randomFile, owner.address, "rw") };
-        const request = {txnType: "VaultRequest", requestType: "append", contract: contractAddress, file: randomFile, data: "Hello World!"};
-        const requestStr = datona.comms.encodeTransaction(request, ownerKey);
-        return keeper.handleSignedRequest(requestStr)
-            .then( function(response){
-              checkSignedErrorResponse(response, "PermissionError");
-            });
-      });
-
-      it("writing to a non-root file resolves with a success response if all is well", function() {
-        const randomFile = "0x388b32F2653C1d72043d240A7F938a114Ab69584";
-        contractStub = { owner: owner.address, expired: false, permissions: createPermissions( randomFile, owner.address, "a") };
-        const request = {txnType: "VaultRequest", requestType: "append", contract: contractAddress, file: randomFile, data: "Hello World!"};
-        const requestStr = datona.comms.encodeTransaction(request, ownerKey);
-        return keeper.handleSignedRequest(requestStr)
-          .then( expectSuccessResponse )
-          .then( function(response){
-              expect(response.txn.data.request).to.equal("append");
-              expect(response.txn.data.data).to.equal("Hello World!");
-            });
+            checkSignedErrorResponse(response, "PermissionError", "Cannot append data to a directory");
+          });
       });
 
     });

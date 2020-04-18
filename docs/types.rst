@@ -24,10 +24,12 @@ Core Types
     - Name of a file or directory in a vault.  See VaultFile_ below.
 
 
+.. _VaultFilename:
+
 VaultFile
 =========
 
-A VaultFile has the form ``[directory/]<file>``
+A VaultFile name has the form ``[directory/]<file>``
 
 If the directory part is present it must be a single blockchain address and the file part can be any POSIX file name except ``.`` and ``..``
 If not present then the file part must be a single blockchain address.
