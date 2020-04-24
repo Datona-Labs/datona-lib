@@ -138,7 +138,7 @@ class Contract {
         const rawTxn = {
           nonce: nonce,
           gasPrice: web3.utils.toHex(gasPrice),
-          gas: web3.utils.toHex(3000000),
+          gas: web3.utils.toHex(6000000),
           data: txnData,
           from: key.address,
           chainID: 42
