@@ -44,9 +44,9 @@ If you have a project that you feel could be listed here, please [ask for it](ht
 
 ## Tests
 
-By default, the tests are configured to use a local Ganache instance.  Ganache needs to be running before executing any of these test commands.  You will need to set the mnemonic to ``foil message analyst universe oval sport super eye spot easily veteran oblige``.
+By default, the tests are configured to use a local Ganache instance on port 8545.  Ganache needs to be running before executing any of these test commands.  You will need to set the mnemonic to ``foil message analyst universe oval sport super eye spot easily veteran oblige``.
 
-If you want to run these tests using your own blockchain node or a third party service, edit the url in conf.json and ensure the three addresses in ``test/system-scenarios.rst`` have funds.
+If you want to run these tests using your own blockchain node or a third party service, edit the url in config.json and ensure the three addresses in ``test/system-scenarios.rst`` have funds.
 
     $ npm test
 

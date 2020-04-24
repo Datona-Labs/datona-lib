@@ -35,13 +35,48 @@ var web3;
 
 
 /*
+ * Constants
+ */
+
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+
+
+/*
  * Classes
  */
+
+class Permissions {
+
+  constructor (permissionsByte) {
+    if (toString.call(permissionsByte) === '[object Number]') {
+      this.permissions = permissionsByte;
+    }
+    else {
+      assert.matches(permissionsByte, '^0x[0-9A-Fa-f]{2}$', "invalid string representation of permissions byte",permissionsByte);
+      this.permissions = parseInt(permissionsByte);
+    }
+  }
+
+  canRead() { return (this.permissions & Contract.READ_BIT) > 0 }
+  canWrite() { return (this.permissions & Contract.WRITE_BIT) > 0 }
+  canAppend() { return (this.permissions & Contract.APPEND_BIT) > 0 }
+  isDirectory() { return (this.permissions & Contract.DIRECTORY_BIT) > 0 }
+
+}
+
 
 /*
  * Represents a Smart Data Access Contract on the blockchain
  */
 class Contract {
+
+  static NO_PERMISSIONS = 0x00;
+  static ALL_PERMISSIONS = 0x07;
+  static READ_BIT = 0x04;
+  static WRITE_BIT = 0x02;
+  static APPEND_BIT = 0x01;
+  static DIRECTORY_BIT = 0x80;
+  static ROOT_DIRECTORY = "0x0000000000000000000000000000000000000000";
 
   /*
    * If the address is not given this represents a new contract to be deployed.
@@ -103,7 +138,7 @@ class Contract {
         const rawTxn = {
           nonce: nonce,
           gasPrice: web3.utils.toHex(gasPrice),
-          gas: web3.utils.toHex(3000000),
+          gas: web3.utils.toHex(6000000),
           data: txnData,
           from: key.address,
           chainID: 42
@@ -157,7 +192,7 @@ class Contract {
         });
     } else {
       const thisContract = this;
-      return this.call("getOwner")
+      return this.call("owner")
         .then(function(owner) {
           thisContract.owner = owner;
           return owner;
@@ -179,12 +214,50 @@ class Contract {
 
 
   /*
-   * Promises to return whether the given address is permitted to access the vault (boolean)
+   * Promises to return whether the given requester is permitted to read the given vault file (boolean)
    */
-  isPermitted(address) {
-    assert.isAddress(address, "Contract isPermitted address");
-    if (this.address === undefined) throw new errors.BlockchainError("Contract.isPermitted: contract has not been deployed or mapped to an existing contract");
-    return this.call("isPermitted", [address]);
+  canRead(requester, fileId) {
+    return this.getPermissions(requester, fileId)
+        .then( function(permissions){
+          return permissions.canRead();
+        });
+  }
+
+
+  /*
+   * Promises to return whether the given requester is permitted to write to the given vault file (boolean)
+   */
+  canWrite(requester, fileId) {
+    return this.getPermissions(requester, fileId)
+        .then( function(permissions){
+          return permissions.canWrite();
+        });
+  }
+
+
+  /*
+   * Promises to return whether the given requester is permitted to append to the given vault file (boolean)
+   */
+  canAppend(requester, fileId) {
+    return this.getPermissions(requester, fileId)
+        .then( function(permissions){
+          return permissions.canAppend();
+        });
+  }
+
+
+  /*
+   * Promises to return a byte with the d----rwa permissions of the given file for the given user address.
+   */
+  getPermissions(requester, fileId) {
+    assert.isAddress(requester, "Contract getPermissions requester");
+    if (fileId === undefined) fileId = Contract.ROOT_DIRECTORY;
+    else assert.isAddress(fileId, "Contract getPermissions fileId");
+    if (this.address === undefined) throw new errors.BlockchainError("Contract.getPermissions: contract has not been deployed or mapped to an existing contract");
+    return this.call("getPermissions", [requester, fileId])
+        .then( function(permissions){
+          return new Permissions(permissions);
+        });
   }
 
 
@@ -356,14 +429,40 @@ class Contract {
 
 
   /*
-   * Promises to reject if the given address does not have permission to access the vault.
+   * Promises to reject if the given requester does not have permission to access the given vault file.
+   * Also returns the permissions
    */
-  assertIsPermitted(address) {
-    return this.isPermitted(address)
-      .then(function(permitted) {
-        if (!permitted) {
-          throw new errors.PermissionError("permission denied");
-        }
+  assertCanRead(requester, fileId) {
+    return this.getPermissions(requester, fileId)
+      .then( function(permissions){
+        _assertPermitted(permissions.canRead());
+        return permissions;
+      });
+  }
+
+
+  /*
+   * Promises to reject if the given requester does not have permission to write to the given vault file.
+   * Also returns the permissions
+   */
+  assertCanWrite(requester, fileId) {
+    return this.getPermissions(requester, fileId)
+      .then( function(permissions){
+        _assertPermitted(permissions.canWrite());
+        return permissions;
+      });
+  }
+
+
+  /*
+   * Promises to reject if the given requester does not have permission to append to the given vault file.
+   * Also returns the permissions
+   */
+  assertCanAppend(requester, fileId) {
+    return this.getPermissions(requester, fileId)
+      .then( function(permissions){
+        _assertPermitted(permissions.canAppend());
+        return permissions;
       });
   }
 
@@ -382,21 +481,6 @@ class GenericSmartDataAccessContract extends Contract {
   }
 
 }
-
-
-
-/*
- * Exports
- */
-
-module.exports = {
-  setProvider: setProvider,
-  Contract: Contract,
-  GenericSmartDataAccessContract: GenericSmartDataAccessContract,
-  subscribe: subscribe,
-  unsubscribe: unsubscribe,
-  close: close
-};
 
 
 
@@ -442,11 +526,14 @@ function setProvider(url) {
  * blockchain with the given code hash.  Optionally, the client can receive notification
  * only if the given address is permitted to access the data controlled by the contract.
  */
-function subscribe(bytecodeHash, callback, permittedAddress) {
+function subscribe(bytecodeHash, callback, permittedAddress, fileId) {
   assert.isHash(bytecodeHash, "subscribe bytecodeHash");
   assert.isFunction(callback, "subscribe callback");
   if (permittedAddress !== undefined) {
-    assert.isAddress(permittedAddress);
+    assert.isAddress(permittedAddress, "subscribe permittedAddress");
+  }
+  if (fileId !== undefined){
+    assert.isAddress(fileId, "subscribe fileId");
   }
 
   // subscribe to web3 if this is the first client subscription
@@ -456,7 +543,9 @@ function subscribe(bytecodeHash, callback, permittedAddress) {
   const subscription = {
     bytecodeHash: bytecodeHash,
     callback: callback,
-    permittedAddress: permittedAddress };
+    permittedAddress: permittedAddress,
+    fileId: fileId
+  };
   const subscriptionHash = crypto.hash(JSON.stringify(subscription));
   subscription.hash = subscriptionHash;
   subscriptions.push(subscription);
@@ -497,6 +586,23 @@ function close(){
     }
   }
 }
+
+
+
+/*
+ * Exports
+ */
+
+module.exports = {
+  ZERO_ADDRESS: ZERO_ADDRESS,
+  setProvider: setProvider,
+  Contract: Contract,
+  Permissions: Permissions,
+  GenericSmartDataAccessContract: GenericSmartDataAccessContract,
+  subscribe: subscribe,
+  unsubscribe: unsubscribe,
+  close: close
+};
 
 
 
@@ -559,8 +665,8 @@ function checkAndInformSubscriber(bytecodeHash, contractAddress) {
       if (subscription.permittedAddress === undefined) {
         subscription.callback(contractAddress, subscription.bytecodeHash);
       } else {
-        var contract = new web3.eth.Contract(sdacInterface.abi, contractAddress);
-        contract.methods["isPermitted"](subscription.permittedAddress).call()
+        const contract = new Contract(sdacInterface.abi, contractAddress);
+        contract.canRead(subscription.permittedAddress, subscription.fileId)
           .then(function(result, error) {
             if (result === true) {
               subscription.callback(contractAddress, subscription.bytecodeHash);
@@ -573,3 +679,15 @@ function checkAndInformSubscriber(bytecodeHash, contractAddress) {
     }
   }
 }
+
+
+/*
+ * Local callback function to throw a PermissionError if permitted parameter is not true
+ */
+function _assertPermitted(permitted) {
+  if (!permitted) {
+    throw new errors.PermissionError("permission denied");
+  }
+}
+
+

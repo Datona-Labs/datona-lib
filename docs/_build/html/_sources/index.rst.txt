@@ -8,7 +8,7 @@
 Welcome to the Datona-Lib documentation
 #######################################
 
-Version 0.0.1.
+Version 0.0.2.
 
 *This is an alpha version designed for experimental use only.*
 

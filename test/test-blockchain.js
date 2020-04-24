@@ -9,6 +9,22 @@ const DatonaErrors = datona.errors;
 const sdacInterface = require("../contracts/SDAC.json");
 const testSDAC = require("../contracts/TestContract.json");
 
+// From TestContract.sol...
+// Permissions are set to support a variety of tests:
+//   - Vault Root: owner:rwa, requester:r
+//   - File 1: owner:wa, requester:r
+//   - File 2: owner:r, requester:w
+//   - File 3: owner:r, requester:a
+//   - File 4: owner:da, requester:dr
+//   - File 5: owner:dr, requester:dwa
+//   - File 6: owner:rwa, requester:-
+const file1 = "0x0000000000000000000000000000000000000001";
+const file2 = "0x0000000000000000000000000000000000000002";
+const file3 = "0x0000000000000000000000000000000000000003";
+const file4 = "0x0000000000000000000000000000000000000004";
+const file5 = "0x0000000000000000000000000000000000000005";
+const file6 = "0x0000000000000000000000000000000000000006";
+
 // Ganache Mnemonic used to generate keys:
 //   foil message analyst universe oval sport super eye spot easily veteran oblige
 const owner = { // taken from Ganache
@@ -24,6 +40,15 @@ const requester = { // taken from Ganache
 const requesterKey = new datona.crypto.Key(requester.privateKey);
 
 const zeroAddress = "0x0000000000000000000000000000000000000000";
+
+// Vault file permissions.  Corresponds to those within the testSDAC
+const ROOT_VAULT_FILE = "0x0000000000000000000000000000000000000000";
+const FILE_WITH_PERMISSIONS_RWA = ROOT_VAULT_FILE;
+const FILE_WITH_PERMISSIONS_R = "0x0000000000000000000000000000000000000001";
+const FILE_WITH_PERMISSIONS_W = "0x0000000000000000000000000000000000000002";
+const FILE_WITH_PERMISSIONS_A = "0x0000000000000000000000000000000000000003";
+const FILE_WITH_PERMISSIONS_DRWA = "0x0000000000000000000000000000000000000004";
+
 
 describe("Blockchain", function() {
 
@@ -318,8 +343,8 @@ describe("Blockchain", function() {
 
       it("can be used with SDAC interface", function() {
         const sdac = new datona.blockchain.Contract(sdacInterface.abi, contract.address);
-        return sdac.call("isPermitted", [requester.address])
-          .should.eventually.equal(true);
+        return sdac.call("getPermissions", [requester.address, "0x0000000000000000000000000000000000000000"])
+          .should.eventually.equal("0x04");
       });
 
     });
@@ -434,7 +459,7 @@ describe("Blockchain", function() {
           .then(
             function(expired){
               expect(expired).to.equal(false);
-              return sdac.transact(ownerKey, "getOwner");
+              return sdac.transact(ownerKey, "getPermissions", [requester.address, "0x0000000000000000000000000000000000000000"]);
             }
           )
           .then(
@@ -451,42 +476,6 @@ describe("Blockchain", function() {
       });
 
     });
-
-
-      describe(".getOwner", function() {
-
-        it("throws a DatonaError if the contract has not been deployed", function() {
-          const localContract = new datona.blockchain.Contract(testSDAC.abi);
-          expect(function() {
-              return localContract.getOwner();
-            })
-            .to.throw(DatonaErrors.BlockchainError, "contract has not been deployed or mapped to an existing contract");
-        });
-
-        it("return the correct address after deploying", function() {
-          return contract.getOwner()
-            .should.eventually.satisfy((addr) => addr.toUpperCase() == owner.address.toUpperCase());
-        });
-
-        it("return the correct address for a second time from the same contract", function() {
-          return contract.getOwner()
-            .should.eventually.satisfy((addr) => addr.toUpperCase() == owner.address.toUpperCase());
-        });
-
-        it("return the correct address after mapping address to existing contract", function() {
-          const localContract = new datona.blockchain.Contract(testSDAC.abi);
-          localContract.setAddress(contract.address);
-          return localContract.getOwner()
-            .should.eventually.satisfy((addr) => addr.toUpperCase() == owner.address.toUpperCase());
-        });
-
-        it("can be used with SDAC interface", function() {
-          const localContract = new datona.blockchain.Contract(sdacInterface.abi, contract.address);
-          return localContract.getOwner()
-            .should.eventually.satisfy((addr) => addr.toUpperCase() == owner.address.toUpperCase());
-        });
-
-      });
 
 
       describe(".hasExpired", function() {
@@ -525,62 +514,298 @@ describe("Blockchain", function() {
       });
 
 
-      describe(".isPermitted", function() {
+      describe(".canRead", function() {
 
         it("throws a DatonaError if the contract has not been deployed", function() {
           const localContract = new datona.blockchain.Contract(testSDAC.abi);
           expect(function() {
-              return localContract.isPermitted(requester.address);
+              return localContract.canRead(requester.address);
             })
             .to.throw(DatonaErrors.BlockchainError, "contract has not been deployed or mapped to an existing contract");
         });
 
         it("return the correct value after deploying", function() {
-          return contract.isPermitted(requester.address)
+          return contract.canRead(requester.address)
             .should.eventually.equal(true);
         });
 
-        it("throws a DatonaError if the address is missing", function() {
-          expect(function() {
-              contract.isPermitted();
-            })
-            .to.throw(DatonaErrors.TypeError, "address is missing");
+        it("returns true when permitted to access a specific file", function() {
+          return contract.canRead(requester.address, FILE_WITH_PERMISSIONS_R)
+              .should.eventually.equal(true);
         });
 
-        it("throws a DatonaError if the address is not an address", function() {
+        it("returns false when not permitted to access a specific file", function() {
+          return contract.canRead(requester.address, FILE_WITH_PERMISSIONS_W)
+              .should.eventually.equal(false);
+        });
+
+        it("throws a DatonaError if the requester is missing", function() {
           expect(function() {
-              contract.isPermitted(requester.address+"0");
+              contract.canRead();
+            })
+            .to.throw(DatonaErrors.TypeError, "requester is missing");
+        });
+
+        it("throws a DatonaError if the requester is not an address", function() {
+          expect(function() {
+              contract.canRead(requester.address+"0");
             })
             .to.throw(DatonaErrors.TypeError, "Expected address");
         });
 
-        it("return the correct vaule for a second time from the same contract", function() {
-          return contract.isPermitted(requester.address)
+        it("throws a DatonaError if the fileId is not a vault file", function() {
+          expect(function() {
+            contract.canRead(requester.address, FILE_WITH_PERMISSIONS_RWA+"0");
+          })
+              .to.throw(DatonaErrors.TypeError, "Contract getPermissions fileId: invalid type. Expected address");
+        });
+
+        it("throws a DatonaError if passed a file with directory part", function() {
+          const localContract = new datona.blockchain.Contract(sdacInterface.abi, contract.address);
+          expect( function() { localContract.canRead(requester.address, file4+"/myfile") })
+            .to.throw(DatonaErrors.TypeError, "Contract getPermissions fileId: invalid type. Expected address");
+        });
+
+        it("return the correct value for a second time from the same contract", function() {
+          return contract.canRead(requester.address)
             .should.eventually.equal(true);
         });
 
-        it("returns false if the address is not permitted access", function() {
-          return contract.isPermitted(owner.address)
+        it("returns false if the requester is not permitted access", function() {
+          const randomAddress = "0x288b32F2653C1d72043d240A7F938a114Ab69584";
+          return contract.canRead(randomAddress)
             .should.eventually.equal(false);
         });
 
         it("return the correct value after mapping address to existing contract", function() {
           const localContract = new datona.blockchain.Contract(testSDAC.abi);
           localContract.setAddress(contract.address);
-          return localContract.isPermitted(requester.address)
+          return localContract.canRead(requester.address)
             .should.eventually.equal(true)
         });
 
         it("can be used with SDAC interface", function() {
           const localContract = new datona.blockchain.Contract(sdacInterface.abi, contract.address);
-          return localContract.isPermitted(requester.address)
+          return localContract.canRead(requester.address)
+            .should.eventually.equal(true);
+        });
+
+        it("returns true if the requester is permitted to access the specific file", function() {
+          const localContract = new datona.blockchain.Contract(sdacInterface.abi, contract.address);
+          return localContract.canRead(requester.address, file1)
+            .should.eventually.equal(true);
+        });
+
+        it("returns false if the requester is not permitted access to the specific file", function() {
+          const localContract = new datona.blockchain.Contract(sdacInterface.abi, contract.address);
+          return localContract.canRead(requester.address, file2)
+            .should.eventually.equal(false);
+        });
+
+        it("returns true if the requester is permitted to access the specific directory", function() {
+          const localContract = new datona.blockchain.Contract(sdacInterface.abi, contract.address);
+          return localContract.canRead(requester.address, file4)
             .should.eventually.equal(true);
         });
 
       });
 
 
-      describe(".getBytecode", function() {
+    describe(".canWrite", function() {
+
+      it("throws a DatonaError if the contract has not been deployed", function() {
+        const localContract = new datona.blockchain.Contract(testSDAC.abi);
+        expect(function() {
+          return localContract.canWrite(requester.address);
+        })
+            .to.throw(DatonaErrors.BlockchainError, "contract has not been deployed or mapped to an existing contract");
+      });
+
+      it("return the correct value after deploying", function() {
+        return contract.canWrite(owner.address)
+            .should.eventually.equal(true);
+      });
+
+      it("returns true when permitted to write to a specific file", function() {
+        return contract.canWrite(requester.address, FILE_WITH_PERMISSIONS_W)
+            .should.eventually.equal(true);
+      });
+
+      it("returns false when not permitted to write to a specific file", function() {
+        return contract.canWrite(requester.address, FILE_WITH_PERMISSIONS_R)
+            .should.eventually.equal(false);
+      });
+
+      it("throws a DatonaError if the requester is missing", function() {
+        expect(function() {
+          contract.canWrite();
+        })
+            .to.throw(DatonaErrors.TypeError, "requester is missing");
+      });
+
+      it("throws a DatonaError if the requester is not an address", function() {
+        expect(function() {
+          contract.canWrite(requester.address+"0");
+        })
+            .to.throw(DatonaErrors.TypeError, "Expected address");
+      });
+
+      it("throws a DatonaError if the fileId is not an address", function() {
+        expect(function() {
+          contract.canWrite(requester.address, FILE_WITH_PERMISSIONS_RWA+"0");
+        })
+            .to.throw(DatonaErrors.TypeError, "Contract getPermissions fileId: invalid type. Expected address");
+      });
+
+      it("throws a DatonaError if passed a file with directory part", function() {
+        const localContract = new datona.blockchain.Contract(sdacInterface.abi, contract.address);
+        expect( function() { localContract.canWrite(requester.address, file4+"/myfile") })
+          .to.throw(DatonaErrors.TypeError, "Contract getPermissions fileId: invalid type. Expected address");
+      });
+
+      it("return the correct vaule for a second time from the same contract", function() {
+        return contract.canWrite(owner.address)
+            .should.eventually.equal(true);
+      });
+
+      it("returns false if the requester is not permitted access", function() {
+        const randomAddress = "0x288b32F2653C1d72043d240A7F938a114Ab69584";
+        return contract.canWrite(randomAddress)
+            .should.eventually.equal(false);
+      });
+
+      it("return the correct value after mapping address to existing contract", function() {
+        const localContract = new datona.blockchain.Contract(testSDAC.abi);
+        localContract.setAddress(contract.address);
+        return localContract.canWrite(owner.address)
+            .should.eventually.equal(true)
+      });
+
+      it("can be used with SDAC interface", function() {
+        const localContract = new datona.blockchain.Contract(sdacInterface.abi, contract.address);
+        return localContract.canWrite(owner.address)
+            .should.eventually.equal(true);
+      });
+
+      it("returns true if the requester is permitted to write to a specific file", function() {
+        const localContract = new datona.blockchain.Contract(sdacInterface.abi, contract.address);
+        return localContract.canWrite(requester.address, file2)
+          .should.eventually.equal(true);
+      });
+
+      it("returns false if the requester is not permitted to write to a specific file", function() {
+        const localContract = new datona.blockchain.Contract(sdacInterface.abi, contract.address);
+        return localContract.canWrite(requester.address, file1)
+          .should.eventually.equal(false);
+      });
+
+      it("returns true if the requester is permitted to write to a specific directory", function() {
+        const localContract = new datona.blockchain.Contract(sdacInterface.abi, contract.address);
+        return localContract.canWrite(requester.address, file5)
+          .should.eventually.equal(true);
+      });
+
+    });
+
+
+    describe(".canAppend", function() {
+
+      it("throws a DatonaError if the contract has not been deployed", function() {
+        const localContract = new datona.blockchain.Contract(testSDAC.abi);
+        expect(function() {
+          return localContract.canAppend(requester.address);
+        })
+            .to.throw(DatonaErrors.BlockchainError, "contract has not been deployed or mapped to an existing contract");
+      });
+
+      it("return the correct value after deploying", function() {
+        return contract.canAppend(owner.address)
+            .should.eventually.equal(true);
+      });
+
+      it("returns true when permitted to write to a specific file", function() {
+        return contract.canAppend(requester.address, FILE_WITH_PERMISSIONS_A)
+            .should.eventually.equal(true);
+      });
+
+      it("returns false when not permitted to write to a specific file", function() {
+        return contract.canAppend(requester.address, FILE_WITH_PERMISSIONS_R)
+            .should.eventually.equal(false);
+      });
+
+      it("throws a DatonaError if the requester is missing", function() {
+        expect(function() {
+          contract.canAppend();
+        })
+            .to.throw(DatonaErrors.TypeError, "requester is missing");
+      });
+
+      it("throws a DatonaError if the requester is not an address", function() {
+        expect(function() {
+          contract.canAppend(requester.address+"0");
+        })
+            .to.throw(DatonaErrors.TypeError, "Expected address");
+      });
+
+      it("throws a DatonaError if the fileId is not an address", function() {
+        expect(function() {
+          contract.canAppend(requester.address, FILE_WITH_PERMISSIONS_RWA+"0");
+        })
+            .to.throw(DatonaErrors.TypeError, "Contract getPermissions fileId: invalid type. Expected address");
+      });
+
+      it("throws a DatonaError if passed a file with directory part", function() {
+        const localContract = new datona.blockchain.Contract(sdacInterface.abi, contract.address);
+        expect( function() { localContract.canAppend(requester.address, file4+"/myfile") })
+          .to.throw(DatonaErrors.TypeError, "Contract getPermissions fileId: invalid type. Expected address");
+      });
+
+      it("return the correct vaule for a second time from the same contract", function() {
+        return contract.canAppend(owner.address)
+            .should.eventually.equal(true);
+      });
+
+      it("returns false if the requester is not permitted access", function() {
+        const randomAddress = "0x288b32F2653C1d72043d240A7F938a114Ab69584";
+        return contract.canAppend(randomAddress)
+            .should.eventually.equal(false);
+      });
+
+      it("return the correct value after mapping address to existing contract", function() {
+        const localContract = new datona.blockchain.Contract(testSDAC.abi);
+        localContract.setAddress(contract.address);
+        return localContract.canAppend(owner.address)
+            .should.eventually.equal(true)
+      });
+
+      it("can be used with SDAC interface", function() {
+        const localContract = new datona.blockchain.Contract(sdacInterface.abi, contract.address);
+        return localContract.canAppend(owner.address)
+            .should.eventually.equal(true);
+      });
+
+      it("returns true if the requester is permitted to append to a specific file", function() {
+        const localContract = new datona.blockchain.Contract(sdacInterface.abi, contract.address);
+        return localContract.canAppend(requester.address, file3)
+          .should.eventually.equal(true);
+      });
+
+      it("returns false if the requester is not permitted to append to a specific file", function() {
+        const localContract = new datona.blockchain.Contract(sdacInterface.abi, contract.address);
+        return localContract.canAppend(requester.address, file1)
+          .should.eventually.equal(false);
+      });
+
+      it("returns true if the requester is permitted to append to a specific directory", function() {
+        const localContract = new datona.blockchain.Contract(sdacInterface.abi, contract.address);
+        return localContract.canAppend(requester.address, file5)
+          .should.eventually.equal(true);
+      });
+
+    });
+
+
+    describe(".getBytecode", function() {
 
         it("throws a DatonaError if the contract has not been deployed", function() {
           const localContract = new datona.blockchain.Contract(testSDAC.abi);
@@ -692,22 +917,107 @@ describe("Blockchain", function() {
 
       });
 
-      describe(".assertIsPermitted", function() {
+      describe(".assertCanRead", function() {
 
         it("throws a DatonaError if the contract has not been deployed", function() {
           const localContract = new datona.blockchain.Contract(testSDAC.abi);
           expect(function() {
-              return localContract.assertIsPermitted(requester.address);
+              return localContract.assertCanRead(requester.address);
             })
             .to.throw(DatonaErrors.BlockchainError, "contract has not been deployed or mapped to an existing contract");
         });
 
-        it("resolve when the address is permitted", function() {
-          return contract.assertIsPermitted(requester.address)
+        it("resolve when the address is permitted to access the root vault", function() {
+          return contract.assertCanRead(requester.address)
             .should.eventually.be.fulfilled;
         });
 
+        it("reject with PermissionError when the address is not permitted to access the root vault", function() {
+          const randomAddress = "0x288b32F2653C1d72043d240A7F938a114Ab69584";
+          return contract.assertCanRead(randomAddress)
+              .should.eventually.be.rejectedWith(DatonaErrors.PermissionError);
+       });
+
+        it("resolve when the address is permitted to access a specific vault file", function() {
+          return contract.assertCanRead(requester.address, FILE_WITH_PERMISSIONS_R)
+              .should.eventually.be.fulfilled;
+        });
+
+        it("reject with PermissionError when the address is not permitted to access a specific vault file", function() {
+          return contract.assertCanRead(requester.address, FILE_WITH_PERMISSIONS_W)
+              .should.eventually.be.rejectedWith(DatonaErrors.PermissionError);
+        });
+
       });
+
+
+    describe(".assertCanWrite", function() {
+
+      it("throws a DatonaError if the contract has not been deployed", function() {
+        const localContract = new datona.blockchain.Contract(testSDAC.abi);
+        expect(function() {
+          return localContract.assertCanWrite(requester.address);
+        })
+            .to.throw(DatonaErrors.BlockchainError, "contract has not been deployed or mapped to an existing contract");
+      });
+
+      it("resolve when the address is permitted to write to the root vault", function() {
+        return contract.assertCanWrite(owner.address)
+            .should.eventually.be.fulfilled;
+      });
+
+      it("reject with PermissionError when the address is not permitted to write to the root vault", function() {
+        const randomAddress = "0x288b32F2653C1d72043d240A7F938a114Ab69584";
+        return contract.assertCanWrite(randomAddress)
+            .should.eventually.be.rejectedWith(DatonaErrors.PermissionError);
+      });
+
+      it("resolve when the address is permitted to write to a specific vault file", function() {
+        return contract.assertCanWrite(requester.address, FILE_WITH_PERMISSIONS_W)
+            .should.eventually.be.fulfilled;
+      });
+
+      it("reject with PermissionError when the address is not permitted to write to a specific vault file", function() {
+        return contract.assertCanWrite(requester.address, FILE_WITH_PERMISSIONS_A)
+            .should.eventually.be.rejectedWith(DatonaErrors.PermissionError);
+      });
+
+    });
+
+
+    describe(".assertCanAppend", function() {
+
+      it("throws a DatonaError if the contract has not been deployed", function() {
+        const localContract = new datona.blockchain.Contract(testSDAC.abi);
+        expect(function() {
+          return localContract.assertCanAppend(requester.address);
+        })
+            .to.throw(DatonaErrors.BlockchainError, "contract has not been deployed or mapped to an existing contract");
+      });
+
+      it("resolve when the address is permitted to append to the root vault", function() {
+        return contract.assertCanAppend(owner.address)
+            .should.eventually.be.fulfilled;
+      });
+
+      it("reject with PermissionError when the address is not permitted to append to the root vault", function() {
+        const randomAddress = "0x288b32F2653C1d72043d240A7F938a114Ab69584";
+        return contract.assertCanAppend(randomAddress)
+            .should.eventually.be.rejectedWith(DatonaErrors.PermissionError);
+      });
+
+      it("resolve when the address is permitted to append to a specific vault file", function() {
+        return contract.assertCanAppend(requester.address, FILE_WITH_PERMISSIONS_A)
+            .should.eventually.be.fulfilled;
+      });
+
+      it("reject with PermissionError when the address is not permitted to append to a specific vault file", function() {
+        return contract.assertCanAppend(requester.address, FILE_WITH_PERMISSIONS_W)
+            .should.eventually.be.rejectedWith(DatonaErrors.PermissionError);
+      });
+
+    });
+
 
     describe(".terminate", function() {
 
@@ -749,15 +1059,14 @@ describe("Blockchain", function() {
 
     });
 
-    describe(".assertIsPermitted", function() {
+    describe(".assertCanRead", function() {
 
-      it("reject with a PermissionError when the address is not permitted", function() {
-        return contract.assertIsPermitted(owner.address)
+      it("reject with a PermissionError when the contract has been terminated", function() {
+        return contract.assertCanRead(owner.address)
           .should.eventually.be.rejectedWith(DatonaErrors.PermittedError, "permission denied");
       });
 
     });
-
 
   });
 
@@ -891,7 +1200,7 @@ describe("Blockchain", function() {
       it("will receive notification of a deployed contract with permission granted", function() {
         const sdacSH = new SubscriptionHandler();
         assert(sdacSH.contracts.length == 0);
-        const subscriptionId = datona.blockchain.subscribe(bcHash, sdacSH.callback.bind(sdacSH), requester.address, testSDAC.abi);
+        const subscriptionId = datona.blockchain.subscribe(bcHash, sdacSH.callback.bind(sdacSH), requester.address);
         assert(sdacSH.contracts.length == 0);
         contract = new datona.blockchain.Contract(testSDAC.abi);
         return contract.deploy(ownerKey, testSDAC.bytecode, [requester.address, 10])
@@ -912,7 +1221,8 @@ describe("Blockchain", function() {
         assert(sdacSH.contracts.length == 0);
         assert(anotherSdacSH.contracts.length == 0);
         const sdacSubscriptionId = datona.blockchain.subscribe(bcHash, sdacSH.callback.bind(sdacSH));
-        const anotherSdacSubscriptionId = datona.blockchain.subscribe(bcHash, anotherSdacSH.callback.bind(anotherSdacSH), owner.address, testSDAC.abi);
+        const randomAddress = "0x288b32F2653C1d72043d240A7F938a114Ab69584";
+        const anotherSdacSubscriptionId = datona.blockchain.subscribe(bcHash, anotherSdacSH.callback.bind(anotherSdacSH), randomAddress);
         assert(sdacSH.contracts.length == 0);
         assert(anotherSdacSH.contracts.length == 0);
         contract = new datona.blockchain.Contract(testSDAC.abi);

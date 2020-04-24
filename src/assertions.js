@@ -24,6 +24,10 @@
 
 const errors = require('./errors');
 
+const VALID_BLOCKCHAIN_ADDRESS_REGEX = /^0x[0-9a-fA-F]{40}$/;
+const VALID_PRIVATE_KEY_REGEX = /^[0-9a-fA-F]{64}$/;
+const VALID_HASH_REGEX = /^[0-9a-fA-F]{64}$/;
+
 
 function isNotEmpty(value, name) {
   const result = (value !== undefined) && !/^\s*$/.test(value);
@@ -102,19 +106,19 @@ exports.isHexString = function(value, name) {
 };
 
 exports.isHash = function(value, name) {
-  const result = isNotEmpty(value, name) && /^[0-9a-fA-F]{64}$/.test(value);
+  const result = isNotEmpty(value, name) && VALID_HASH_REGEX.test(value);
   if (name !== undefined && !result) throw new errors.TypeError(name + ": invalid type. Expected hex string of length 64");
   else return result;
 };
 
 exports.isPrivateKey = function(value, name) {
-  const result = isNotEmpty(value, name) && /^[0-9a-fA-F]{64}$/.test(value);
+  const result = isNotEmpty(value, name) && VALID_PRIVATE_KEY_REGEX.test(value);
   if (name !== undefined && !result) throw new errors.TypeError(name + ": invalid type. Expected hex string of length 64");
   else return result;
 };
 
 exports.isAddress = function(value, name) {
-  const result = isNotEmpty(value, name) && /^0x[0-9a-fA-F]{40}$/.test(value);
+  const result = isNotEmpty(value, name) && VALID_BLOCKCHAIN_ADDRESS_REGEX.test(value);
   if (name !== undefined && !result) throw new errors.TypeError(name + ": invalid type. Expected address");
   else return result;
 };
@@ -133,3 +137,11 @@ exports.isInstanceOf = function(value, name, type) {
   if (name !== undefined && !result) throw new errors.TypeError(name + ": invalid type. Expected " + type.name);
   else return result;
 };
+
+exports.matches = function(value, regex, name) {
+  exports.isString(value, name);
+  const result = value.match(regex);
+  if (name !== undefined && !result) throw new errors.TypeError(name + ": invalid type. Expected to match '"+regex+"'");
+  else return result;
+};
+

@@ -24,6 +24,7 @@
  */
 
 module.exports = {
+  protocolVersion: "0.0.2",
   config: require('../config.json'),
   crypto: require('./datona-crypto'),
   comms: require('./datona-comms'),

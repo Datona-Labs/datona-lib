@@ -6,6 +6,137 @@ datona-blockchain
 
 Gives access to the Datona blockchain (Ethereum right now), providing functions to deploy, manage and access S-DACs.  Is designed to be used by both owner-end software (identity apps) and vault software.  Uses `web3 <https://github.com/ethereum/web3.js>`_.
 
+
+*********
+Constants
+*********
+
+* ``ZERO_ADDRESS`` *(Address)* = ``"0x0000000000000000000000000000000000000000"``
+
+
+.. _Permissions:
+
+****************************
+Class Permissions
+****************************
+
+Encapsulates file/directory permissions returned by the ``getPermissions`` method of an SDAC.  Provides accessor functions to read properties of the permissions.
+
+Properties
+==========
+
+* ``permissions`` *(byte)* - the raw permissions provided to the constructor.  Is expected to be of the form specified in the :ref:`SDAC Interface<SdacInterface>`.
+
+Constructor
+===========
+
+Decodes a raw permissions byte.
+
+.. code-block:: javascript
+
+    new Permissions(permissionsByte);
+
+----------
+Parameters
+----------
+
+1. ``permissionsByte`` *(byte or String)* - the raw permissions byte either as an integer or a string of the form ``0xNN``.
+
+------
+Throws
+------
+
+* ``TypeError`` if the permissionsByte is a string and does not have the form ``0xNN``
+
+-------
+Example
+-------
+
+.. code-block:: javascript
+
+  // using string format
+  const permissions = new Permissions("0x87");
+
+  // using byte returned from contract
+  myContract.getPermissions(myAddress)
+    .then( function(rawPermissions) {
+        const permissions = new Permissions(rawPermissions);
+        if (permissions.canRead()) { ...
+        }
+    });
+
+
+-----------------------------------------------------------------------------
+
+canRead
+=======
+
+Accesses the READ bit in the raw permissions.
+
+.. code-block:: javascript
+
+    if (permissions.canRead()) { ... }
+
+-------
+Returns
+-------
+
+``boolean`` - true if the bit is set in the raw permissions.
+
+-----------------------------------------------------------------------------
+
+canWrite
+========
+
+Accesses the WRITE bit in the raw permissions.
+
+.. code-block:: javascript
+
+    if (permissions.canWrite()) { ... }
+
+-------
+Returns
+-------
+
+``boolean`` - true if the bit is set in the raw permissions.
+
+-----------------------------------------------------------------------------
+
+canAppend
+=========
+
+Accesses the APPEND bit in the raw permissions.
+
+.. code-block:: javascript
+
+    if (permissions.canAppend()) { ... }
+
+-------
+Returns
+-------
+
+``boolean`` - true if the bit is set in the raw permissions.
+
+-----------------------------------------------------------------------------
+
+isDirectory
+===========
+
+Accesses the DIRECTORY bit in the raw permissions.
+
+.. code-block:: javascript
+
+    if (permissions.isDirectory()) { ... }
+
+-------
+Returns
+-------
+
+``boolean`` - true if the bit is set in the raw permissions.
+
+-----------------------------------------------------------------------------
+
+
 .. _Contract:
 
 ****************************
@@ -13,6 +144,22 @@ Class Contract
 ****************************
 
 Represents a Smart Data Access Contract on the blockchain.  Provides functions to interact with the contract.
+
+Constants
+=========
+
+Bit masks for the permissions byte returned by a Smart Data Access Contract:
+
+* static ``NO_PERMISSIONS`` *(byte)* = ``0x00``
+* static ``ALL_PERMISSIONS`` *(byte)* = ``0x07``;
+* static ``READ_BIT`` *(byte)* = ``0x04``;
+* static ``WRITE_BIT`` *(byte)* = ``0x02``;
+* static ``APPEND_BIT`` *(byte)* = ``0x01``;
+* static ``DIRECTORY_BIT`` *(byte)* = ``0x80``;
+
+Reserved Addresses used by a Smart Data Access Contract:
+
+* static ``ROOT_DIRECTORY`` *(Address)* = ``"0x0000000000000000000000000000000000000000"``;
 
 Properties
 ==========
@@ -140,8 +287,8 @@ Example
   contract.deploy(myKey, myContract.bytecode, [1, requesterAddress])
     .then( function(address){
       contractAddress = address;
-      const vault = new datona.Vault( vaultUrl, contractAddress, myKey );
-      return vault.storeData("Hello World!");
+      const vault = new datona.vault.RemoteVault( vaultUrl, contractAddress, myKey );
+      return vault.write("Hello World");
     })
     .catch( function(error){
       console.error(error);
@@ -248,31 +395,32 @@ Example
 
 -----------------------------------------------------------------------------
 
-isPermitted
-===========
+getPermissions
+==============
 
-Resolves true if the owner of the given address is permitted to access the data in the vault controlled by this contract.
+Promises to call the contract's getPermissions method and return the permissions byte as a Permissions_ object.
 
 .. code-block:: javascript
 
-    isPermitted(address);
+    getPermissions(requester, [file]);
 
 ----------
 Parameters
 ----------
 
-1. ``address`` *(Address)* - the address to check
+1. ``requester`` *(Address)* - the address of the requester that wants to read the data
+2. ``file`` *(Address)* - (Optional) the specific file to check.  Defaults to the ``ROOT_DIRECTORY`` if not given.
 
 -------
 Returns
 -------
 
-``Promise`` - A promise to return the permission status
+``Promise`` - A promise to return the permissions byte encapsulated in a Permissions object
 
 Resolves With
 ~~~~~~~~~~~~~
 
-``boolean`` - True if the address is permitted to access the vault.  False otherwise.
+``Permissions`` - the Permissions_ object representing the permissions byte returned by the SDAC.
 
 Rejects With
 ~~~~~~~~~~~~
@@ -293,16 +441,205 @@ Example
 
   const myContract = require("../contracts/myContract.json");
   const contract = new Contract(myContract.abi, myContractAddress);
+  const fileId = "0x0000000000000000000000000000000000000001";
+  const vaultUrl = "file://datonavault.com:8124";
+  const vaultOwner = "0x288b32F2653C1d72043d240A7F938a114Ab69584";
 
-  contract.isPermitted(myKey.address)
-    .then( function(permitted){
-      if (permitted) {
-        const vault = new datona.Vault( vaultUrl, myContractAddress, myKey );
-        return vault.retrieveData();
+  contract.getPermissions(myKey.address, fileId)
+    .then( function(permissions){
+      if (permissions.canRead() && !permissions.isDirectory()) {
+        const vault = new datona.vault.RemoteVault( vaultUrl, contract.address, myKey, vaultOwner );
+        return vault.read(fileId);
       }
     })
     .catch(console.error);
 
+-----------------------------------------------------------------------------
+
+canRead
+=======
+
+Resolves true if the owner of the given address is permitted to read the data from a given file in the vault controlled by this contract.
+
+.. code-block:: javascript
+
+    canRead(requester, [file]);
+
+----------
+Parameters
+----------
+
+1. ``requester`` *(Address)* - the address of the requester that wants to read the data
+2. ``file`` *(Address)* - (Optional) the specific file to check.  Defaults to the ``ROOT_DIRECTORY`` if not given.
+
+-------
+Returns
+-------
+
+``Promise`` - A promise to return the permission status
+
+Resolves With
+~~~~~~~~~~~~~
+
+``boolean`` - True if the address is permitted to read the file.  False otherwise.
+
+Rejects With
+~~~~~~~~~~~~
+
+* ``BlockchainError`` - if the permission status could not be retrieved from the blockchain.
+
+------
+Throws
+------
+
+* ``BlockchainError`` - if the contract hasn't been deployed or mapped to a blockchain address.
+
+-------
+Example
+-------
+
+.. code-block:: javascript
+
+  const myContract = require("../contracts/myContract.json");
+  const contract = new Contract(myContract.abi, myContractAddress);
+  const fileId = "0x0000000000000000000000000000000000000001";
+  const vaultUrl = "file://datonavault.com:8124";
+  const vaultOwner = "0x288b32F2653C1d72043d240A7F938a114Ab69584";
+
+  contract.canRead(myKey.address, fileId)
+    .then( function(permitted){
+      if (permitted) {
+        const vault = new datona.vault.RemoteVault( vaultUrl, contract.address, myKey, vaultOwner );
+        return vault.read(fileId);
+      }
+    })
+    .catch(console.error);
+
+-----------------------------------------------------------------------------
+
+canWrite
+========
+
+Resolves true if the owner of the given address is permitted to write to (or overwrite) a given file or directory in the vault controlled by this contract.
+
+If permitted to write to a directory, the user can add a new file to the directory or can overwrite any file within that directory.
+
+.. code-block:: javascript
+
+    canWrite(requester, [file]);
+
+----------
+Parameters
+----------
+
+1. ``requester`` *(Address)* - the address of the requester that wants to write to the file
+2. ``file`` *(Address)* - (Optional) the specific file or directory to check.  Defaults to the ``ROOT_DIRECTORY`` if not given.
+
+-------
+Returns
+-------
+
+``Promise`` - A promise to return the permission status
+
+Resolves With
+~~~~~~~~~~~~~
+
+``boolean`` - True if the address is permitted to write to the file.  False otherwise.
+
+Rejects With
+~~~~~~~~~~~~
+
+* ``BlockchainError`` - if the permission status could not be retrieved from the blockchain.
+
+------
+Throws
+------
+
+* ``BlockchainError`` - if the contract hasn't been deployed or mapped to a blockchain address.
+
+-------
+Example
+-------
+
+.. code-block:: javascript
+
+  const myContract = require("../contracts/myContract.json");
+  const contract = new Contract(myContract.abi, myContractAddress);
+  const fileId = "0x0000000000000000000000000000000000000001";
+  const vaultUrl = "file://datonavault.com:8124";
+  const vaultOwner = "0x288b32F2653C1d72043d240A7F938a114Ab69584";
+
+  contract.canWrite(myKey.address, fileId)
+    .then( function(permitted){
+      if (permitted) {
+        const vault = new datona.vault.RemoteVault( vaultUrl, contract.address, myKey, vaultOwner );
+        return vault.write("hello world", fileId);
+      }
+    })
+    .catch(console.error);
+
+-----------------------------------------------------------------------------
+
+canAppend
+=========
+
+Resolves true if the owner of the given address is permitted to append to (or overwrite) a given file or directory in the vault controlled by this contract.
+
+If permitted to append to a directory, the user can add a new file to the directory or can append to any file within that directory. It does not mean that existing files in that directory are (over)writable - use canWrite to determine this.
+
+.. code-block:: javascript
+
+    canAppend(requester, [file]);
+
+----------
+Parameters
+----------
+
+1. ``requester`` *(Address)* - the address of the requester that wants to append to the file
+2. ``file`` *(Address)* - (Optional) the specific file to check.  Defaults to the ``ROOT_DIRECTORY`` if not given.
+
+-------
+Returns
+-------
+
+``Promise`` - A promise to return the permission status
+
+Resolves With
+~~~~~~~~~~~~~
+
+``boolean`` - True if the address is permitted to append to the file.  False otherwise.
+
+Rejects With
+~~~~~~~~~~~~
+
+* ``BlockchainError`` - if the permission status could not be retrieved from the blockchain.
+
+------
+Throws
+------
+
+* ``BlockchainError`` - if the contract hasn't been deployed or mapped to a blockchain address.
+
+-------
+Example
+-------
+
+.. code-block:: javascript
+
+  const myContract = require("../contracts/myContract.json");
+  const contract = new Contract(myContract.abi, myContractAddress);
+  const fileId = "0x0000000000000000000000000000000000000001";
+  const vaultUrl = "file://datonavault.com:8124";
+  const vaultOwner = "0x288b32F2653C1d72043d240A7F938a114Ab69584";
+
+  contract.canAppend(myKey.address, fileId)
+    .then( function(permitted){
+      if (permitted) {
+        const vault = new datona.vault.RemoteVault( vaultUrl, contract.address, myKey, vaultOwner );
+        return vault.append("some more info", fileId);
+      }
+    })
+    .catch(console.error);
 
 -----------------------------------------------------------------------------
 
@@ -727,31 +1064,32 @@ Example
 
 -----------------------------------------------------------------------------
 
-assertIsPermitted
-=================
+assertCanRead
+=============
 
-Resolves provided the given address is permitted to access the vault controlled by this contract.
+Resolves provided the given address is permitted to read the given file or directory in the vault controlled by this contract.
 
 .. code-block:: javascript
 
-    assertIsPermitted(address);
+    assertCanRead(requester, [file]);
 
 ----------
 Parameters
 ----------
 
-1. ``address`` *(Address)* - the address to test
+1. ``requester`` *(Address)* - the address of the requester that wants to read the data
+2. ``file`` *(Address)* - (Optional) the specific file to check.  Defaults to the ``ROOT_DIRECTORY`` if not given.
 
 -------
 Returns
 -------
 
-``Promise`` - A promise to resolve if the given address is permitted, and to reject if not.
+``Promise`` - A promise to resolve if the given address is permitted to read the given file, and to reject if not.
 
 Resolves With
 ~~~~~~~~~~~~~
 
-Resolves with no data if the given address is permitted to access the vault controlled by this contract.
+``Permissions`` - the Permissions_ object representing the permissions byte returned by the SDAC. Only resolves if the requester is permitted.
 
 Rejects With
 ~~~~~~~~~~~~
@@ -773,10 +1111,133 @@ Example
 
   const expectedContract = require("../contracts/myContract.json");
   const contract = new Contract(expectedContract.abi, customer.contractAddress);
+  const fileId = "0x0000000000000000000000000000000000000001";
 
   contract.assertBytecode(expectedContract.runtimeBytecode)
     .then( () => { return contract.assertOwner(customer.address) })
-    .then( () => { return contract.assertIsPermitted(myKey.address) })
+    .then( () => { return contract.assertCanRead(myKey.address, fileId) })
+    .then( function(){
+      console.log("Confirmed customer's contract is valid");
+    })
+    .catch(console.error);
+
+-----------------------------------------------------------------------------
+
+assertCanWrite
+==============
+
+Resolves provided the given address is permitted to write to the given file or directory in the vault controlled by this contract.
+
+.. code-block:: javascript
+
+    assertCanWrite(requester, [file]);
+
+----------
+Parameters
+----------
+
+1. ``requester`` *(Address)* - the address of the requester that wants to write the data
+2. ``file`` *(Address)* - (Optional) the specific file to check.  Defaults to the ``ROOT_DIRECTORY`` if not given.
+
+-------
+Returns
+-------
+
+``Promise`` - A promise to resolve if the given address is permitted to write to the given file, and to reject if not.
+
+Resolves With
+~~~~~~~~~~~~~
+
+``Permissions`` - the Permissions_ object representing the permissions byte returned by the SDAC. Only resolves if the requester is permitted.
+
+Rejects With
+~~~~~~~~~~~~
+
+* ``PermissionError`` - if permission is not granted
+* ``BlockchainError`` - if the expiry status could not be retrieved from the blockchain.
+
+------
+Throws
+------
+
+* ``BlockchainError`` - if the contract hasn't been deployed or mapped to a blockchain address.
+
+-------
+Example
+-------
+
+.. code-block:: javascript
+
+  const expectedContract = require("../contracts/myContract.json");
+  const contract = new Contract(expectedContract.abi, customer.contractAddress);
+  const ownersFile = "0x0000000000000000000000000000000000000001";
+  const resultsFile = "0x0000000000000000000000000000000000000002";
+
+  contract.assertBytecode(expectedContract.runtimeBytecode)
+    .then( () => { return contract.assertOwner(customer.address) })
+    .then( () => { return contract.assertCanRead(myKey.address, ownersFile) })
+    .then( () => { return contract.assertCanWrite(myKey.address, resultsFile) })
+    .then( function(){
+      console.log("Confirmed customer's contract is valid");
+    })
+    .catch(console.error);
+
+-----------------------------------------------------------------------------
+
+assertCanAppend
+===============
+
+Resolves provided the given address is permitted to append to the given file or directory in the vault controlled by this contract.
+
+.. code-block:: javascript
+
+    assertCanAppend(requester, [file]);
+
+----------
+Parameters
+----------
+
+1. ``requester`` *(Address)* - the address of the requester that wants to append the data
+2. ``file`` *(Address)* - (Optional) the specific file to check.  Defaults to the ``ROOT_DIRECTORY`` if not given.
+
+-------
+Returns
+-------
+
+``Promise`` - A promise to resolve if the given address is permitted to append to the given file, and to reject if not.
+
+Resolves With
+~~~~~~~~~~~~~
+
+``Permissions`` - the Permissions_ object representing the permissions byte returned by the SDAC. Only resolves if the requester is permitted.
+
+Rejects With
+~~~~~~~~~~~~
+
+* ``PermissionError`` - if permission is not granted
+* ``BlockchainError`` - if the expiry status could not be retrieved from the blockchain.
+
+------
+Throws
+------
+
+* ``BlockchainError`` - if the contract hasn't been deployed or mapped to a blockchain address.
+
+-------
+Example
+-------
+
+.. code-block:: javascript
+
+  const expectedContract = require("../contracts/myContract.json");
+  const contract = new Contract(expectedContract.abi, customer.contractAddress);
+  const ownersFile = "0x0000000000000000000000000000000000000001";
+  const logFile = "0x0000000000000000000000000000000000000002";
+
+  contract.assertBytecode(expectedContract.runtimeBytecode)
+    .then( () => { return contract.assertOwner(customer.address) })
+    .then( () => { return contract.assertCanRead(myKey.address, ownersFile) })
+    .then( () => { return contract.assertCanAppend(myKey.address, logFile) })
     .then( function(){
       console.log("Confirmed customer's contract is valid");
     })
@@ -790,7 +1251,7 @@ Example
 Class GenericSmartDataAccessContract
 ************************************
 
-Instance of Contract_, providing an interface to any Smart Data Access Contract.  Maps to a contract at the given address using the standard SDAC interface abi.
+Instance of Contract_ providing an interface to any Smart Data Access Contract.  Maps to a contract at the given address using the standard :ref:`SDAC Interface<SdacInterface>` ABI.
 
 Constructor
 ===========

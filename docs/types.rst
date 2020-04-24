@@ -20,6 +20,31 @@ Core Types
     - Private key in the format ``/^[0-9a-fA-F]{64}$/``
   * - *URL*
     - Server URL of the form: ``{ scheme: String, host: String, port: Number }``
+  * - *VaultFile*
+    - Name of a file or directory in a vault.  See VaultFile_ below.
+
+
+.. _VaultFilename:
+
+VaultFile
+=========
+
+A VaultFile name has the form ``[directory/]<file>``
+
+If the directory part is present it must be a single blockchain address and the file part can be any POSIX file name except ``.`` and ``..``
+If not present then the file part must be a single blockchain address.
+Nested directories are not permitted.
+
+Example valid files:
+
+  * ``0x0000000000000000000000000000000000000001``
+  * ``0x0000000000000000000000000000000000000002/my_file.txt``
+  * ``0x0000000000000000000000000000000000000002/0x0000000000000000000000000000000000000001``
+
+Example invalid files:
+
+  * ``my_file.txt``
+  * ``0x0000000000000000000000000000000000000002/0x0000000000000000000000000000000000000001/my_file.txt``
 
 ------------------------------------------------------------------------------
 
@@ -29,7 +54,7 @@ Core Types
 Application Layer Protocol
 ##########################
 
-*Version: 0.0.1*
+*Version: 0.0.2*
 
 *WARNING - This protocol is experimental and subject to change without notice.  The version will be updated if any change is made.*
 
@@ -44,25 +69,34 @@ All S-DACs must comply with the following interface.  In future the protocolVers
 
 .. code-block:: solidity
 
-  pragma solidity ^0.5.1;
+    pragma solidity ^0.6.3;
 
-  contract SDAC {
+    abstract contract SDAC {
 
-      string public constant version = "0.0.1";
+        string public constant DatonaProtocolVersion = "0.0.2";
 
-      // returns the owner of this contract
-      function getOwner() public view returns (address);
+        // constants describing the permissions-byte structure of the form d----rwa.
+        byte public constant NO_PERMISSIONS = 0x00;
+        byte public constant ALL_PERMISSIONS = 0x07;
+        byte public constant READ_BIT = 0x04;
+        byte public constant WRITE_BIT = 0x02;
+        byte public constant APPEND_BIT = 0x01;
+        byte public constant DIRECTORY_BIT = 0x80;
 
-      // basic permission.  Assumes the data vault has validated the requester's ID'
-      function isPermitted( address requester ) public view returns (bool);
+        address public owner = msg.sender;
 
-      // returns true if the contract has expired either automatically or manually
-      function hasExpired() public view returns (bool);
+        // File based d----rwa permissions.  Assumes the data vault has validated the requester's ID.
+        // Address(0) is a special file representing the vault's root
+        function getPermissions( address requester, address file ) public virtual view returns (byte);
 
-      // terminates the contract if the sender is permitted and any termination conditions are met
-      function terminate() public;
+        // returns true if the contract has expired either automatically or has been manually terminated
+        function hasExpired() public virtual view returns (bool);
 
-  }
+        // terminates the contract if the sender is permitted and any termination conditions are met
+        function terminate() public virtual;
+
+    }
+
 
 .. _GeneralProtocol:
 
@@ -301,7 +335,7 @@ A reject response consists of copying the rejectTransaction object from the Smar
 Vault Request Protocol
 ======================
 
-VaultRequest packets are sent to a Data Vault Server to create, update, access or delete a vault.  The server promises to respond to any request with a VaultResponse packet indicating success or error.  The protocol consists of a single request and response.
+VaultRequest packets are sent to a Data Vault Server to create, write, append, read or delete a vault.  The server promises to respond to any request with a VaultResponse packet indicating success or error.  The protocol consists of a single request and response.
 
 .. _VaultRequest:
 
@@ -319,29 +353,40 @@ create
     "txnType": "VaultRequest",
     "requestType": "create",
     "contract": Address,
-    "data": Object
   }
 
-update
+write
 ~~~~~~
 
 .. code-block:: json
 
   {
     "txnType": "VaultRequest",
-    "requestType": "update",
+    "requestType": "write",
     "contract": Address,
     "data": Object
   }
 
-access
+append
 ~~~~~~
 
 .. code-block:: json
 
   {
     "txnType": "VaultRequest",
-    "requestType": "access",
+    "requestType": "append",
+    "contract": Address,
+    "data": Object
+  }
+
+read
+~~~~~~
+
+.. code-block:: json
+
+  {
+    "txnType": "VaultRequest",
+    "requestType": "read",
     "contract": Address
   }
 
@@ -364,7 +409,7 @@ delete
   * - Field
     - Description
   * - type
-    - *(String)*  The type of request: either “create”, “update”, “access” or “delete”
+    - *(String)*  The type of request: either “create”, “write”, "append", “read” or “delete”
   * - contract
     - *(Address)*  The blockchain address of the Smart Data Access Contract that controls the vault.  The S-DAC must already be deployed on the blockchain.
   * - data
@@ -382,7 +427,7 @@ Every Vault Request from the client is responded to with a Vault Response.  Ther
 success
 ~~~~~~~
 
-A success response conforms with the GeneralServerResponse_ Acknowledgement format.  If responding to an access request, the response will additionally contain a ``data`` field with returned vault contents.
+A success response conforms with the GeneralServerResponse_ Acknowledgement format.  If responding to a read request, the response will additionally contain a ``data`` field with returned vault contents.
 
 .. code-block:: json
 
