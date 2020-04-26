@@ -2,3 +2,4 @@ node_modules/
 docs/
 .idea
 .nyc_output
+test
