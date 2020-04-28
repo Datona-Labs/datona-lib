@@ -5,6 +5,7 @@ const should = chai.should();
 const datona = require("../src/datona");
 const DatonaErrors = datona.errors;
 const net = require('net');
+const WebSocket = require('ws');
 
 
 describe("Comms", function() {
@@ -404,7 +405,7 @@ describe("Comms", function() {
 
       const vaultUrl = {
         scheme: "file",
-        host: "https://datonavault.com",
+        host: "datonavault.com",
         port: 8963
       };
 
@@ -506,29 +507,18 @@ describe("Comms", function() {
       }).timeout(5000);
 
       it("rejects with a DatonaError if the host is invalid", function() {
-        const server = new Server();
         var request2 = request1;
         request2.api.url.host = "crap host";
         const request2Txn = datona.comms.encodeTransaction(request2, requesterKey);
-        const request = new datona.comms.SmartDataAccessRequest(request2Txn, ownerKey);
-        return request.accept(owner.address, requester.address, vaultUrl)
-          .then( function(response){
-            server.close();
-            return response;
-          })
-          .catch( function(error){
-            server.close();
-            throw error;
-          })
-          .should.eventually.be.rejectedWith(DatonaErrors.CommunicationError);
+        expect(function() {
+          const request = new datona.comms.SmartDataAccessRequest(request2Txn, ownerKey);
+        }).to.throw(DatonaErrors.RequestError);
       }).timeout(5000);
 
     });
 
 
     describe("reject", function() {
-
-      const vaultUrl = "https://datonavault.com";
 
       it("throws a DatonaError if the reason parameter is missing", function() {
         expect(function() {
@@ -564,4 +554,150 @@ describe("Comms", function() {
   });
 
 
+  describe("WebSocketClient", function() {
+
+    const portNumber = 9864;
+
+    class Server{
+
+      constructor(){
+        this.server = new WebSocket.Server({ port: portNumber });
+        this.server.parent = this;
+        this.server.on('connection', this.connection.bind(this.server));
+        this.clear();
+      }
+
+      connection(c){
+        c.on('close', () => { });
+        c.on('message', (data) => {
+          this.parent.data += data.toString();
+          c.send(datona.comms.encodeTransaction({txnType: "GeneralResponse", responseType:"success"}, requesterKey));
+          c.close();
+        });
+      }
+
+      clear(){ this.data = ""; }
+      close(){ this.server.close() }
+
+    }
+
+
+    const request1 =
+      {
+        txnType: "SmartDataAccessRequest",
+        version: "0.0.1",
+        contract: {
+          hash: "3ea2f1d0abf3fc66cf29eebb70cbd4e7fe762ef8a09bcc06c8edf641230afec0"
+        },
+        api: {
+          url: {
+            scheme: "ws",
+            host: "localhost",
+            port: portNumber,
+            path: ""
+          },
+          acceptTransaction: {
+            myAcceptDetails: "acceptance id"
+          },
+          rejectTransaction: {
+            myRejectDetails: "rejection id"
+          }
+        }
+      };
+
+    const request1Txn = datona.comms.encodeTransaction(request1, requesterKey);
+
+    const vaultUrl = {
+      scheme: "ws",
+      host: "datonavault.com",
+      port: 8963
+    };
+
+    it("sends and receives ok", function() {
+      const server = new Server();
+      const request = new datona.comms.SmartDataAccessRequest(request1Txn, ownerKey);
+      return request.accept(owner.address, requester.address, vaultUrl)
+        .then( function(response){
+          server.close();
+          expect(response.txn.responseType).to.equal("success");
+          expect(server.data.length).to.be.gt(0);
+          const serverPacket = datona.comms.decodeTransaction(server.data);
+          expect(serverPacket.signatory).to.equal(owner.address);
+          expect(serverPacket.txn.txnType).to.equal("SmartDataAccessResponse");
+          expect(serverPacket.txn.responseType).to.equal("accept");
+          expect(serverPacket.txn.myAcceptDetails).to.equal("acceptance id");
+          expect(serverPacket.txn.contract).to.equal(owner.address);
+          expect(serverPacket.txn.vaultAddress).to.equal(requester.address);
+          expect(serverPacket.txn.vaultUrl.scheme).to.equal(vaultUrl.scheme);
+          expect(serverPacket.txn.vaultUrl.host).to.equal(vaultUrl.host);
+          expect(serverPacket.txn.vaultUrl.port).to.equal(vaultUrl.port);
+        })
+        .catch( function(error){
+          server.close();
+          throw error;
+        });
+    }).timeout(5000);
+
+    it("rejects with a DatonaError if the connection is refused", function() {
+      const server = new Server();
+      var request2 = request1;
+      request2.api.url.port++;
+      const request2Txn = datona.comms.encodeTransaction(request2, requesterKey);
+      const request = new datona.comms.SmartDataAccessRequest(request2Txn, ownerKey);
+      return request.accept(owner.address, requester.address, vaultUrl)
+        .then( function(response){
+          server.close();
+          return response;
+        })
+        .catch( function(error){
+          server.close();
+          throw error;
+        })
+        .should.eventually.be.rejectedWith(DatonaErrors.CommunicationError, "ECONNREFUSED");
+    }).timeout(5000);
+
+    it("rejects with a DatonaError if the connection times out", function() {
+      const server = new Server();
+      var request2 = request1;
+      request2.api.url.host = "127.0.0.2";
+      const request2Txn = datona.comms.encodeTransaction(request2, requesterKey);
+      const request = new datona.comms.SmartDataAccessRequest(request2Txn, ownerKey);
+      request.client.connectionTimeout = 50; // set low for testing
+      return request.accept(owner.address, requester.address, vaultUrl)
+        .then( function(response){
+          server.close();
+          return response;
+        })
+        .catch( function(error){
+          server.close();
+          throw error;
+        })
+        .should.eventually.be.rejectedWith(DatonaErrors.CommunicationError);
+    }).timeout(5000);
+
+    it("sends the correct reject response", function() {
+      const server = new Server();
+      const request = new datona.comms.SmartDataAccessRequest(request1Txn, ownerKey);
+      const reason = "my reject reason!";
+      return request.reject(reason)
+        .then( function(response){
+          server.close();
+          expect(response.txn.responseType).to.equal("success");
+          expect(server.data.length).to.be.gt(0);
+          const serverPacket = datona.comms.decodeTransaction(server.data);
+          expect(serverPacket.signatory).to.equal(owner.address);
+          expect(serverPacket.txn.txnType).to.equal("SmartDataAccessResponse");
+          expect(serverPacket.txn.responseType).to.equal("reject");
+          expect(serverPacket.txn.myRejectDetails).to.equal("rejection id");
+          expect(serverPacket.txn.reason).to.equal(reason);
+        })
+        .catch( function(error){
+          server.close();
+          throw error;
+        });
+    }).timeout(5000);
+
+  });
+
 });
+

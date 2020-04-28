@@ -28,13 +28,13 @@
 const errors = require('./errors');
 const assert = require('./assertions');
 const crypto = require('./datona-crypto');
-const net = require('net');
+var WebSocket;
+var net;
 
 
 /*
  * Classes
  */
-
 
 /*
  * Interface for clients that communicate with a remote vault or requester server.
@@ -42,9 +42,7 @@ const net = require('net');
 class DatonaClient {
 
   constructor(url) {
-    assert.isObject(url, "url");
-    assert.isString(url.host, "url host");
-    assert.isNumber(url.port, "url port");
+    assert.isUrl(url, "url");
     this.url = url;
   }
 
@@ -67,6 +65,7 @@ class TcpClient extends DatonaClient {
   constructor(url, connectionTimeout = 3000) {
     super(url);
     this.connectionTimeout = connectionTimeout;
+    if (net === undefined) net = require('net');
   }
 
   send(signedTxnStr) {
@@ -100,6 +99,46 @@ class TcpClient extends DatonaClient {
 
 
 /*
+ * DatonaClient implementation for a plain TCP (file://) connection
+ */
+class WebSocketClient extends DatonaClient {
+
+  constructor(url, connectionTimeout = 3000) {
+    super(url);
+    this.connectionTimeout = connectionTimeout;
+    if (WebSocket === undefined) WebSocket = require('isomorphic-ws');
+  }
+
+  send(signedTxnStr) {
+
+    return new Promise((resolve, reject) => {
+
+      const socket = new WebSocket(this.url.scheme + "://" + this.url.host + ":" + this.url.port);
+      const timer = setTimeout(() => {
+        socket.close();
+        reject(new errors.CommunicationError("Connection timeout"));
+      }, this.connectionTimeout);
+
+      socket.onopen = function (evt) {
+        clearTimeout(timer);
+        socket.send(signedTxnStr);
+      };
+
+      socket.onmessage = function (evt) {
+        socket.close();
+        resolve(evt.data.toString());
+      };
+
+      socket.onerror = function (evt) {
+        socket.close();
+        reject(new errors.CommunicationError("Failed to send transaction: " + evt.message, evt.error));
+      };
+
+    });
+  }
+}
+
+/*
  * Superclass for classes that communicate with a remote vault or requester server.
  * The DatonaConnector automatically selects the appropriate DatonaClient based on
  * the url scheme.  Allows datona-lib to seamlessly support multiple types of
@@ -117,6 +156,9 @@ class DatonaConnector {
     switch (url.scheme) {
       case "file":
         this.client = new TcpClient(url);
+        break;
+      case "ws":
+        this.client = new WebSocketClient(url);
         break;
       default:
         throw new errors.RequestError("Unsupported url scheme: "+url.scheme);
