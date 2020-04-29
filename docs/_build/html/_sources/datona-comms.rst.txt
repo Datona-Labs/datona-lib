@@ -174,7 +174,7 @@ Example
 Class DatonaConnector
 *********************
 
-Enables communications with a remote server abstracting away the underlying network protocols.  Currently, only the *file* schema (plain tcp connection) is supported.  Other protocols, such as http, will be supported in the future.
+Enables communications with a remote server, abstracting away the underlying network protocols.  Supported protocols are: `file` (plain tcp connection), `ws` (websocket) and `http`.  Encrypted protocols, such as https and wss, will be supported in the future.
 
 Designed to be used as a superclass, this class is extended by the SmartDataAccessRequest_ and :ref:`RemoteVault` classes.
 

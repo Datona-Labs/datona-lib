@@ -552,7 +552,7 @@ The Datona Lib :ref:`VaultKeeper<VaultKeeper>` class provides these capabilities
 
 The diagram above shows the class relationships between the user-defined classes in black and the datona-lib classes in blue.  The user-defined ``DataServer`` class must implement the VaultDataServer interface and promise to handle the 4 types of data request.  All permission checks will have already been performed by the ``VaultKeeper`` so the ``DataServer`` need only perform the requests unconditionally.
 
-Example bare-minimal server and VaultDataServer implementation.
+Example bare-minimal server and VaultDataServer implementation.  This example is a plain TCP server.  It could instead be written as an HTTP or WebSocket server.
 
 .. code-block:: javascript
 
