@@ -63,7 +63,7 @@ describe("System Scenarios", function() {
   var vaultServer;
   const vaultServerConfig = {
     url: {
-      scheme: "file",
+      scheme: "http",
       host: "localhost",
       port: 8124
     },
@@ -94,7 +94,7 @@ describe("System Scenarios", function() {
   function expectSuccessResponse(response){
     expect(response.signatory.toLowerCase()).to.equal(vaultOwner.address.toLowerCase());
     expect(response.txn.txnType).to.equal("VaultResponse");
-    if (response.txn.responseType == "error") console.error(response.txn.error);
+    if (response.txn.responseType === "error") console.error(response.txn.error);
     expect(response.txn.responseType).to.equal("success");
   }
 
@@ -102,7 +102,7 @@ describe("System Scenarios", function() {
     expect(response.txnType).to.equal(txnType);
     expect(response.responseType).to.equal("error");
     expect(response.error).to.be.an.instanceof(Object);
-    if (response.error.name != errorName) console.log(response);  // debug
+    if (response.error.name !== errorName) console.log(response);  // debug
     if (errorName) expect(response.error.name).to.equal(errorName);
     if (errorMessage) expect(response.error.message).to.match(new RegExp(errorMessage));
   }
@@ -146,19 +146,19 @@ describe("System Scenarios", function() {
     }).timeout(200000);
 
     it( "create vault", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
       return vault.create()
         .then( expectSuccessResponse );
     });
 
     it( "[create the same vault again fails]", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
       return vault.create()
         .should.eventually.be.rejectedWith(DatonaErrors.VaultError, "attempt to create a vault that already exists");
     });
 
     it( "write to the vault", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
       return vault.write("Hello World!")
           .then( expectSuccessResponse );
     });
@@ -166,7 +166,7 @@ describe("System Scenarios", function() {
     it( "inform requester", function(){
       return request.accept(contract.address, vaultOwner.address, vaultServerConfig.url)
         .then( function(response){
-          if (response.txn.responseType == "error") console.error(response.txn.error);
+          if (response.txn.responseType === "error") console.error(response.txn.error);
           expect(response.txn.responseType).to.equal("success");
           expect(requesterServer.sdaResponse.txnType).to.equal("SmartDataAccessResponse");
           expect(requesterServer.sdaResponse.responseType).to.equal("accept");
@@ -187,20 +187,20 @@ describe("System Scenarios", function() {
     });
 
     it( "[attempt to access by non-permitted address fails with PermissionError]", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, vaultKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, vaultKey, vaultOwner.address);
       return vault.read()
         .should.eventually.be.rejectedWith(DatonaErrors.PermissionError, "permission denied");
 
     });
 
     it( "update the vault with new data", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
       return vault.write("Greasy chips")
         .then( expectSuccessResponse );
     });
 
     it( "access the vault returns the new data", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, requesterKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, requesterKey, vaultOwner.address);
       return vault.read()
         .then( function(data){
           expect(data).to.equal("Greasy chips");
@@ -208,19 +208,19 @@ describe("System Scenarios", function() {
     });
 
     it( "[attempt to write to root vault by address with only read access fails with PermissionError]", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, requesterKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, requesterKey, vaultOwner.address);
       return vault.write("Requester says hello")
         .should.eventually.be.rejectedWith(DatonaErrors.PermissionError, "permission denied");
     });
 
     it( "[attempt to append to root vault by address with only read access fails with PermissionError]", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, requesterKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, requesterKey, vaultOwner.address);
       return vault.append("Requester says hello again")
         .should.eventually.be.rejectedWith(DatonaErrors.PermissionError, "permission denied");
     });
 
     it( "access the vault returns the same data", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, requesterKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, requesterKey, vaultOwner.address);
       return vault.read()
         .then( function(data){
           expect(data).to.equal("Greasy chips");
@@ -228,13 +228,13 @@ describe("System Scenarios", function() {
     });
 
     it( "append the vault with new data", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
       return vault.append(" and mushy peas")
         .then( expectSuccessResponse );
     });
 
     it( "access the vault returns the new and appended data", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, requesterKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, requesterKey, vaultOwner.address);
       return vault.read()
         .then( function(data){
           expect(data).to.equal("Greasy chips and mushy peas");
@@ -246,7 +246,7 @@ describe("System Scenarios", function() {
     //
 
     it( "[trying to terminate the vault before the contract has expired fails]", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
       return vault.delete()
         .should.eventually.be.rejectedWith(DatonaErrors.ContractExpiryError, "contract has not expired");
     });
@@ -259,13 +259,13 @@ describe("System Scenarios", function() {
     }).timeout(200000);
 
     it( "can no longer access the vault", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, requesterKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, requesterKey, vaultOwner.address);
       return vault.read()
         .should.eventually.be.rejectedWith(DatonaErrors.PermissionError, "permission denied");
     });
 
     it( "owner succesfully deletes the vault", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
       return vault.delete()
         .then( expectSuccessResponse );
     });
@@ -319,13 +319,13 @@ describe("System Scenarios", function() {
     }).timeout(200000);
 
     it( "create vault", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
       return vault.create()
         .then( expectSuccessResponse );
     });
 
     it( "Owner writes to his file", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
       return vault.write("Hello World!", ownersFile)
         .then( expectSuccessResponse );
     });
@@ -339,31 +339,31 @@ describe("System Scenarios", function() {
     });
 
     it( "[attempt to access by non-permitted address fails with PermissionError]", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
       return vault.read(ownersFile)
         .should.eventually.be.rejectedWith(DatonaErrors.PermissionError, "permission denied");
     });
 
     it( "[attempt to access non-existent file fails]", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
       return vault.read(requestersLog)
         .should.eventually.be.rejected;
     });
 
     it( "Requester writes first log entry", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, requesterKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, requesterKey, vaultOwner.address);
       return vault.append("Data accepted", requestersLog)
         .then( expectSuccessResponse );
     });
 
     it( "Owner updates their data", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
       return vault.write("Hi World!", ownersFile)
         .then( expectSuccessResponse );
     });
 
     it( "Requester reads new owner data", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, requesterKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, requesterKey, vaultOwner.address);
       return vault.read(ownersFile)
         .then( function(data){
           expect(data).to.equal("Hi World!");
@@ -371,19 +371,19 @@ describe("System Scenarios", function() {
     });
 
     it( "Requester appends second log entry", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, requesterKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, requesterKey, vaultOwner.address);
       return vault.append("\nUpdated data accepted", requestersLog)
         .then( expectSuccessResponse );
     });
 
     it( "[Requester attempts to overwrite the log file. Fails with PermissionError]", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, requesterKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, requesterKey, vaultOwner.address);
       return vault.write("Requester says hello", requestersLog)
         .should.eventually.be.rejectedWith(DatonaErrors.PermissionError, "permission denied");
     });
 
     it( "Owner reads the requester's log", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
       return vault.read(requestersLog)
         .then( function(data){
           expect(data).to.equal("Data accepted\nUpdated data accepted");
@@ -402,19 +402,19 @@ describe("System Scenarios", function() {
     }).timeout(200000);
 
     it( "Requester can no longer access the vault", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, requesterKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, requesterKey, vaultOwner.address);
       return vault.read(ownersFile)
         .should.eventually.be.rejectedWith(DatonaErrors.PermissionError, "permission denied");
     });
 
     it( "Owner can no longer access the requester's log", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
       return vault.read(requestersLog)
         .should.eventually.be.rejectedWith(DatonaErrors.PermissionError, "permission denied");
     });
 
     it( "owner succesfully deletes the vault", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
       return vault.delete()
         .then( expectSuccessResponse );
     });
@@ -482,25 +482,25 @@ describe("System Scenarios", function() {
     }).timeout(200000);
 
     it( "create vault", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
       return vault.create()
         .then( expectSuccessResponse );
     });
 
     it( "[Customer tries to append data directly to his directory]", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
       return vault.append("My passport", customersDirectory)
         .should.eventually.be.rejectedWith(DatonaErrors.PermissionError, "Cannot append data to a directory");
     });
 
     it( "Customer writes his photo ID to his directory", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
       return vault.append("My passport", customersDirectory+"/passport.png")
         .then( expectSuccessResponse );
     });
 
     it( "Customer writes his proof of address to his directory", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
       return vault.append("My proof of address", customersDirectory+"/proof_of_address.pdf")
         .then( expectSuccessResponse );
     });
@@ -530,19 +530,19 @@ describe("System Scenarios", function() {
     });
 
     it( "Verifier logs verification started", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, requesterKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, requesterKey, vaultOwner.address);
       return vault.append("Verification started", verifiersLog)
         .then( expectSuccessResponse );
     });
 
     it( "Verifier logs verification rejected", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, requesterKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, requesterKey, vaultOwner.address);
       return vault.append("\nVerification rejected: proof of address is over 3 months old", verifiersLog)
         .then( expectSuccessResponse );
     });
 
     it( "Customer reads verifier's log", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
       return vault.read(verifiersLog)
         .then( function(data){
           expect(data).to.equal("Verification started\nVerification rejected: proof of address is over 3 months old");
@@ -550,13 +550,13 @@ describe("System Scenarios", function() {
     });
 
     it( "[Customer tries to overwrite his existing proof of address]", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
       return vault.write("My new proof of address", customersDirectory+"/proof_of_address.pdf")
         .should.eventually.be.rejectedWith(DatonaErrors.PermissionError, "permission denied");
     });
 
     it( "Customer adds new proof of address to his directory", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
       return vault.append("My new proof of address", customersDirectory+"/proof_of_address2.pdf")
         .then( expectSuccessResponse );
     });
@@ -578,25 +578,25 @@ describe("System Scenarios", function() {
     });
 
     it( "[Verifier tries to overwrite his logfile]", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, requesterKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, requesterKey, vaultOwner.address);
       return vault.write("sinister re-write of history", verifiersLog)
         .should.eventually.be.rejectedWith(DatonaErrors.PermissionError, "permission denied");
     });
 
     it( "Verifier logs verification complete", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, requesterKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, requesterKey, vaultOwner.address);
       return vault.append("\nVerification complete: Accepted", verifiersLog)
         .then( expectSuccessResponse );
     });
 
     it( "Verifier writes cryptographic signature", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, requesterKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, requesterKey, vaultOwner.address);
       return vault.write("signature", verifiersSignature)
         .then( expectSuccessResponse );
     });
 
     it( "Customer reads verifier's log again", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
       return vault.read(verifiersLog)
         .then( function(data){
           expect(data).to.equal("Verification started\nVerification rejected: proof of address is over 3 months old\nVerification complete: Accepted");
@@ -604,7 +604,7 @@ describe("System Scenarios", function() {
     });
 
     it( "Customer reads signature", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
       return vault.read(verifiersSignature)
         .then( function(data){
           expect(data).to.equal("signature");
@@ -623,31 +623,31 @@ describe("System Scenarios", function() {
     }).timeout(200000);
 
     it( "Customer can no longer access the vault", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, requesterKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, requesterKey, vaultOwner.address);
       return vault.read(verifiersSignature)
         .should.eventually.be.rejectedWith(DatonaErrors.PermissionError, "permission denied");
     });
 
     it( "Verifier can no longer access the customer's ID", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
       return vault.read(customersDirectory)
         .should.eventually.be.rejectedWith(DatonaErrors.PermissionError, "permission denied");
     });
 
     it( "Verifier can no longer access the customer's ID", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
       return vault.read(customersDirectory+"/passport.png")
         .should.eventually.be.rejectedWith(DatonaErrors.PermissionError, "permission denied");
     });
 
     it( "Verifier can no longer access the customer's ID", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
       return vault.read(customersDirectory+"/proof_of_address2.pdf")
         .should.eventually.be.rejectedWith(DatonaErrors.PermissionError, "permission denied");
     });
 
     it( "owner succesfully deletes the vault", function(){
-      const vault = new datona.vault.RemoteVault({scheme: "file", host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
       return vault.delete()
         .then( expectSuccessResponse );
     });

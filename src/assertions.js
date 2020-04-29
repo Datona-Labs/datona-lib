@@ -27,7 +27,8 @@ const errors = require('./errors');
 const VALID_BLOCKCHAIN_ADDRESS_REGEX = /^0x[0-9a-fA-F]{40}$/;
 const VALID_PRIVATE_KEY_REGEX = /^[0-9a-fA-F]{64}$/;
 const VALID_HASH_REGEX = /^[0-9a-fA-F]{64}$/;
-
+const VALID_URL_SCHEME = /^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$/;
+const VALID_URL_HOSTNAME = /^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$/;
 
 function isNotEmpty(value, name) {
   const result = (value !== undefined) && !/^\s*$/.test(value);
@@ -126,8 +127,8 @@ exports.isAddress = function(value, name) {
 exports.isUrl = function(value, name) {
   var result = isNotEmpty(value, name) && (toString.call(value) === '[object Object]');
   if (name !== undefined && !result) throw new errors.TypeError(name + ": invalid type. Expected Object");
-  result &= exports.isString(value.scheme, name ? name + " scheme" : undefined);
-  result &= exports.isString(value.host, name ? name + " host" : undefined);
+  result &= exports.matches(value.scheme, VALID_URL_SCHEME, name ? name + " scheme" : undefined);
+  result &= exports.matches(value.host, VALID_URL_HOSTNAME, name ? name + " host" : undefined);
   result &= exports.isNumber(value.port, name ? name + " port" : undefined);
   return result;
 };

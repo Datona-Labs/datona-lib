@@ -21,6 +21,19 @@ Full documentation is available on [ReadTheDocs](https://datona-lib.readthedocs.
 
 ## Installation
 
+### Within a Web Page
+
+Copy `dist/datona-lib.js` into your directory structure along with [`dist/web3.min.js`](https://github.com/ethereum/web3.js).  Include these scripts in your web page:
+
+```html
+<head>
+  <script src="./lib/web3.min.js"></script>
+  <script src="./lib/datona-lib.js"></script>
+ </head>
+```
+
+### Within a Local Node.js Project
+
     $ npm install datona-lib
 
 This will install datona-lib and all its dependencies to your local node project.

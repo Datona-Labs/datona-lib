@@ -12,7 +12,8 @@
     "test": "./node_modules/.bin/mocha --reporter spec -i -g 'Blockchain subscribe/unsubscribe'",
     "test-realtime": "./node_modules/.bin/mocha --reporter spec -g 'Blockchain subscribe/unsubscribe'",
     "test-all": "./node_modules/.bin/mocha --reporter spec",
-    "test-cov": "nyc --reporter=lcov node_modules/mocha/bin/_mocha -- -R spec"
+    "test-cov": "nyc --reporter=lcov node_modules/mocha/bin/_mocha -- -R spec",
+    "browserify": "browserify -r ./src/datona.js:datona-lib --exclude web3 > dist/datona-lib.js"
   },
   "repository": {
     "type": "git",
@@ -32,12 +33,15 @@
   },
   "homepage": "https://github.com/Datona-Labs/datona-lib#readme",
   "dependencies": {
+    "axios": "^0.19.2",
+    "isomorphic-ws": "^4.0.1",
     "js-sha3": "^0.8.0",
     "minimist": ">=0.2.1",
     "npm": "^6.14.4",
     "rlp": "^2.2.4",
     "secp256k1": "^3.8.0",
-    "web3": "^1.2.7"
+    "web3": "^1.2.7",
+    "ws": "^7.2.5"
   },
   "devDependencies": {
     "chai": "^3.5.0",

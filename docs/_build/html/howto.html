@@ -692,7 +692,7 @@ abstract contract FileBasedSdac is SDAC {
 </ul>
 <img alt="_images/vault_server-class_diagram.png" src="_images/vault_server-class_diagram.png" />
 <p>The diagram above shows the class relationships between the user-defined classes in black and the datona-lib classes in blue.  The user-defined <code class="docutils literal notranslate"><span class="pre">DataServer</span></code> class must implement the VaultDataServer interface and promise to handle the 4 types of data request.  All permission checks will have already been performed by the <code class="docutils literal notranslate"><span class="pre">VaultKeeper</span></code> so the <code class="docutils literal notranslate"><span class="pre">DataServer</span></code> need only perform the requests unconditionally.</p>
-<p>Example bare-minimal server and VaultDataServer implementation.</p>
+<p>Example bare-minimal server and VaultDataServer implementation.  This example is a plain TCP server.  It could instead be written as an HTTP or WebSocket server.</p>
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="kr">const</span> <span class="nx">datona</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">&quot;datona-lib&quot;</span><span class="p">);</span>
 <span class="kr">const</span> <span class="nx">net</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;net&#39;</span><span class="p">);</span>
 

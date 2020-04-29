@@ -5,7 +5,7 @@
 
 const datona = require("../../../src/datona");
 const RamBasedVaultDataServer = require("./vaultDataManager").RamBasedVaultDataServer;
-const net = require('net');
+const http = require('http');
 
 
 /*
@@ -19,33 +19,36 @@ const net = require('net');
      this.key = key;
      const vaultManager = new RamBasedVaultDataServer();
      this.vaultKeeper = new datona.vault.VaultKeeper(vaultManager, this.key);
-     this.server = net.createServer(this.connection.bind(this));
+     this.server = http.createServer(this.connection.bind(this));
+     this.server.listen(portNumber);
 
      this.server.on('error', (err) => {
        log("fatal server error: " + err);
        throw err;
      });
 
-     this.server.listen(portNumber, () => {
-       log('listening on port ' + portNumber);
-     });
+     log('listening on port ' + portNumber);
    }
 
 
-   connection(c){
-     log(c.remoteAddress+'\tconnected');
+   connection(request, response){
+     log(request.connection.remoteAddress+'\tconnected');
 
-     c.on('end', () => {
-       log(c.remoteAddress+'\tdisconnected');
-     });
+     var data = "";
 
-     c.on('data', (buffer) => {
-       const data = buffer.toString();
-       log(c.remoteAddress+"\ttransaction "+data);
+     request.on('data', (chunk) => { data += chunk.toString() });
+
+     request.on('end', () => {
+       log(request.connection.remoteAddress+"\ttransaction "+data);
        this.vaultKeeper.handleSignedRequest(data)
-         .then( function(response){ sendResponse(c,response); }  )
+         .then( function(responseTxn){ sendResponse(request, response, responseTxn); }  )
          .catch( log ); // should never happen
      });
+
+     request.on('close', () => {
+       log(request.connection.remoteAddress+'\tdisconnected');
+     });
+
    }
 
    close(){
@@ -56,10 +59,10 @@ const net = require('net');
 }
 
 
-function sendResponse(c, response){
-  log(c.remoteAddress+"\t"+response.message);
-  c.write(response);
-  c.end();
+function sendResponse(c, r, responseTxn){
+  log(c.connection.remoteAddress+"\tresponse "+responseTxn);
+  r.writeHead(200);
+  r.end(responseTxn);
 }
 
 function log( message ){
