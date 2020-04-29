@@ -17435,7 +17435,7 @@ const CONFIG = require('../config.json');
 const crypto = require('./datona-crypto');
 const errors = require('./errors');
 const assert = require('./assertions');
-const Web3 = (typeof window === 'undefined') ? require('web3') : window.web3;
+const Web3 = (typeof window === 'undefined') ? require('web3') : window.Web3;
 const Transaction = require('ethereumjs-tx').Transaction;
 const sdacInterface = require("../contracts/SDAC.json");
 var web3;
