@@ -30,6 +30,7 @@ const assert = require('./assertions');
 const crypto = require('./datona-crypto');
 var WebSocket;
 var net;
+var axios;
 
 
 /*
@@ -99,7 +100,7 @@ class TcpClient extends DatonaClient {
 
 
 /*
- * DatonaClient implementation for a plain TCP (file://) connection
+ * DatonaClient implementation for a websocket connection
  */
 class WebSocketClient extends DatonaClient {
 
@@ -114,6 +115,7 @@ class WebSocketClient extends DatonaClient {
     return new Promise((resolve, reject) => {
 
       const socket = new WebSocket(this.url.scheme + "://" + this.url.host + ":" + this.url.port);
+
       const timer = setTimeout(() => {
         socket.close();
         reject(new errors.CommunicationError("Connection timeout"));
@@ -125,7 +127,7 @@ class WebSocketClient extends DatonaClient {
       };
 
       socket.onmessage = function (evt) {
-        socket.close();
+        //socket.close();
         resolve(evt.data.toString());
       };
 
@@ -137,6 +139,35 @@ class WebSocketClient extends DatonaClient {
     });
   }
 }
+
+
+/*
+ * DatonaClient implementation for an http connection
+ */
+class HttpClient extends DatonaClient {
+
+  constructor(url, connectionTimeout = 3000) {
+    super(url);
+    if (axios === undefined) axios = require('axios');
+    this.socket = axios.create({ baseURL: this.url.scheme + "://" + this.url.host + ":" + this.url.port + "/" });
+    this.connectionTimeout = connectionTimeout;
+  }
+
+  send(signedTxnStr) {
+    let source = axios.CancelToken.source();
+    const timer = setTimeout(() => { source.cancel() }, this.connectionTimeout);
+    return this.socket.post("", signedTxnStr, {cancelToken: source.token})
+      .then( (response) => {
+        clearTimeout(timer);
+        return JSON.stringify(response.data);
+      })
+      .catch( (error) => {
+        throw new errors.CommunicationError("Failed to send transaction: " + error.message, error);
+      });
+  }
+
+}
+
 
 /*
  * Superclass for classes that communicate with a remote vault or requester server.
@@ -159,6 +190,9 @@ class DatonaConnector {
         break;
       case "ws":
         this.client = new WebSocketClient(url);
+        break;
+      case "http":
+        this.client = new HttpClient(url);
         break;
       default:
         throw new errors.RequestError("Unsupported url scheme: "+url.scheme);

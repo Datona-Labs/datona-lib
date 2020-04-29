@@ -4,8 +4,8 @@ const expect = chai.expect;
 const should = chai.should();
 const datona = require("../src/datona");
 const DatonaErrors = datona.errors;
-const net = require('net');
 const sdacInterface = require("../contracts/SDAC.json");
+var http = require('http');
 
 
 describe("Vault", function() {
@@ -49,18 +49,17 @@ describe("Vault", function() {
     class Server{
 
       constructor(key){
-        this.server = net.createServer(this.connection);
-        this.server.parent = this;
-        this.server.listen(portNumber, ()=>{});
-        this.server.key = key;
+        this.server = http.createServer(this.connection.bind(this));
+        this.server.listen(portNumber);
+        this.key = key;
         this.clear();
       }
 
-      connection(c){
-        c.on('end', () => { });
-        c.on('data', (data) => {
-          this.parent.data += data.toString();
-          c.write(datona.comms.encodeTransaction({txnType: "VaultResponse", responseType: "success", data: "RemoteVault Server says 'Hello'"}, this.key));
+      connection(request, response){
+        request.on('data', (data) => { this.data += data.toString(); });
+        request.on('end', () => {
+          response.writeHead(200);
+          response.end(datona.comms.encodeTransaction({txnType: "VaultResponse", responseType: "success", data: "RemoteVault Server says 'Hello'"}, this.key));
         });
       }
 
@@ -70,7 +69,7 @@ describe("Vault", function() {
     }
 
     const serverUrl = {
-      scheme: "file",
+      scheme: "http",
       host: "localhost",
       port: portNumber
     };

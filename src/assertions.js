@@ -126,10 +126,10 @@ exports.isAddress = function(value, name) {
 
 exports.isUrl = function(value, name) {
   var result = isNotEmpty(value, name) && (toString.call(value) === '[object Object]');
+  if (name !== undefined && !result) throw new errors.TypeError(name + ": invalid type. Expected Object");
   result &= exports.matches(value.scheme, VALID_URL_SCHEME, name ? name + " scheme" : undefined);
   result &= exports.matches(value.host, VALID_URL_HOSTNAME, name ? name + " host" : undefined);
   result &= exports.isNumber(value.port, name ? name + " port" : undefined);
-  if (name !== undefined && !result) throw new errors.TypeError(name + ": invalid type. Expected Object");
   return result;
 };
 
