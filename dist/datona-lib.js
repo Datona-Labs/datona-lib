@@ -17447,6 +17447,14 @@ var web3;
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
+const NO_PERMISSIONS = 0x00;
+const ALL_PERMISSIONS = 0x07;
+const READ_BIT = 0x04;
+const WRITE_BIT = 0x02;
+const APPEND_BIT = 0x01;
+const DIRECTORY_BIT = 0x80;
+const ROOT_DIRECTORY = "0x0000000000000000000000000000000000000000";
+
 
 /*
  * Classes
@@ -17464,10 +17472,10 @@ class Permissions {
     }
   }
 
-  canRead() { return (this.permissions & Contract.READ_BIT) > 0 }
-  canWrite() { return (this.permissions & Contract.WRITE_BIT) > 0 }
-  canAppend() { return (this.permissions & Contract.APPEND_BIT) > 0 }
-  isDirectory() { return (this.permissions & Contract.DIRECTORY_BIT) > 0 }
+  canRead() { return (this.permissions & READ_BIT) > 0 }
+  canWrite() { return (this.permissions & WRITE_BIT) > 0 }
+  canAppend() { return (this.permissions & APPEND_BIT) > 0 }
+  isDirectory() { return (this.permissions & DIRECTORY_BIT) > 0 }
 
 }
 
@@ -17476,14 +17484,6 @@ class Permissions {
  * Represents a Smart Data Access Contract on the blockchain
  */
 class Contract {
-
-  static NO_PERMISSIONS = 0x00;
-  static ALL_PERMISSIONS = 0x07;
-  static READ_BIT = 0x04;
-  static WRITE_BIT = 0x02;
-  static APPEND_BIT = 0x01;
-  static DIRECTORY_BIT = 0x80;
-  static ROOT_DIRECTORY = "0x0000000000000000000000000000000000000000";
 
   /*
    * If the address is not given this represents a new contract to be deployed.
@@ -17658,7 +17658,7 @@ class Contract {
    */
   getPermissions(requester, fileId) {
     assert.isAddress(requester, "Contract getPermissions requester");
-    if (fileId === undefined) fileId = Contract.ROOT_DIRECTORY;
+    if (fileId === undefined) fileId = ROOT_DIRECTORY;
     else assert.isAddress(fileId, "Contract getPermissions fileId");
     if (this.address === undefined) throw new errors.BlockchainError("Contract.getPermissions: contract has not been deployed or mapped to an existing contract");
     return this.call("getPermissions", [requester, fileId])
