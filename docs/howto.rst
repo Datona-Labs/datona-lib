@@ -34,7 +34,6 @@ Here is an example of a simple contract that automatically terminates after a gi
 
     contract Duration_SDAC is SDAC {
 
-        address public owner = msg.sender;
         address public permittedRequester;
         uint public contractDuration;
         uint public contractStart;
@@ -60,6 +59,10 @@ Here is an example of a simple contract that automatically terminates after a gi
             return NO_PERMISSIONS;
         }
 
+        function isPermitted( address requester ) public view returns (bool) {
+            return ( getPermissions(requester, address(0)) & READ_BIT ) > 0;
+        }
+
         function hasExpired() public view override returns (bool) {
             return terminated ||
                    (block.timestamp - contractStart) >= (contractDuration * 1 days);
@@ -68,7 +71,13 @@ Here is an example of a simple contract that automatically terminates after a gi
         function terminate() public override onlyOwnerOrRequester {
             terminated = true;
         }
-     }
+
+        function getOwner() public view returns (address) {
+            return owner;
+        }
+
+    }
+
 
 File Permissions
 ----------------
