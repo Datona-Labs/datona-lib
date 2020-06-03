@@ -234,7 +234,6 @@ import &quot;SDAC.sol&quot;;
 
 contract Duration_SDAC is SDAC {
 
-    address public owner = msg.sender;
     address public permittedRequester;
     uint public contractDuration;
     uint public contractStart;
@@ -260,6 +259,10 @@ contract Duration_SDAC is SDAC {
         return NO_PERMISSIONS;
     }
 
+    function isPermitted( address requester ) public view returns (bool) {
+        return ( getPermissions(requester, address(0)) &amp; READ_BIT ) &gt; 0;
+    }
+
     function hasExpired() public view override returns (bool) {
         return terminated ||
                (block.timestamp - contractStart) &gt;= (contractDuration * 1 days);
@@ -268,7 +271,12 @@ contract Duration_SDAC is SDAC {
     function terminate() public override onlyOwnerOrRequester {
         terminated = true;
     }
- }
+
+    function getOwner() public view returns (address) {
+        return owner;
+    }
+
+}
 </pre></div>
 </div>
 <div class="section" id="file-permissions">

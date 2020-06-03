@@ -80,6 +80,78 @@ Example
 
 -----------------------------------------------------------------------------
 
+encrypt
+=======
+
+Encrypts the given data using the Elliptic Curve Integrated Encryption Scheme.  The symmetric encryption key is generated from this private key and the given public key.  The resulting encrypted data can be decrypted with this public key and the private part of the given public key.
+
+The key derivation function used is the standard datona crypto hash function.  The encryption scheme used is AES-GCM.  ECIES has been selected instead of an asymmetric scheme like RSA for performance reasons.
+
+.. code-block:: javascript
+
+    encrypt(publicKeyTo, data);
+
+----------
+Parameters
+----------
+
+1. ``publicKeyTo`` *(address)*  public part of the remote key that will be used to decrypt this data
+2. ``data`` *(bytes)* data to encrypt (e.g. as a string)
+
+-------
+Returns
+-------
+
+``bytes`` - the encrypted data
+
+-------
+Example
+-------
+
+.. code-block:: javascript
+
+  const encryptedData = myKey.encrypt(theirPublicKey, "Hello World"))
+
+
+-----------------------------------------------------------------------------
+
+decrypt
+=======
+
+Decrypts the given data that has been encrypted with the ``encrypt`` function.  The given public key must be the public part of the private key used to encrypt the data and this key must be the private part of the public key used to encrypt the data.
+
+.. code-block:: javascript
+
+    decrypt(publicKeyFrom, data);
+
+----------
+Parameters
+----------
+
+1. ``publicKeyFrom`` *(address)*  public part of the remote key that was used to encrypt this data
+2. ``data`` *(bytes)* the encrypted data
+
+-------
+Returns
+-------
+
+``bytes`` - the decrypted data
+
+-------
+Example
+-------
+
+.. code-block:: javascript
+
+  const key1 = new Key("e68e40257cfee330038c49637fcffff82fae04b9c563f4ea071c20f2eb55063c");
+  const key2 = new Key("b692ef5519cd87854b9bd97dd47a8929cbe473fe7a0da53e4ec79efec540cd2b");
+  const encryptedData = key1.encrypt(key2.publicKey, "Hello World"));
+  const decryptedData = key2.decrypt(key1.publicKey, encryptedData));
+  assert(decryptedData == "Hello World");
+
+
+-----------------------------------------------------------------------------
+
 *********
 Functions
 *********

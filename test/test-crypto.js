@@ -8,10 +8,17 @@ const expect = chai.expect;
 describe("Crypto", function() {
 
   const hash = "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"; // random hash
-  const ethId = { // taken from Ganache
+  const owner = { // taken from Ganache
     privateKey: "b94452c533536500e30f2253c96d123133ca1cbdb987556c2dc229573a2cd53c",
     address: "0xfb3e6dd29d01c1b5b99e46db3fe26df1138b73d1"
   };
+  const ownerKey = new datona.crypto.Key(owner.privateKey);
+
+  const requester = { // taken from Ganache
+    privateKey: "e68e40257cfee330038c49637fcffff82fae04b9c563f4ea071c20f2eb55063c",
+    address: "0x41A60F71063CD7c9e5247d3E7d551f91f94b5C3b"
+  };
+  const requesterKey = new datona.crypto.Key(requester.privateKey);
 
   describe("generateKey function", function() {
 
@@ -45,7 +52,7 @@ describe("Crypto", function() {
 
       it("an empty data argument results in an error", function() {
         expect(function() {
-          datona.crypto.sign("", ethId.privateKey)
+          datona.crypto.sign("", owner.privateKey)
         }).to.throw(DatonaError, "hash is missing or empty");
       });
 
@@ -70,7 +77,7 @@ describe("Crypto", function() {
     });
 
     it("returns a hex signature string for a valid hash and key", function() {
-      var signature = datona.crypto.sign(hash, ethId.privateKey);
+      var signature = datona.crypto.sign(hash, owner.privateKey);
       expect(signature).to.match(/^[0-9a-f]+$/);
     });
 
@@ -80,8 +87,8 @@ describe("Crypto", function() {
   describe("getSignatory", function() {
 
     it("returns the correct signer's address", function() {
-      var signature = datona.crypto.sign(hash, ethId.privateKey);
-      expect(datona.crypto.getSignatory(hash, signature)).to.equal(ethId.address);
+      var signature = datona.crypto.sign(hash, owner.privateKey);
+      expect(datona.crypto.getSignatory(hash, signature)).to.equal(owner.address);
     });
 
   });
@@ -113,7 +120,7 @@ describe("Crypto", function() {
 
   describe("recover function", function() {
 
-    var signature = datona.crypto.sign(hash, ethId.privateKey);
+    var signature = datona.crypto.sign(hash, owner.privateKey);
 
     describe("called with", function() {
 
@@ -125,7 +132,7 @@ describe("Crypto", function() {
 
       it("an empty hash argument results in an error", function() {
         expect(function() {
-          datona.crypto.recover("", signature, ethId.address)
+          datona.crypto.recover("", signature, owner.address)
         }).to.throw(DatonaError, "hash is missing or invalid");
       });
 
@@ -137,33 +144,33 @@ describe("Crypto", function() {
 
       it("an empty signature argument results in an error", function() {
         expect(function() {
-          datona.crypto.recover(hash, "", ethId.address)
+          datona.crypto.recover(hash, "", owner.address)
         }).to.throw(DatonaError, "signature is missing or empty");
       });
 
       it("an invalid signature argument results in an error", function() {
         expect(function() {
-          datona.crypto.recover(hash, signature + "#&%", ethId.address)
+          datona.crypto.recover(hash, signature + "#&%", owner.address)
         }).to.throw(DatonaError, "signature: invalid type. Expected hex string");
       });
 
       it("an invalid length hash results in an error", function() {
         expect(function() {
-          datona.crypto.recover(hash + "ab", signature, ethId.address)
+          datona.crypto.recover(hash + "ab", signature, owner.address)
         }).to.throw(DatonaError, "hash is missing or invalid");
       });
 
       it("a hash with invalid characters results in an error", function() {
         var invalidHash = "g" + hash.substr(1);
         expect(function() {
-          datona.crypto.recover(invalidHash, signature, ethId.address)
+          datona.crypto.recover(invalidHash, signature, owner.address)
         }).to.throw(DatonaError, "hash is missing or invalid");
       });
 
     });
 
     it("returns the correct signer's address", function() {
-      expect(datona.crypto.recover(hash, signature)).to.equal(ethId.address);
+      expect(datona.crypto.recover(hash, signature)).to.equal(owner.address);
     });
 
   });
@@ -171,7 +178,7 @@ describe("Crypto", function() {
 
   describe("verify function", function() {
 
-    var signature = datona.crypto.sign(hash, ethId.privateKey);
+    var signature = datona.crypto.sign(hash, owner.privateKey);
 
     describe("called with", function() {
 
@@ -183,7 +190,7 @@ describe("Crypto", function() {
 
       it("an empty hash argument results in an error", function() {
         expect(function() {
-          datona.crypto.verify("", signature, ethId.address)
+          datona.crypto.verify("", signature, owner.address)
         }).to.throw(DatonaError, "hash is missing or invalid");
       });
 
@@ -195,13 +202,13 @@ describe("Crypto", function() {
 
       it("an empty signature argument results in an error", function() {
         expect(function() {
-          datona.crypto.verify(hash, "", ethId.address)
+          datona.crypto.verify(hash, "", owner.address)
         }).to.throw(DatonaError, "signature is missing or empty");
       });
 
       it("an invalid signature argument results in an error", function() {
         expect(function() {
-          datona.crypto.verify(hash, signature + "#&%", ethId.address)
+          datona.crypto.verify(hash, signature + "#&%", owner.address)
         }).to.throw(DatonaError, "signature: invalid type. Expected hex string");
       });
 
@@ -219,21 +226,21 @@ describe("Crypto", function() {
 
       it("an invalid length hash results in an error", function() {
         expect(function() {
-          datona.crypto.verify(hash + "ab", signature, ethId.address)
+          datona.crypto.verify(hash + "ab", signature, owner.address)
         }).to.throw(DatonaError, "hash is missing or invalid");
       });
 
       it("a hash with invalid characters results in an error", function() {
         var invalidHash = "g" + hash.substr(1);
         expect(function() {
-          datona.crypto.verify(invalidHash, signature, ethId.address)
+          datona.crypto.verify(invalidHash, signature, owner.address)
         }).to.throw(DatonaError, "hash is missing or invalid");
       });
 
     });
 
     it("returns true for the correct signer's address", function() {
-      expect(datona.crypto.verify(hash, signature, ethId.address)).to.equal(true);
+      expect(datona.crypto.verify(hash, signature, owner.address)).to.equal(true);
     });
 
     it("returns false for an incorrect signer's address", function() {
@@ -290,67 +297,141 @@ describe("Crypto", function() {
 
   describe("Key class", function() {
 
-    describe("constructor", function() {
+    describe("constructor", function () {
 
-      it("when called with no argument results in an error", function() {
-        expect(function() {
+      it("when called with no argument results in an error", function () {
+        expect(function () {
           new datona.crypto.Key()
         }).to.throw(DatonaError, "privateKey is missing or empty");
       });
 
-      it("when called with an empty privateKey argument results in an error", function() {
-        expect(function() {
+      it("when called with an empty privateKey argument results in an error", function () {
+        expect(function () {
           new datona.crypto.Key("")
         }).to.throw(DatonaError, "privateKey is missing or empty");
       });
 
-      it("when called with an invalid private key results in an error", function() {
-        expect(function() {
+      it("when called with an invalid private key results in an error", function () {
+        expect(function () {
           new datona.crypto.Key("my_invalid_private_key")
         }).to.throw(DatonaError, "privateKey: invalid type. Expected hex string");
       });
 
-      it("calculates the correct private key and address when called with a valid privateKey", function() {
-        const key = new datona.crypto.Key(ethId.privateKey);
-        expect(key.privateKey.toString('hex')).to.equal(ethId.privateKey);
-        expect(key.address).to.equal(ethId.address);
+      it("calculates the correct private key and address when called with a valid privateKey", function () {
+        const key = new datona.crypto.Key(owner.privateKey);
+        expect(key.privateKey.toString('hex')).to.equal(owner.privateKey);
+        expect(key.address).to.equal(owner.address);
       });
 
     });
 
-    describe("sign function", function() {
+    describe("sign function", function () {
 
-      const key = new datona.crypto.Key(ethId.privateKey);
+      const key = new datona.crypto.Key(owner.privateKey);
 
-      describe("called with", function() {
+      describe("called with", function () {
 
-        it("no argument results in an error", function() {
-          expect(function() {
+        it("no argument results in an error", function () {
+          expect(function () {
             key.sign()
           }).to.throw(DatonaError, "hash is missing or empty");
         });
 
-        it("an empty data argument results in an error", function() {
-          expect(function() {
+        it("an empty data argument results in an error", function () {
+          expect(function () {
             key.sign("")
           }).to.throw(DatonaError, "hash is missing or empty");
         });
 
-        it("an invalid hash results in an error", function() {
-          expect(function() {
+        it("an invalid hash results in an error", function () {
+          expect(function () {
             key.sign("my_invalid_hash")
           }).to.throw(DatonaError, "hash: invalid type. Expected hex string");
         });
 
       });
 
-      it("returns a hex signature string for a valid hash and key", function() {
+      it("returns a hex signature string for a valid hash and key", function () {
         var signature = key.sign(hash);
         expect(signature).to.match(/^[0-9a-f]+$/);
       });
 
     });
 
-  });
+    describe("encrypt function", function () {
 
+      describe("called with", function () {
+
+        it("no argument results in an error", function () {
+          expect(function () {
+            ownerKey.encrypt()
+          }).to.throw(DatonaError, "public key is missing or empty");
+        });
+
+        it("data missing results in an error", function () {
+          expect(function () {
+            ownerKey.encrypt(requesterKey.publicKey);
+          }).to.throw(DatonaError, "data is missing or empty");
+        });
+
+        it("an invalid public key results in an error", function () {
+          expect(function () {
+            ownerKey.encrypt(requesterKey, "Hello World")
+          }).to.throw(DatonaError, "public key: invalid type");
+        });
+
+      });
+
+      it("confirm ECIES shared secret is the same when calculated at both ends", function () {
+        const ecdsa = require('secp256k1');
+        const ownerCalculatedSecret = ecdsa.ecdh(requesterKey.publicKey, ownerKey.privateKey).toString('hex');
+        const requesterCalulatedSecret = ecdsa.ecdh(ownerKey.publicKey, requesterKey.privateKey).toString('hex');
+        expect(ownerCalculatedSecret).to.equal(requesterCalulatedSecret);
+      });
+
+      it("confirm ECIES shared secret is not the same when calculated by a third party", function () {
+        const ecdsa = require('secp256k1');
+        const key = new datona.crypto.Key(owner.privateKey);
+        const ownerCalculatedSecret = ecdsa.ecdh(requesterKey.publicKey, ownerKey.privateKey).toString('hex');
+        const otherCalulatedSecret = ecdsa.ecdh(ownerKey.publicKey, key.privateKey).toString('hex');
+        expect(ownerCalculatedSecret).to.not.equal(otherCalulatedSecret);
+      });
+
+      it("returns the correct encrypted data", function () {
+        expect(ownerKey.encrypt(requesterKey.publicKey, "Hello World")).to.not.equal("Hello World");
+      });
+
+    });
+
+    describe("decrypt function", function () {
+
+      describe("called with", function () {
+
+        it("no argument results in an error", function () {
+          expect(function () {
+            ownerKey.decrypt()
+          }).to.throw(DatonaError, "public key is missing or empty");
+        });
+
+        it("data missing results in an error", function () {
+          expect(function () {
+            ownerKey.decrypt(requesterKey.publicKey);
+          }).to.throw(DatonaError, "data is missing or empty");
+        });
+
+        it("an invalid public key results in an error", function () {
+          expect(function () {
+            ownerKey.decrypt(requesterKey, "Hello World")
+          }).to.throw(DatonaError, "public key: invalid type");
+        });
+
+      });
+
+      it("requester can decode message encrypted by owner", function () {
+        expect(requesterKey.decrypt(ownerKey.publicKey, ownerKey.encrypt(requesterKey.publicKey, "Hello World"))).to.equal("Hello World");
+      });
+
+    });
+
+  });
 });

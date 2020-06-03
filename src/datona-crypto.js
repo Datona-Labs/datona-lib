@@ -26,6 +26,7 @@
 const errors = require('./errors');
 const assert = require('./assertions');
 const ecdsa = require('secp256k1');
+const CryptoJS = require('crypto-js');
 const keccak256 = require('js-sha3').keccak256;
 const rlp = require('rlp');
 const randomBytes = require('crypto').randomBytes;
@@ -46,8 +47,8 @@ class Key {
   constructor(privateKey) {
     assert.isPrivateKey(privateKey, "privateKey");
     this.privateKey = Buffer.from(privateKey, 'hex');
-    const publicKey = ecdsa.publicKeyCreate(this.privateKey, false).slice(1);
-    const addressBuf = hash(publicKey).slice(-20 * 2);
+    this.publicKey = ecdsa.publicKeyCreate(this.privateKey, false);
+    const addressBuf = hash(this.publicKey.slice(1)).slice(-20 * 2);
     this.address = "0x" + addressBuf.toString('hex');
   }
 
@@ -59,6 +60,28 @@ class Key {
     const signature = ecdsa.sign(Buffer.from(hash, 'hex'), this.privateKey);
     return toDatonaSignature(signature);
   }
+
+
+  /*
+   * Encrypts the given data for the given key using the Elliptic Curve Integrated Encryption Scheme
+   *   - The key derivation function used is the standard datona crypto hash function.
+   *   - The encryption scheme used is AES-GCM.
+   * ECIES has been selected instead of an asymmetric scheme like RSA for performance reasons.
+   */
+  encrypt(publicKeyTo, data) {
+    assert.isInstanceOf(publicKeyTo, "public key", Uint8Array);
+    assert.isPresent(data, "data");
+    const sharedSecret = ecdsa.ecdh(publicKeyTo, this.privateKey).toString('hex');
+    return CryptoJS.AES.encrypt(data,hash(sharedSecret)).toString();
+  }
+
+  decrypt(publicKeyFrom, data) {
+    assert.isInstanceOf(publicKeyFrom, "public key", Uint8Array);
+    assert.isPresent(data, "data");
+    const sharedSecret = ecdsa.ecdh(publicKeyFrom, this.privateKey).toString('hex');
+    return CryptoJS.AES.decrypt(data,hash(sharedSecret)).toString(CryptoJS.enc.Utf8);
+  }
+
 }
 
 
