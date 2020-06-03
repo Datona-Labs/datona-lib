@@ -104,7 +104,13 @@ Promises to create a new vault on the remote data vault server containing the gi
 
 .. code-block:: javascript
 
-    create();
+    create([options]);
+
+----------
+Parameters
+----------
+
+1. ``options`` *(Object)* - (Optional) this object will be passed unchanged to the remote data vault server.
 
 -------
 Returns
@@ -149,7 +155,7 @@ Promises to write data to the vault, to a specific file if specified. This metho
 
 .. code-block:: javascript
 
-    write(data, [file]);
+    write(data, [file], [options]);
 
 ----------
 Parameters
@@ -157,6 +163,7 @@ Parameters
 
 1. ``data`` *(Object)* - the data to be stored
 2. ``file`` *(Address)* - (Optional) the specific file to write to.  Defaults to the :ref:`ROOT_DIRECTORY<Contract>` if not given.
+3. ``options`` *(Object)* - (Optional) this object will be passed unchanged to the remote data vault server.
 
 -------
 Returns
@@ -203,7 +210,7 @@ When appending data to a directory, the data is written to a new file in that di
 
 .. code-block:: javascript
 
-    append(data, [file]);
+    append(data, [file], [options]);
 
 ----------
 Parameters
@@ -211,6 +218,7 @@ Parameters
 
 1. ``data`` *(Object)* - the data to be appended
 2. ``file`` *(Address)* - (Optional) the specific file to write to.  Defaults to the :ref:`ROOT_DIRECTORY<Contract>` if not given.
+3. ``options`` *(Object)* - (Optional) this object will be passed unchanged to the remote data vault server.
 
 -------
 Returns
@@ -255,13 +263,14 @@ Promises to retrieve the data from this vault if permitted.  This method creates
 
 .. code-block:: javascript
 
-    read([file]);
+    read([file], [options]);
 
 ----------
 Parameters
 ----------
 
 1. ``file`` *(Address)* - (Optional) the specific file or directory to read from.  Defaults to the :ref:`ROOT_DIRECTORY<Contract>` if not given.
+2. ``options`` *(Object)* - (Optional) this object will be passed unchanged to the remote data vault server.
 
 -------
 Returns
@@ -306,7 +315,13 @@ Promises to delete this vault and its data provided the contract has expired or 
 
 .. code-block:: javascript
 
-    delete();
+    delete([options]);
+
+----------
+Parameters
+----------
+
+1. ``options`` *(Object)* - (Optional) this object will be passed unchanged to the remote data vault server.
 
 -------
 Returns
@@ -734,13 +749,14 @@ Must create a new vault identified by the given contract address.  Must fail if 
 
 .. code-block:: javascript
 
-    create(contract);
+    create(contract, [options]);
 
 ----------
 Parameters
 ----------
 
 1. ``contract`` *(Address)* - the address of the contract to identify the vault.  Future write, append, read and delete requests will identify the vault using this contract address.
+2. ``options`` *(Object)* - (Optional) options from the end user.  Allows the server developer to provide server-specific features to end user applications.
 
 -------
 Returns
@@ -757,7 +773,7 @@ Must unconditionally write the given data to the given file in the vault identif
 
 .. code-block:: javascript
 
-    write(contract, file, data);
+    write(contract, file, data, [options]);
 
 ----------
 Parameters
@@ -766,6 +782,7 @@ Parameters
 1. ``contract`` *(Address)* - the address of the contract to identify the vault.
 2. ``file`` *(Address)* - the specific file to write to.
 3. ``data`` *(Object)* - the data to store in the vault
+4. ``options`` *(Object)* - (Optional) options from the end user.  Allows the server developer to provide server-specific features to end user applications.
 
 -------
 Returns
@@ -782,7 +799,7 @@ Must unconditionally append the given data to the given file in the vault identi
 
 .. code-block:: javascript
 
-    append(contract, file, data);
+    append(contract, file, data, [options]);
 
 ----------
 Parameters
@@ -791,6 +808,7 @@ Parameters
 1. ``contract`` *(Address)* - the address of the contract to identify the vault.
 2. ``file`` *(Address)* - the specific file to write to.
 3. ``data`` *(Object)* - the data to append to the file
+4. ``options`` *(Object)* - (Optional) options from the end user.  Allows the server developer to provide server-specific features to end user applications.
 
 -------
 Returns
@@ -807,7 +825,7 @@ Must unconditionally return the data from the given file in the vault identified
 
 .. code-block:: javascript
 
-    read(contract, file);
+    read(contract, file, [options]);
 
 ----------
 Parameters
@@ -815,6 +833,7 @@ Parameters
 
 1. ``contract`` *(Address)* - the address of the contract to identify the vault.
 2. ``file`` *(Address)* - the specific file to write to.
+3. ``options`` *(Object)* - (Optional) options from the end user.  Allows the server developer to provide server-specific features to end user applications.
 
 -------
 Returns
@@ -831,7 +850,7 @@ Must promise to unconditionally return a list of the names of files in the given
 
 .. code-block:: javascript
 
-    read(contract, file);
+    read(contract, file, [options]);
 
 ----------
 Parameters
@@ -839,6 +858,7 @@ Parameters
 
 1. ``contract`` *(Address)* - the address of the contract to identify the vault.
 2. ``file`` *(Address)* - the specific file to write to.
+3. ``options`` *(Object)* - (Optional) options from the end user.  Allows the server developer to provide server-specific features to end user applications.
 
 ------
 Throws
@@ -861,13 +881,14 @@ Must promise to unconditionally delete the vault identified by the given contrac
 
 .. code-block:: javascript
 
-    deleteVault(contract);
+    deleteVault(contract, [options]);
 
 ----------
 Parameters
 ----------
 
 1. ``contract`` *(Address)* - the address of the contract to identify the vault.
+2. ``options`` *(Object)* - (Optional) options from the end user.  Allows the server developer to provide server-specific features to end user applications.
 
 -------
 Returns

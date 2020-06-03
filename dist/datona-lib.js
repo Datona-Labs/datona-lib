@@ -18002,6 +18002,13 @@ function close(){
 
 module.exports = {
   ZERO_ADDRESS: ZERO_ADDRESS,
+  NO_PERMISSIONS: NO_PERMISSIONS,
+  ALL_PERMISSIONS: ALL_PERMISSIONS,
+  READ_BIT: READ_BIT,
+  WRITE_BIT: WRITE_BIT,
+  APPEND_BIT: APPEND_BIT,
+  DIRECTORY_BIT: DIRECTORY_BIT,
+  ROOT_DIRECTORY: ROOT_DIRECTORY,
   setProvider: setProvider,
   Contract: Contract,
   Permissions: Permissions,
@@ -18795,12 +18802,13 @@ class RemoteVault extends comms.DatonaConnector {
    * Promises to create the vault on the remote server.  This method creates the
    * data request, signs it, initiates the request and validates the response.
    */
-  create() {
+  create(options) {
     const request = {
       txnType: "VaultRequest",
       requestType: "create",
       contract: this.contract,
     };
+    if (options !== undefined) request.options = options;
     return this.send(request)
       .then( function(response){
         comms.validateResponse(response.txn, "VaultResponse");
@@ -18813,7 +18821,7 @@ class RemoteVault extends comms.DatonaConnector {
   /*
    * Promises to write or rewrite the given file of this vault.
    */
-  write(data, file = blockchain.ZERO_ADDRESS) {
+  write(data, file = blockchain.ZERO_ADDRESS, options) {
     const vaultFile = new VaultFilename(file);
     if (!vaultFile.isValid) throw new errors.TypeError("file: invalid filename");
     assert.isPresent(data, "data");
@@ -18824,6 +18832,7 @@ class RemoteVault extends comms.DatonaConnector {
       file: file,
       data: data
     };
+    if (options !== undefined) request.options = options;
     return this.send(request)
       .then( function(response){
         comms.validateResponse(response.txn, "VaultResponse");
@@ -18836,7 +18845,7 @@ class RemoteVault extends comms.DatonaConnector {
   /*
    * Promises to append to the given file of this vault.
    */
-  append(data, file = blockchain.ZERO_ADDRESS) {
+  append(data, file = blockchain.ZERO_ADDRESS, options) {
     const vaultFile = new VaultFilename(file);
     if (!vaultFile.isValid) throw new errors.TypeError("file: invalid filename");
     assert.isPresent(data, "data");
@@ -18847,6 +18856,7 @@ class RemoteVault extends comms.DatonaConnector {
       file: file,
       data: data
     };
+    if (options !== undefined) request.options = options;
     return this.send(request)
         .then( function(response){
           comms.validateResponse(response.txn, "VaultResponse");
@@ -18859,7 +18869,7 @@ class RemoteVault extends comms.DatonaConnector {
   /*
    * Promises to retrieve the data held in this vault, if permitted by the contract.
    */
-  read(file = blockchain.ZERO_ADDRESS) {
+  read(file = blockchain.ZERO_ADDRESS, options) {
     const vaultFile = new VaultFilename(file);
     if (!vaultFile.isValid) throw new errors.TypeError("file: invalid filename");
     const request = {
@@ -18868,6 +18878,7 @@ class RemoteVault extends comms.DatonaConnector {
       contract: this.contract,
       file: file
     };
+    if (options !== undefined) request.options = options;
     return this.send(request)
       .then( function(response){
         comms.validateResponse(response.txn, "VaultResponse");
@@ -18880,12 +18891,13 @@ class RemoteVault extends comms.DatonaConnector {
   /*
    * Promises to delete the vault and its data, if permitted by the contract.
    */
-  delete() {
+  delete(options) {
     const request = {
       txnType: "VaultRequest",
       requestType: "delete",
       contract: this.contract
     };
+    if (options !== undefined) request.options = options;
     return this.send(request)
       .then( function(response){
         comms.validateResponse(response.txn, "VaultResponse");
@@ -18958,8 +18970,8 @@ class VaultKeeper {
       return contract.assertOwner(signatory).then(contract.assertNotExpired.bind(contract));
     }
 
-    function callDataServer(contractAddress, file, data) { // bound to this instance
-      return this.vaultDataServer.create(contractAddress);
+    function callDataServer(contractAddress, file, data, options) { // bound to this instance
+      return this.vaultDataServer.create(contractAddress, options);
     }
 
     return _handleVaultKeeperRequest("create", request, signatory, checkPermissions, callDataServer.bind(this));
@@ -18981,8 +18993,8 @@ class VaultKeeper {
         .then(contract.assertNotExpired.bind(contract));
     }
 
-    function callDataServer(contractAddress, file, data) { // bound to this instance
-      return this.vaultDataServer.write(contractAddress, file, data);
+    function callDataServer(contractAddress, file, data, options) { // bound to this instance
+      return this.vaultDataServer.write(contractAddress, file, data, options);
     }
 
     return _handleVaultKeeperRequest("write", request, signatory, checkPermissions, callDataServer.bind(this));
@@ -19004,8 +19016,8 @@ class VaultKeeper {
         .then(contract.assertNotExpired.bind(contract));
     }
 
-    function callDataServer(contractAddress, file, data) { // bound to this instance
-      return this.vaultDataServer.append(contractAddress, file, data);
+    function callDataServer(contractAddress, file, data, options) { // bound to this instance
+      return this.vaultDataServer.append(contractAddress, file, data, options);
     }
 
     return _handleVaultKeeperRequest("append", request, signatory, checkPermissions, callDataServer.bind(this));
@@ -19026,13 +19038,13 @@ class VaultKeeper {
         .then(contract.assertNotExpired.bind(contract));
      }
 
-    function callDataServer(contractAddress, file, data) { // bound to this instance
+    function callDataServer(contractAddress, file, data, options) { // bound to this instance
       const vaultFile = new VaultFilename(file);
       if (filePermissions.isDirectory() && !vaultFile.hasDirectory) {
-        return this.vaultDataServer.readDir(contractAddress, file);
+        return this.vaultDataServer.readDir(contractAddress, file, options);
       }
       else{
-        return this.vaultDataServer.read(contractAddress, file);
+        return this.vaultDataServer.read(contractAddress, file, options);
       }
     }
 
@@ -19050,8 +19062,8 @@ class VaultKeeper {
       return contract.assertOwner(signatory).then(contract.assertHasExpired.bind(contract));
     }
 
-    function callDataServer(contractAddress, file, data) { // bound to this instance
-      return this.vaultDataServer.delete(contractAddress);
+    function callDataServer(contractAddress, file, data, options) { // bound to this instance
+      return this.vaultDataServer.delete(contractAddress, options);
     }
 
     return _handleVaultKeeperRequest("delete", request, signatory, checkPermissions, callDataServer.bind(this));
@@ -19071,22 +19083,22 @@ class VaultDataServer {
   /*
    * Unconditionally creates a new vault controlled by the given contract.
    */
-  create(contract) { throw new errors.DeveloperError("Vault server's create function has not been implemented"); };
+  create(contract, options) { throw new errors.DeveloperError("Vault server's create function has not been implemented"); };
 
   /*
    * Unconditionally creates or overwrites data in a file within the vault controlled by the given contract.
    */
-  write(contract, file, data) { throw new errors.DeveloperError("Vault server's write has not been implemented"); };
+  write(contract, file, data, options) { throw new errors.DeveloperError("Vault server's write has not been implemented"); };
 
   /*
    * Unconditionally appends data to a file within the vault controlled by the given contract.
    */
-  append(contract, file, data) { throw new errors.DeveloperError("Vault server's append has not been implemented"); };
+  append(contract, file, data, options) { throw new errors.DeveloperError("Vault server's append has not been implemented"); };
 
   /*
    * Unconditionally reads the data from a file within the vault controlled by the given contract.
    */
-  read(contract, file) { throw new errors.DeveloperError("Vault server's read function has not been implemented"); };
+  read(contract, file, options) { throw new errors.DeveloperError("Vault server's read function has not been implemented"); };
 
   /*
    * Unconditionally reads a list of the files from a directory within the vault controlled by the given contract.
@@ -19094,13 +19106,13 @@ class VaultDataServer {
    *    [<file1>][\n<file2>]...
    * If no files exist then the empty string is returned.
    */
-  readDir(contract, dir) { throw new errors.DeveloperError("Vault server's readDir function has not been implemented"); };
+  readDir(contract, dir, options) { throw new errors.DeveloperError("Vault server's readDir function has not been implemented"); };
 
   /*
    * Unconditionally deletes a file controlled by the given contract.  If the file is null then the
    * entire vault is deleted.
    */
-  delete(contract, file) { throw new errors.DeveloperError("Vault server's delete function has not been implemented"); };
+  delete(contract, file, options) { throw new errors.DeveloperError("Vault server's delete function has not been implemented"); };
 
 }
 
@@ -19159,7 +19171,7 @@ function _handleVaultKeeperRequest(requestType, request, signatory, permissionFu
     const vaultFile = new VaultFilename(file);
     if (!vaultFile.isValid) throw new errors.MalformedTransactionError("invalid file");
     return permissionFunction(contract, signatory, vaultFile)
-      .then( function(){ return dataServerFunction(request.contract, file, request.data) })
+      .then( function(){ return dataServerFunction(request.contract, file, request.data, request.options) })
       .then(createSuccessResponse)
       .catch(createErrorResponse);
   } catch (error) {

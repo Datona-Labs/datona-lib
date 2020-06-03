@@ -186,12 +186,15 @@ describe("Vault", function() {
       it("sends the correct create request to the server", function() {
         const server = new Server(requesterKey);
         const vault = new datona.vault.RemoteVault(serverUrl, contractAddress, ownerKey, requester.address);
-        return vault.create()
+        const options = { opt1: "myOpt1", opt2: "myOpt2" };
+        return vault.create(options)
           .then( expectSuccessResponse )
           .then( function(){
             const serverPacket = decodeAndVerifyServerPacket(server);
             expect(serverPacket.txn.requestType).to.equal("create");
             expect(serverPacket.txn.contract).to.equal(contractAddress);
+            expect(serverPacket.txn.options.opt1).to.equal("myOpt1");
+            expect(serverPacket.txn.options.opt2).to.equal("myOpt2");
           })
           .catch( function(error){
             server.close();
@@ -242,19 +245,22 @@ describe("Vault", function() {
         const vault = new datona.vault.RemoteVault(serverUrl, contractAddress, ownerKey, requester.address);
         const data = "Hello World!";
         const randomFile = "0x388b32F2653C1d72043d240A7F938a114Ab69584";
-        return vault.write(data, randomFile)
+        const options = { opt1: "myOpt1", opt2: "myOpt2" };
+        return vault.write(data, randomFile, options)
           .then( expectSuccessResponse )
           .then( function(){
             const serverPacket = decodeAndVerifyServerPacket(server);
-              expect(serverPacket.txn.requestType).to.equal("write");
-              expect(serverPacket.txn.contract).to.equal(contractAddress);
-              expect(serverPacket.txn.file).to.equal(randomFile);
-              expect(serverPacket.txn.data).to.equal(data);
-            })
-            .catch( function(error){
-              server.close();
-              throw error;
-            });
+            expect(serverPacket.txn.requestType).to.equal("write");
+            expect(serverPacket.txn.contract).to.equal(contractAddress);
+            expect(serverPacket.txn.file).to.equal(randomFile);
+            expect(serverPacket.txn.data).to.equal(data);
+            expect(serverPacket.txn.options.opt1).to.equal("myOpt1");
+            expect(serverPacket.txn.options.opt2).to.equal("myOpt2");
+          })
+          .catch( function(error){
+            server.close();
+            throw error;
+          });
       }).timeout(5000);
 
       it("sends the correct write request to the server for a specific file within a directory", function() {
@@ -330,19 +336,22 @@ describe("Vault", function() {
         const vault = new datona.vault.RemoteVault(serverUrl, contractAddress, ownerKey, requester.address);
         const randomFile = "0x388b32F2653C1d72043d240A7F938a114Ab69584";
         const data = "Hello Again World!";
-        return vault.append(data, randomFile)
+        const options = { opt1: "myOpt1", opt2: "myOpt2" };
+        return vault.append(data, randomFile, options)
           .then( expectSuccessResponse )
           .then( function(){
             const serverPacket = decodeAndVerifyServerPacket(server);
-              expect(serverPacket.txn.requestType).to.equal("append");
-              expect(serverPacket.txn.contract).to.equal(contractAddress);
-              expect(serverPacket.txn.file).to.equal(randomFile);
-              expect(serverPacket.txn.data).to.equal(data);
-            })
-            .catch( function(error){
-              server.close();
-              throw error;
-            });
+            expect(serverPacket.txn.requestType).to.equal("append");
+            expect(serverPacket.txn.contract).to.equal(contractAddress);
+            expect(serverPacket.txn.file).to.equal(randomFile);
+            expect(serverPacket.txn.data).to.equal(data);
+            expect(serverPacket.txn.options.opt1).to.equal("myOpt1");
+            expect(serverPacket.txn.options.opt2).to.equal("myOpt2");
+          })
+          .catch( function(error){
+            server.close();
+            throw error;
+          });
       }).timeout(5000);
 
       it("sends the correct append request to the server for a specific file within a directory", function() {
@@ -409,7 +418,8 @@ describe("Vault", function() {
         const server = new Server(requesterKey);
         const vault = new datona.vault.RemoteVault(serverUrl, contractAddress, ownerKey, requester.address);
         const randomFile = "0x388b32F2653C1d72043d240A7F938a114Ab69584";
-        return vault.read(randomFile)
+        const options = { opt1: "myOpt1", opt2: "myOpt2" };
+        return vault.read(randomFile, options)
           .then( function(data){
             expect(data).to.equal("RemoteVault Server says 'Hello'");
           })
@@ -418,6 +428,8 @@ describe("Vault", function() {
             expect(serverPacket.txn.requestType).to.equal("read");
             expect(serverPacket.txn.contract).to.equal(contractAddress);
             expect(serverPacket.txn.file).to.equal(randomFile);
+            expect(serverPacket.txn.options.opt1).to.equal("myOpt1");
+            expect(serverPacket.txn.options.opt2).to.equal("myOpt2");
           })
           .catch( function(error){
             server.close();
@@ -462,12 +474,15 @@ describe("Vault", function() {
       it("sends the correct delete request to the server", function() {
         const server = new Server(requesterKey);
         const vault = new datona.vault.RemoteVault(serverUrl, contractAddress, ownerKey, requester.address);
-        return vault.delete()
+        const options = { opt1: "myOpt1", opt2: "myOpt2" };
+        return vault.delete(options)
           .then( expectSuccessResponse )
           .then( function(){
             const serverPacket = decodeAndVerifyServerPacket(server);
             expect(serverPacket.txn.requestType).to.equal("delete");
             expect(serverPacket.txn.contract).to.equal(contractAddress);
+            expect(serverPacket.txn.options.opt1).to.equal("myOpt1");
+            expect(serverPacket.txn.options.opt2).to.equal("myOpt2");
           })
           .catch( function(error){
             server.close();
@@ -487,28 +502,28 @@ describe("Vault", function() {
      */
     class MyDataServer extends datona.vault.VaultDataServer {
 
-      create(contract, data){
-        return {request: "create", contract: contract, data: data};
+      create(contract, options){
+        return {request: "create", contract: contract, options: options};
       }
 
-      write(contract, file, data){
-        return {request: "write", contract: contract, file: file, data: data};
+      write(contract, file, data, options){
+        return {request: "write", contract: contract, file: file, data: data, options: options};
       }
 
-      append(contract, file, data){
-        return {request: "append", contract: contract, file: file, data: data};
+      append(contract, file, data, options){
+        return {request: "append", contract: contract, file: file, data: data, options: options};
       }
 
-      read(contract, file){
-        return {request: "read", contract: contract, file: file};
+      read(contract, file, options){
+        return {request: "read", contract: contract, file: file, options: options};
       }
 
-      readDir(contract, dir){
-        return {request: "readDir", contract: contract, dir: dir};
+      readDir(contract, dir, options){
+        return {request: "readDir", contract: contract, dir: dir, options: options};
       }
 
-      delete(contract){
-        return {request: "delete", contract: contract};
+      delete(contract, options){
+        return {request: "delete", contract: contract, options: options};
       }
 
     }
@@ -831,12 +846,14 @@ describe("Vault", function() {
 
       it("resolves with a success response if all is well", function() {
         contractStub = { owner: owner.address, expired: false, permissions: NO_PERMISSIONS };
-        const request = {txnType: "VaultRequest", requestType: "create", contract: contractAddress};
+        const request = {txnType: "VaultRequest", requestType: "create", contract: contractAddress, options: { opt1: "myOpt1", opt2: "myOpt2"} };
         const requestStr = datona.comms.encodeTransaction(request, ownerKey);
         return keeper.handleSignedRequest(requestStr)
           .then( expectSuccessResponse )
           .then( function(response){
             expect(response.txn.data.request).to.equal("create");
+            expect(response.txn.data.options.opt1).to.equal("myOpt1");
+            expect(response.txn.data.options.opt2).to.equal("myOpt2");
           });
       });
 
@@ -908,12 +925,14 @@ describe("Vault", function() {
 
         it(requestType + " the root vault resolves with a success response if all is well", function () {
           contractStub = { owner: owner.address, expired: false, permissions: createPermissions(zeroAddress, owner.address, permission) };
-          const request = { txnType: "VaultRequest", requestType: requestType, contract: contractAddress, data: dataToWrite };
+          const request = { txnType: "VaultRequest", requestType: requestType, contract: contractAddress, data: dataToWrite, options: { opt1: "myOpt1", opt2: "myOpt2"} };
           const requestStr = datona.comms.encodeTransaction(request, ownerKey);
           return keeper.handleSignedRequest(requestStr)
             .then(expectSuccessResponse)
             .then(function (response) {
               expect(response.txn.data.request).to.equal(requestType);
+              expect(response.txn.data.options.opt1).to.equal("myOpt1");
+              expect(response.txn.data.options.opt2).to.equal("myOpt2");
             });
         });
 
@@ -936,12 +955,14 @@ describe("Vault", function() {
         it(requestType+" a specific file resolves with a success response if all is well", function() {
           const randomFile = "0x388b32F2653C1d72043d240A7F938a114Ab69584";
           contractStub = { owner: owner.address, expired: false, permissions: createPermissions( randomFile, owner.address, permission) };
-          const request = {txnType: "VaultRequest", requestType: requestType, contract: contractAddress, file: randomFile, data: dataToWrite};
+          const request = {txnType: "VaultRequest", requestType: requestType, contract: contractAddress, file: randomFile, data: dataToWrite, options: { opt1: "myOpt1", opt2: "myOpt2"} };
           const requestStr = datona.comms.encodeTransaction(request, ownerKey);
           return keeper.handleSignedRequest(requestStr)
             .then( expectSuccessResponse )
             .then( function(response){
               expect(response.txn.data.request).to.equal(requestType);
+              expect(response.txn.data.options.opt1).to.equal("myOpt1");
+              expect(response.txn.data.options.opt2).to.equal("myOpt2");
             });
         });
 
@@ -1119,12 +1140,14 @@ describe("Vault", function() {
 
       it("resolves with a success response if all is well", function() {
         contractStub = { owner: owner.address, expired: true, permissions: createPermissions( zeroAddress, owner.address, "") };
-        const request = {txnType: "VaultRequest", requestType: "delete", contract: contractAddress};
+        const request = {txnType: "VaultRequest", requestType: "delete", contract: contractAddress, options: { opt1: "myOpt1", opt2: "myOpt2"} };
         const requestStr = datona.comms.encodeTransaction(request, ownerKey);
         return keeper.handleSignedRequest(requestStr)
           .then( expectSuccessResponse )
           .then( function(response){
             expect(response.txn.data.request).to.equal("delete");
+            expect(response.txn.data.options.opt1).to.equal("myOpt1");
+            expect(response.txn.data.options.opt2).to.equal("myOpt2");
           });
       });
 
