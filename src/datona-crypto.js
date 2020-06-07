@@ -48,8 +48,7 @@ class Key {
     assert.isPrivateKey(privateKey, "privateKey");
     this.privateKey = Buffer.from(privateKey, 'hex');
     this.publicKey = ecdsa.publicKeyCreate(this.privateKey, false);
-    const addressBuf = hash(this.publicKey.slice(1)).slice(-20 * 2);
-    this.address = "0x" + addressBuf.toString('hex');
+    this.address = publicKeyToAddress(this.publicKey);
   }
 
   /*
@@ -69,14 +68,14 @@ class Key {
    * ECIES has been selected instead of an asymmetric scheme like RSA for performance reasons.
    */
   encrypt(publicKeyTo, data) {
-    assert.isInstanceOf(publicKeyTo, "public key", Uint8Array);
+    assert.isInstanceOf(publicKeyTo, "public key", Buffer);
     assert.isPresent(data, "data");
     const sharedSecret = ecdsa.ecdh(publicKeyTo, this.privateKey).toString('hex');
     return CryptoJS.AES.encrypt(data,hash(sharedSecret)).toString();
   }
 
   decrypt(publicKeyFrom, data) {
-    assert.isInstanceOf(publicKeyFrom, "public key", Uint8Array);
+    assert.isInstanceOf(publicKeyFrom, "public key", Buffer);
     assert.isPresent(data, "data");
     const sharedSecret = ecdsa.ecdh(publicKeyFrom, this.privateKey).toString('hex');
     return CryptoJS.AES.decrypt(data,hash(sharedSecret)).toString(CryptoJS.enc.Utf8);
@@ -97,8 +96,12 @@ module.exports = {
   recover: recover,
   getSignatory: recover,
   calculateContractAddress: calculateContractAddress,
+  publicKeyToAddress: publicKeyToAddress,
+  hexToUint8Array: hexToUint8Array,
+  uint8ArrayToHex: uint8ArrayToHex,
   hash: hash,
-  Key: Key
+  Key: Key,
+  Buffer: Buffer  // export to give javascript visibility in browser
 };
 
 
@@ -183,6 +186,31 @@ function calculateContractAddress(ownerAddress, nonce) {
   catch (error) {
     throw new errors.CryptographicError("Failed to calculate contract address: "+error.message);
   }
+}
+
+
+/*
+ * Calculates the address associated with a public key
+ */
+function publicKeyToAddress(publicKey) {
+  assert.isInstanceOf(publicKey, "publicKey", Uint8Array);
+  const addressBuf = hash(publicKey.slice(1)).slice(-20 * 2);
+  return "0x" + addressBuf.toString('hex');
+}
+
+
+/*
+ * Hex conversion functions
+ */
+
+function hexToUint8Array(hexString) {
+  assert.isHexString(hexString, 'hexString');
+  return Buffer.from(hexString, 'hex');
+}
+
+function uint8ArrayToHex(buffer) {
+  assert.isInstanceOf(buffer, "buffer", Uint8Array);
+  return Buffer.from(buffer).toString('hex');
 }
 
 

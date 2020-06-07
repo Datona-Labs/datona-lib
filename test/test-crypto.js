@@ -401,6 +401,13 @@ describe("Crypto", function() {
         expect(ownerKey.encrypt(requesterKey.publicKey, "Hello World")).to.not.equal("Hello World");
       });
 
+      it("returns the correct encrypted data when the key has been JSON stringified then JSON parsed", function () {
+        const key = JSON.parse(JSON.stringify(requesterKey));
+        key.privateKey = Buffer.from(key.privateKey);  // need to typecast Buffers since JSON does not do it
+        key.publicKey = Buffer.from(key.publicKey);
+        expect(ownerKey.encrypt(key.publicKey, "Hello World")).to.not.equal("Hello World");
+      });
+
     });
 
     describe("decrypt function", function () {
@@ -434,4 +441,52 @@ describe("Crypto", function() {
     });
 
   });
+
+
+  describe("hex conversion functions", function () {
+
+    describe("called with", function () {
+
+      it("uint8ArrayToHex with no argument results in an error", function () {
+        expect(function () {
+          datona.crypto.uint8ArrayToHex();
+        }).to.throw(DatonaError, "buffer is missing or empty");
+      });
+
+      it("uint8ArrayToHex with an invalid parameter results in an error", function () {
+        expect(function () {
+          datona.crypto.uint8ArrayToHex(ownerKey.address);
+        }).to.throw(DatonaError, "buffer: invalid type");
+      });
+
+      it("hexToUint8Array with no argument results in an error", function () {
+        expect(function () {
+          datona.crypto.hexToUint8Array();
+        }).to.throw(DatonaError, "hexString is missing or empty");
+      });
+
+      it("hexToUint8Array with an invalid parameter results in an error", function () {
+        expect(function () {
+          datona.crypto.hexToUint8Array(ownerKey.publicKey);
+        }).to.throw(DatonaError, "hexString: invalid type");
+      });
+
+    });
+
+    it("hexToUint8Array generates the correct result", function () {
+      expect(datona.crypto.hexToUint8Array("0001fF")).to.eql(Buffer.from([0,1,255]));
+    });
+
+    it("uint8ArrayToHex generates the correct result", function () {
+      expect(datona.crypto.uint8ArrayToHex(new Uint8Array([0,1,255]))).to.equal("0001ff");
+    });
+
+    it("functions are the inverse of each other", function () {
+      const hexString = owner.address.slice(2);
+      expect(datona.crypto.hexToUint8Array(datona.crypto.uint8ArrayToHex(ownerKey.publicKey))).to.eql(ownerKey.publicKey);
+      expect(datona.crypto.uint8ArrayToHex(datona.crypto.hexToUint8Array(hexString))).to.equal(hexString);
+    });
+
+  });
+
 });
