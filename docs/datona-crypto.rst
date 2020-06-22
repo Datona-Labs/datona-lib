@@ -18,6 +18,7 @@ Properties
 ==========
 
 * ``privateKey`` *(PrivateKey)* - the private key given to the constructor
+* ``publicKey`` *(PublicKey)* - the public key derived from the private key
 * ``address`` *(Address)* - the public blockchain address derived from the private key
 
 Constructor
@@ -155,6 +156,32 @@ Example
 *********
 Functions
 *********
+
+generateKey
+===========
+
+Generates a new Key object with a random private key.  NB: This function does not use a true random source.  Use only for experimental and test purposes.
+
+.. code-block:: javascript
+
+    generateKey();
+
+-------
+Returns
+-------
+
+``Key`` - a new Key object with a random private key.
+
+-------
+Example
+-------
+
+.. code-block:: javascript
+
+  const myPrivateKey = datona.crypto.generateKey();
+
+
+-----------------------------------------------------------------------------
 
 sign
 ====
