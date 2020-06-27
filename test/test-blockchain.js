@@ -1243,6 +1243,65 @@ describe("Blockchain", function() {
 
   });
 
+
+  describe("sendTransaction", function() {
+    
+    const txnSendCoinsToRequester = {to: requester.address, value: 5};
+
+    it("throws a DatonaError if the key is undefined", function() {
+      expect(function() {
+        datona.blockchain.sendTransaction(undefined, txnSendCoinsToRequester)
+      })
+        .to.throw(DatonaErrors.TypeError, "key is missing or empty");
+    });
+
+    it("throws a DatonaError if the key is the incorrect type", function() {
+      expect(function() {
+        datona.blockchain.sendTransaction("string, not Key", txnSendCoinsToRequester)
+      })
+        .to.throw(DatonaErrors.TypeError, "invalid type. Expected Key");
+    });
+
+    it("throws a DatonaError if the transaction is undefined", function() {
+      expect(function() {
+        datona.blockchain.sendTransaction(ownerKey, undefined)
+      })
+        .to.throw(DatonaErrors.TypeError, "transaction is missing or empty");
+    });
+
+    it("throws a DatonaError if the transaction is an invalid type", function() {
+      expect(function() {
+        datona.blockchain.sendTransaction(ownerKey, "a string not an object")
+      })
+        .to.throw(DatonaErrors.TypeError, "transaction: invalid type. Expected Object");
+    });
+
+    it("rejects with a BlockchainError if the key's public address is invalid", function() {
+      const invalidKey = new datona.crypto.Key(owner.privateKey);
+      invalidKey.address = invalidKey.address.slice(0, -1);
+      return datona.blockchain.sendTransaction(invalidKey, txnSendCoinsToRequester)
+        .should.eventually.be.rejectedWith(DatonaErrors.BlockchainError);
+    });
+
+    it("rejects with a BlockchainError if the nonce is invalid", function() {
+      // Force the nonce to be invalid by faking the key's address so the nonce is retrieved for the wrong address
+      const incorrectKey = new datona.crypto.Key(owner.privateKey);
+      incorrectKey.address = requester.address;
+      return datona.blockchain.sendTransaction(incorrectKey, txnSendCoinsToRequester)
+        .should.eventually.be.rejectedWith(DatonaErrors.BlockchainError, "nonce");
+    });
+
+    it("resolves with a receipt indicating success if all is well", function() {
+      return datona.blockchain.sendTransaction(ownerKey, txnSendCoinsToRequester)
+        .then( receipt => {
+          expect(receipt.status).to.equal(true);
+          expect(receipt.transactionHash).to.match(/^0x[0-9a-fA-F]{64}$/);
+        });
+    });
+
+  });
+
+
   after( function(){
     datona.blockchain.close();
   });

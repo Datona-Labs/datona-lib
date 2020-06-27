@@ -1284,9 +1284,107 @@ Example
 
 -----------------------------------------------------------------------------
 
+
 *********
 Functions
 *********
+
+.. _setProvider:
+
+setProvider
+===========
+
+Overrides the default gateway service to the blockchain (that configured in config.json).  Supported URL schemes (protocols) are ws, wss, http and https.
+
+.. code-block:: javascript
+
+    setProvider(url);
+
+----------
+Parameters
+----------
+
+1. ``url`` *(URL)* - url of the blockchain provider
+
+
+------
+Throws
+------
+
+* ``BlockchainError`` - if the url is invalid or the scheme (protocol) is not supported.
+
+-------
+Example
+-------
+
+.. code-block:: javascript
+
+  const myGateway = { scheme: "https", host: "kovan.infura.com:, port: "" };
+
+  datona.blockchain.setProvider(myGateway);
+
+-----------------------------------------------------------------------------
+
+.. _sendTransaction:
+
+sendTransaction
+===============
+
+Promises to publish a transaction on the blockchain.  There are three types of transactions: balance transfers between accounts; contract deployment and contract function calls.  The ``Contract`` class above should be used for contract deployment and calls.
+
+.. code-block:: javascript
+
+    sendTransaction(key, transaction);
+
+----------
+Parameters
+----------
+
+1. ``key`` *(Key)* - the Datona Key object used to sign the transaction
+2. ``transaction`` *(Object)* - Object containing the transaction
+
+The Transaction parameter has the following structure:
+  - ``from`` *(String)* - (optional) source address.  Will be auto populated from the ``key`` parameter if not given.
+  - ``to`` *(String)* - destination address (account or contract address).  Leave undefined if this is a deployment transaction.
+  - ``value`` *(Number|String|BN|BigNumber)* - eth to transfer to the destination in wei, if any.  Can be omitted if this is a contract deployment or call.
+  - ``data`` *(String)* - hex string data (with ``0x`` prefix) to include in the transaction.  If a contract deployment, this is the contract bytecode.  If a contract call this is the call information.
+  - ``gasPrice`` *(Number)* - (optional) the price you are offering to pay per unit of gas in wei.  If not given, the gas price will be auto populated using the median gas price of the last few blocks.
+  - ``gas`` *(Number|String|BN|BigNumber)* - (optional) the maximum amount of gas allowed for the transaction (gas limit). Warning - A high gas limit is used if the ``gas`` parameter is not given.
+  - ``nonce`` *(Number)* - (optional) must be the correct value for the sending address.  The EVM expects this nonce to increment each time a transaction is successfully published from the sending address.  The nonce will be automatically calculated so it should be left undefined unless you know what you are doing.
+
+-------
+Returns
+-------
+
+``Promise`` - A promise to publish the transaction.
+
+Resolves With
+~~~~~~~~~~~~~
+
+``receipt`` - An object containing the EVM receipt.  Will only resolve if the receipt's status is ``0x01`` - will reject if not.  See `here <https://ethereum.stackexchange.com/questions/6531/structure-of-a-transaction-receipt>`_ for information on the receipt structure.
+
+Rejects With
+~~~~~~~~~~~~
+
+* ``BlockchainError`` - if the transaction is invalid, could not be published or was rejected by the EVM.
+
+-------
+Example
+-------
+
+.. code-block:: javascript
+
+  const myTransaction = {
+    to: "0xc16a409a39EDe3F38E212900f8d3afe6aa6A8929",
+    value: 1000,
+    data: "0x01020304
+  }
+
+  datona.blockchain.sendTransaction(myKey, myTransaction)
+    .then(console.log)
+    .catch(console.error);
+
+-----------------------------------------------------------------------------
 
 .. _subscribe:
 
