@@ -1498,3 +1498,36 @@ Throws
 ------
 
 * ``BlockchainError`` - if the connection cannot be closed.
+
+-----------------------------------------------------------------------------
+
+getGasPrice
+===========
+
+Returns the median gas price of the last few blocks.
+
+.. code-block:: javascript
+
+    getGasPrice();
+
+-------
+Returns
+-------
+
+``Promise`` - A promise to return the gas price
+
+Resolves With
+~~~~~~~~~~~~~
+
+``String`` - String representation of the gas price in wei
+
+-------
+Example
+-------
+
+.. code-block:: javascript
+
+  getGasPrice().then(console.log);
+
+  > "20000000000"
+

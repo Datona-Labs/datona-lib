@@ -18,6 +18,8 @@ Core Types
     - keccak256 hash in the format ``/^[0-9a-fA-F]{64}$/``
   * - *PrivateKey*
     - Private key in the format ``/^[0-9a-fA-F]{64}$/``
+  * - *PublicKey*
+    - Public key in the format ``/^[0-9a-fA-F]{130}$/``
   * - *URL*
     - Server URL of the form: ``{ scheme: String, host: String, port: Number }``
   * - *VaultFile*

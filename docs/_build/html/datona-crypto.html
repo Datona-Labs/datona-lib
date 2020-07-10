@@ -118,36 +118,65 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#functions">Functions</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#id10">sign</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#id11">Parameters</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id12">Returns</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id13">Example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#generatekey">generateKey</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id10">Returns</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id11">Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#id12">sign</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id13">Parameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id14">Returns</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id15">Example</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#verify">verify</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#id14">Parameters</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id15">Returns</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id16">Parameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id17">Returns</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#throws">Throws</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id16">Example</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id18">Example</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#recover">recover</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#id17">Parameters</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id18">Returns</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id19">Throws</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id20">Example</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id19">Parameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id20">Returns</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id21">Throws</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id22">Example</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#hash">hash</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#id21">Parameters</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id22">Returns</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id23">Example</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id23">Parameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id24">Returns</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id25">Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#filetohash">fileToHash</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id26">Parameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id27">Returns</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id28">Example</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#calculatecontractaddress">calculateContractAddress</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#id24">Parameters</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id25">Returns</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id26">Example</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id29">Parameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id30">Returns</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id31">Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#publickeytoaddress">publicKeyToAddress</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id32">Parameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id33">Returns</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id34">Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#hextouint8array">hexToUint8Array</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id35">Parameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id36">Returns</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id37">Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#uint8arraytohex">uint8ArrayToHex</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id38">Parameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id39">Returns</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id40">Example</a></li>
 </ul>
 </li>
 </ul>
@@ -232,6 +261,7 @@
 <h3>Properties<a class="headerlink" href="#properties" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">privateKey</span></code> <em>(PrivateKey)</em> - the private key given to the constructor</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">publicKey</span></code> <em>(PublicKey)</em> - the public key derived from the private key</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">address</span></code> <em>(Address)</em> - the public blockchain address derived from the private key</p></li>
 </ul>
 </div>
@@ -339,25 +369,43 @@
 <hr class="docutils" />
 <div class="section" id="functions">
 <h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="generatekey">
+<h3>generateKey<a class="headerlink" href="#generatekey" title="Permalink to this headline">¶</a></h3>
+<p>Generates a new Key object with a random private key.  NB: This function does not use a true random source.  Use only for experimental and test purposes.</p>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="nx">generateKey</span><span class="p">();</span>
+</pre></div>
+</div>
 <div class="section" id="id10">
-<h3>sign<a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h3>
+<h4>Returns<a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">Key</span></code> - a new Key object with a random private key.</p>
+</div>
+<div class="section" id="id11">
+<h4>Example<a class="headerlink" href="#id11" title="Permalink to this headline">¶</a></h4>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="kr">const</span> <span class="nx">myPrivateKey</span> <span class="o">=</span> <span class="nx">datona</span><span class="p">.</span><span class="nx">crypto</span><span class="p">.</span><span class="nx">generateKey</span><span class="p">();</span>
+</pre></div>
+</div>
+</div>
+</div>
+<hr class="docutils" />
+<div class="section" id="id12">
+<h3>sign<a class="headerlink" href="#id12" title="Permalink to this headline">¶</a></h3>
 <p>Signs the given hash using the given private key.</p>
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="nx">sign</span><span class="p">(</span><span class="nx">hash</span><span class="p">,</span> <span class="nx">privateKey</span><span class="p">);</span>
 </pre></div>
 </div>
-<div class="section" id="id11">
-<h4>Parameters<a class="headerlink" href="#id11" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id13">
+<h4>Parameters<a class="headerlink" href="#id13" title="Permalink to this headline">¶</a></h4>
 <ol class="arabic simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">hash</span></code> <em>(Hash)</em> - 32-byte <a class="reference internal" href="types.html#types"><span class="std std-ref">hash</span></a> to sign in hex (64 hex characters)</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">privateKey</span></code> <em>(PrivateKey)</em> - 32-byte <a class="reference internal" href="types.html#types"><span class="std std-ref">private key</span></a> in hex (64 hex characters)</p></li>
 </ol>
 </div>
-<div class="section" id="id12">
-<h4>Returns<a class="headerlink" href="#id12" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id14">
+<h4>Returns<a class="headerlink" href="#id14" title="Permalink to this headline">¶</a></h4>
 <p><code class="docutils literal notranslate"><span class="pre">DatonaSignature</span></code> - the signature of the given hash derived from the given key</p>
 </div>
-<div class="section" id="id13">
-<h4>Example<a class="headerlink" href="#id13" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id15">
+<h4>Example<a class="headerlink" href="#id15" title="Permalink to this headline">¶</a></h4>
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="kr">const</span> <span class="nx">myPrivateKey</span> <span class="o">=</span> <span class="s2">&quot;e68e40257cfee330038c49637fcffff82fae04b9c563f4ea071c20f2eb55063c&quot;</span><span class="p">;</span>
 <span class="kr">const</span> <span class="nx">signature</span> <span class="o">=</span> <span class="nx">sign</span><span class="p">(</span><span class="nx">hash</span><span class="p">(</span><span class="s2">&quot;Hello World!&quot;</span><span class="p">),</span> <span class="nx">myPrivateKey</span><span class="p">);</span>
 </pre></div>
@@ -371,16 +419,16 @@
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="nx">verify</span><span class="p">(</span><span class="nx">hash</span><span class="p">,</span> <span class="nx">signature</span><span class="p">,</span> <span class="nx">address</span><span class="p">);</span>
 </pre></div>
 </div>
-<div class="section" id="id14">
-<h4>Parameters<a class="headerlink" href="#id14" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id16">
+<h4>Parameters<a class="headerlink" href="#id16" title="Permalink to this headline">¶</a></h4>
 <ol class="arabic simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">hash</span></code> <em>(Hash)</em> - 32-byte <a class="reference internal" href="types.html#types"><span class="std std-ref">hash</span></a> to sign in hex (64 hex characters)</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">signature</span></code> <em>(DatonaSignature)</em> - 65-byte <a class="reference internal" href="types.html#types"><span class="std std-ref">DatonaSignature</span></a> in hex (130 hex characters)</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">address</span></code> <em>(Address)</em> - expected signatory <a class="reference internal" href="types.html#types"><span class="std std-ref">address</span></a> to verify against</p></li>
 </ol>
 </div>
-<div class="section" id="id15">
-<h4>Returns<a class="headerlink" href="#id15" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id17">
+<h4>Returns<a class="headerlink" href="#id17" title="Permalink to this headline">¶</a></h4>
 <p><code class="docutils literal notranslate"><span class="pre">bool</span></code> - true if signatory matches the given address</p>
 </div>
 <div class="section" id="throws">
@@ -390,8 +438,8 @@
 <li><p><code class="docutils literal notranslate"><span class="pre">InvalidSignatureError</span></code> if the signatory could not be recovered</p></li>
 </ul>
 </div>
-<div class="section" id="id16">
-<h4>Example<a class="headerlink" href="#id16" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id18">
+<h4>Example<a class="headerlink" href="#id18" title="Permalink to this headline">¶</a></h4>
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="kr">const</span> <span class="nx">myKey</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Key</span><span class="p">(</span><span class="s2">&quot;e68e40257cfee330038c49637fcffff82fae04b9c563f4ea071c20f2eb55063c&quot;</span><span class="p">);</span>
 <span class="kr">const</span> <span class="nx">myHash</span> <span class="o">=</span> <span class="nx">hash</span><span class="p">(</span><span class="s2">&quot;Hello World!&quot;</span><span class="p">);</span>
 <span class="kr">const</span> <span class="nx">signature</span> <span class="o">=</span> <span class="nx">myKey</span><span class="p">.</span><span class="nx">sign</span><span class="p">(</span><span class="nx">myHash</span><span class="p">);</span>
@@ -410,26 +458,26 @@
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="nx">recover</span><span class="p">(</span><span class="nx">hash</span><span class="p">,</span> <span class="nx">signature</span><span class="p">);</span>
 </pre></div>
 </div>
-<div class="section" id="id17">
-<h4>Parameters<a class="headerlink" href="#id17" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id19">
+<h4>Parameters<a class="headerlink" href="#id19" title="Permalink to this headline">¶</a></h4>
 <ol class="arabic simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">hash</span></code> <em>(Hash)</em> - 32-byte <a class="reference internal" href="types.html#types"><span class="std std-ref">hash</span></a> to sign in hex (64 hex characters)</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">signature</span></code> <em>(DatonaSignature)</em> - 65-byte <a class="reference internal" href="types.html#types"><span class="std std-ref">DatonaSignature</span></a> in hex (130 hex characters)</p></li>
 </ol>
 </div>
-<div class="section" id="id18">
-<h4>Returns<a class="headerlink" href="#id18" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id20">
+<h4>Returns<a class="headerlink" href="#id20" title="Permalink to this headline">¶</a></h4>
 <p><code class="docutils literal notranslate"><span class="pre">Address</span></code> - address of the signatory (with leading 0x)</p>
 </div>
-<div class="section" id="id19">
-<h4>Throws<a class="headerlink" href="#id19" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id21">
+<h4>Throws<a class="headerlink" href="#id21" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">InvalidHashError</span></code> if the hash is invalid</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">InvalidSignatureError</span></code> if the signatory could not be recovered</p></li>
 </ul>
 </div>
-<div class="section" id="id20">
-<h4>Example<a class="headerlink" href="#id20" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id22">
+<h4>Example<a class="headerlink" href="#id22" title="Permalink to this headline">¶</a></h4>
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="kr">const</span> <span class="nx">myKey</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Key</span><span class="p">(</span><span class="s2">&quot;e68e40257cfee330038c49637fcffff82fae04b9c563f4ea071c20f2eb55063c&quot;</span><span class="p">);</span>
 <span class="kr">const</span> <span class="nx">myHash</span> <span class="o">=</span> <span class="nx">hash</span><span class="p">(</span><span class="s2">&quot;Hello World!&quot;</span><span class="p">);</span>
 <span class="kr">const</span> <span class="nx">signature</span> <span class="o">=</span> <span class="nx">myKey</span><span class="p">.</span><span class="nx">sign</span><span class="p">(</span><span class="nx">myHash</span><span class="p">);</span>
@@ -451,22 +499,61 @@
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="nx">hash</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
 </pre></div>
 </div>
-<div class="section" id="id21">
-<h4>Parameters<a class="headerlink" href="#id21" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id23">
+<h4>Parameters<a class="headerlink" href="#id23" title="Permalink to this headline">¶</a></h4>
 <ol class="arabic simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">data</span></code> <em>(Buffer)</em> - the data to be hashed</p></li>
 </ol>
 </div>
-<div class="section" id="id22">
-<h4>Returns<a class="headerlink" href="#id22" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id24">
+<h4>Returns<a class="headerlink" href="#id24" title="Permalink to this headline">¶</a></h4>
 <p><code class="docutils literal notranslate"><span class="pre">Hash</span></code> - <a class="reference internal" href="types.html#types"><span class="std std-ref">hash</span></a> of the given data as a 32-byte hex string (64 hex characters)</p>
 </div>
-<div class="section" id="id23">
-<h4>Example<a class="headerlink" href="#id23" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id25">
+<h4>Example<a class="headerlink" href="#id25" title="Permalink to this headline">¶</a></h4>
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="kr">const</span> <span class="nx">myHash</span> <span class="o">=</span> <span class="nx">hash</span><span class="p">(</span><span class="s2">&quot;Hello World!&quot;</span><span class="p">);</span>
 
 <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">myHash</span><span class="p">);</span>
 <span class="o">&gt;</span> <span class="mi">3</span><span class="nx">ea2f1d0abf3fc66cf29eebb70cbd4e7fe762ef8a09bcc06c8edf641230afec0</span>
+</pre></div>
+</div>
+</div>
+</div>
+<hr class="docutils" />
+<div class="section" id="filetohash">
+<h3>fileToHash<a class="headerlink" href="#filetohash" title="Permalink to this headline">¶</a></h3>
+<p>Generates a keccak256 hash of the given file’s contents.  Can handle files of any length.</p>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="nx">fileToHash</span><span class="p">(</span><span class="nx">path</span><span class="p">,</span> <span class="nx">nonce</span><span class="p">);</span>
+</pre></div>
+</div>
+<div class="section" id="id26">
+<h4>Parameters<a class="headerlink" href="#id26" title="Permalink to this headline">¶</a></h4>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">path</span></code> <em>(String)</em> - the file path</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">nonce</span></code> <em>(String)</em> - (Optional) if present the nonce is appended to the file contents to form part of the hash</p></li>
+</ol>
+</div>
+<div class="section" id="id27">
+<h4>Returns<a class="headerlink" href="#id27" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">Promise</span></code> - A promise to resolve with the hash of the file contents</p>
+<div class="section" id="resolves-with">
+<h5>Resolves With<a class="headerlink" href="#resolves-with" title="Permalink to this headline">¶</a></h5>
+<p><code class="docutils literal notranslate"><span class="pre">Hash</span></code> - <a class="reference internal" href="types.html#types"><span class="std std-ref">hash</span></a> of the given data as a 32-byte hex string (64 hex characters)</p>
+</div>
+<div class="section" id="rejects-with">
+<h5>Rejects With<a class="headerlink" href="#rejects-with" title="Permalink to this headline">¶</a></h5>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">FileSystemError</span></code> - if the file cannot be read</p></li>
+</ul>
+</div>
+</div>
+<div class="section" id="id28">
+<h4>Example<a class="headerlink" href="#id28" title="Permalink to this headline">¶</a></h4>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="nx">fileToHash</span><span class="p">(</span><span class="s2">&quot;../myFiles/myFile.txt&quot;</span><span class="p">)</span>
+  <span class="p">.</span><span class="nx">then</span><span class="p">(</span> <span class="p">(</span><span class="nx">hash</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;hash=&quot;</span><span class="o">+</span><span class="nx">hash</span><span class="p">)</span> <span class="p">})</span>
+  <span class="p">.</span><span class="k">catch</span><span class="p">(</span><span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">);</span>
+
+<span class="o">&gt;</span> <span class="nx">hash</span><span class="o">=</span><span class="mi">3</span><span class="nx">ea2f1d0abf3fc66cf29eebb70cbd4e7fe762ef8a09bcc06c8edf641230afec0</span>
 </pre></div>
 </div>
 </div>
@@ -478,20 +565,96 @@
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="nx">calculateContractAddress</span><span class="p">(</span><span class="nx">ownerAddress</span><span class="p">,</span> <span class="nx">nonce</span><span class="p">);</span>
 </pre></div>
 </div>
-<div class="section" id="id24">
-<h4>Parameters<a class="headerlink" href="#id24" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id29">
+<h4>Parameters<a class="headerlink" href="#id29" title="Permalink to this headline">¶</a></h4>
 <ol class="arabic simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">ownerAddress</span></code> <em>(Address)</em> - the blockchain address of the deployer</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">nonce</span></code> <em>(uint)</em> - the owner’s next transaction nonce</p></li>
 </ol>
 </div>
-<div class="section" id="id25">
-<h4>Returns<a class="headerlink" href="#id25" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id30">
+<h4>Returns<a class="headerlink" href="#id30" title="Permalink to this headline">¶</a></h4>
 <p><code class="docutils literal notranslate"><span class="pre">Address</span></code> - blockchain address of the contract</p>
 </div>
-<div class="section" id="id26">
-<h4>Example<a class="headerlink" href="#id26" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id31">
+<h4>Example<a class="headerlink" href="#id31" title="Permalink to this headline">¶</a></h4>
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="kr">const</span> <span class="nx">contractAddress</span> <span class="o">=</span> <span class="nx">calculateContractAddress</span><span class="p">(</span><span class="nx">myKey</span><span class="p">.</span><span class="nx">address</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+</div>
+<hr class="docutils" />
+<div class="section" id="publickeytoaddress">
+<h3>publicKeyToAddress<a class="headerlink" href="#publickeytoaddress" title="Permalink to this headline">¶</a></h3>
+<p>Calculates the address from a public key</p>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="nx">publicKeyToAddress</span><span class="p">(</span><span class="nx">publicKey</span><span class="p">);</span>
+</pre></div>
+</div>
+<div class="section" id="id32">
+<h4>Parameters<a class="headerlink" href="#id32" title="Permalink to this headline">¶</a></h4>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">publicKey</span></code> <em>(Uint8Array)</em> - public key as a byte buffer</p></li>
+</ol>
+</div>
+<div class="section" id="id33">
+<h4>Returns<a class="headerlink" href="#id33" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">Address</span></code> - blockchain address of the public key</p>
+</div>
+<div class="section" id="id34">
+<h4>Example<a class="headerlink" href="#id34" title="Permalink to this headline">¶</a></h4>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="kr">const</span> <span class="nx">address</span> <span class="o">=</span> <span class="nx">publicKeyToAddress</span><span class="p">(</span><span class="nx">myKey</span><span class="p">.</span><span class="nx">publicKey</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+</div>
+<hr class="docutils" />
+<div class="section" id="hextouint8array">
+<h3>hexToUint8Array<a class="headerlink" href="#hextouint8array" title="Permalink to this headline">¶</a></h3>
+<p>Basic conversion function to convert a hex string to a Uint8Array</p>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="nx">hexToUint8Array</span><span class="p">(</span><span class="nx">hex</span><span class="p">);</span>
+</pre></div>
+</div>
+<div class="section" id="id35">
+<h4>Parameters<a class="headerlink" href="#id35" title="Permalink to this headline">¶</a></h4>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">hex</span></code> <em>(String)</em> - string of hex characters (without <code class="docutils literal notranslate"><span class="pre">0x</span></code> prefix)</p></li>
+</ol>
+</div>
+<div class="section" id="id36">
+<h4>Returns<a class="headerlink" href="#id36" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">Uint8Array</span></code> - Uint8Array representation of the hex string</p>
+</div>
+<div class="section" id="id37">
+<h4>Example<a class="headerlink" href="#id37" title="Permalink to this headline">¶</a></h4>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="kr">const</span> <span class="nx">array</span> <span class="o">=</span> <span class="nx">hexToUint8Array</span><span class="p">(</span><span class="s2">&quot;010203fdfeff&quot;</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+</div>
+<hr class="docutils" />
+<div class="section" id="uint8arraytohex">
+<h3>uint8ArrayToHex<a class="headerlink" href="#uint8arraytohex" title="Permalink to this headline">¶</a></h3>
+<p>Basic conversion function to convert a Uint8Array to a hex string</p>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="nx">uint8ArrayToHex</span><span class="p">(</span><span class="nx">array</span><span class="p">);</span>
+</pre></div>
+</div>
+<div class="section" id="id38">
+<h4>Parameters<a class="headerlink" href="#id38" title="Permalink to this headline">¶</a></h4>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">array</span></code> <em>(Uint8Array)</em> - array to convert</p></li>
+</ol>
+</div>
+<div class="section" id="id39">
+<h4>Returns<a class="headerlink" href="#id39" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">String</span></code> - hex representation of the array (without <code class="docutils literal notranslate"><span class="pre">0x</span></code> prefix)</p>
+</div>
+<div class="section" id="id40">
+<h4>Example<a class="headerlink" href="#id40" title="Permalink to this headline">¶</a></h4>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="kr">const</span> <span class="nx">myArray</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Uint8Array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">253</span><span class="p">,</span> <span class="mi">254</span><span class="p">,</span> <span class="mi">255</span><span class="p">]);</span>
+<span class="kr">const</span> <span class="nx">hex</span> <span class="o">=</span> <span class="nx">uint8ArrayToHex</span><span class="p">(</span><span class="nx">myArray</span><span class="p">);</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">hex</span><span class="p">)</span>
+
+<span class="o">&gt;</span> <span class="mi">010203</span><span class="nx">fdfeff</span>
 </pre></div>
 </div>
 </div>

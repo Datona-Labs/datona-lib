@@ -348,6 +348,53 @@ Example
 
 -----------------------------------------------------------------------------
 
+fileToHash
+==========
+
+Generates a keccak256 hash of the given file's contents.  Can handle files of any length.
+
+.. code-block:: javascript
+
+    fileToHash(path, nonce);
+
+----------
+Parameters
+----------
+
+1. ``path`` *(String)* - the file path
+2. ``nonce`` *(String)* - (Optional) if present the nonce is appended to the file contents to form part of the hash
+
+-------
+Returns
+-------
+
+``Promise`` - A promise to resolve with the hash of the file contents
+
+Resolves With
+~~~~~~~~~~~~~
+
+``Hash`` - :ref:`hash<Types>` of the given data as a 32-byte hex string (64 hex characters)
+
+Rejects With
+~~~~~~~~~~~~
+
+* ``FileSystemError`` - if the file cannot be read
+
+-------
+Example
+-------
+
+.. code-block:: javascript
+
+  fileToHash("../myFiles/myFile.txt")
+    .then( (hash) => { console.log("hash="+hash) })
+    .catch(console.error);
+
+  > hash=3ea2f1d0abf3fc66cf29eebb70cbd4e7fe762ef8a09bcc06c8edf641230afec0
+
+
+-----------------------------------------------------------------------------
+
 calculateContractAddress
 ========================
 
@@ -377,3 +424,103 @@ Example
 .. code-block:: javascript
 
   const contractAddress = calculateContractAddress(myKey.address, 1);
+
+-----------------------------------------------------------------------------
+
+publicKeyToAddress
+==================
+
+Calculates the address from a public key
+
+.. code-block:: javascript
+
+    publicKeyToAddress(publicKey);
+
+----------
+Parameters
+----------
+
+1. ``publicKey`` *(Uint8Array)* - public key as a byte buffer
+
+-------
+Returns
+-------
+
+``Address`` - blockchain address of the public key
+
+-------
+Example
+-------
+
+.. code-block:: javascript
+
+  const address = publicKeyToAddress(myKey.publicKey);
+
+
+-----------------------------------------------------------------------------
+
+hexToUint8Array
+===============
+
+Basic conversion function to convert a hex string to a Uint8Array
+
+.. code-block:: javascript
+
+    hexToUint8Array(hex);
+
+----------
+Parameters
+----------
+
+1. ``hex`` *(String)* - string of hex characters (without ``0x`` prefix)
+
+-------
+Returns
+-------
+
+``Uint8Array`` - Uint8Array representation of the hex string
+
+-------
+Example
+-------
+
+.. code-block:: javascript
+
+  const array = hexToUint8Array("010203fdfeff");
+
+
+-----------------------------------------------------------------------------
+
+uint8ArrayToHex
+===============
+
+Basic conversion function to convert a Uint8Array to a hex string
+
+.. code-block:: javascript
+
+    uint8ArrayToHex(array);
+
+----------
+Parameters
+----------
+
+1. ``array`` *(Uint8Array)* - array to convert
+
+-------
+Returns
+-------
+
+``String`` - hex representation of the array (without ``0x`` prefix)
+
+-------
+Example
+-------
+
+.. code-block:: javascript
+
+  const myArray = new Uint8Array([1, 2, 3, 253, 254, 255]);
+  const hex = uint8ArrayToHex(myArray);
+  console.log(hex)
+
+  > 010203fdfeff
+
