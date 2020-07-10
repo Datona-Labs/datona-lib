@@ -4,6 +4,7 @@ const datona = require("../src/datona");
 const DatonaError = datona.errors.DatonaError;
 
 const expect = chai.expect;
+const should = chai.should();
 
 describe("Crypto", function() {
 
@@ -113,6 +114,20 @@ describe("Crypto", function() {
                 Integer posuere massa eu elit porta iaculis. Donec bibendum, diam rhoncus cursus feugiat, ligula ligula tempor est, eget ornare mauris nulla non est. Phasellus tempor efficitur erat, eget gravida nulla pretium id. Phasellus bibendum quis diam in imperdiet. Vivamus pellentesque risus libero, non imperdiet lacus scelerisque quis. Vivamus condimentum pretium lorem, et mollis diam consectetur et. Curabitur cursus, odio eu blandit porttitor, tortor sapien aliquet nibh, non porta elit libero quis ligula. Etiam vitae mauris tortor. Ut pretium quam eget ex lacinia rhoncus. Proin quis quam sit amet risus pellentesque porta ut sit amet urna. Mauris posuere eleifend sapien, ac suscipit magna sodales a. Sed gravida erat et diam suscipit iaculis. Sed lobortis est ac dui egestas, ornare malesuada odio facilisis. Etiam ullamcorper porttitor nisi in euismod. Donec ac sagittis tellus, quis dapibus ligula.
 			      `;
       expect(datona.crypto.hash(text)).to.equal("20a39c5a3c8b006065fbb57eff6e6ee6b63c425d8f121c7fd2de83199a2a16a8");
+    });
+
+  });
+
+
+  describe("fileToHash function", function() {
+
+    it("rejects with a FileSystemError if the file does not exist", function() {
+     return datona.crypto.fileToHash("non-existent-file")
+       .should.eventually.be.rejectedWith(datona.errors.FileSystemError, "no such file or directory");
+    });
+
+    it("calculates the correct hash for a file", function() {
+      expect(datona.crypto.fileToHash("LICENSE")).to.eventually.equal("d94fe86957166f63cdafc835df8885fae8b7ab5bf00d9af0c09b2f2298a35386");
     });
 
   });

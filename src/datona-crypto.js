@@ -27,6 +27,7 @@ const errors = require('./errors');
 const assert = require('./assertions');
 const ecdsa = require('secp256k1');
 const CryptoJS = require('crypto-js');
+const FS = (typeof window === 'undefined') ? require('fs') : window.FS;
 const keccak256 = require('js-sha3').keccak256;
 const rlp = require('rlp');
 const randomBytes = require('crypto').randomBytes;
@@ -100,6 +101,7 @@ module.exports = {
   hexToUint8Array: hexToUint8Array,
   uint8ArrayToHex: uint8ArrayToHex,
   hash: hash,
+  fileToHash: fileToHash,
   Key: Key,
   Buffer: Buffer  // export to give javascript visibility in browser
 };
@@ -171,6 +173,31 @@ function hash(data) {
   } catch (error) {
     throw new errors.HashingError("failed to hash data: " + error.message, data);
   }
+}
+
+
+/*
+ * Returns a promise to generate a keccak256 hash of the given file.
+ * If the nonce string is given, it is appended to the file.
+ */
+function fileToHash( file, nonce ){
+  return new Promise(
+    function( resolve, reject ){
+      try {
+        const hash = new keccak256.create();
+        const fd = FS.createReadStream(file);
+        fd.on('data', function(data) { hash.update(data); });
+        fd.on('error', function(err){ reject( new errors.FileSystemError(err) ); });
+        fd.on('close', function() {
+          if (nonce) hash.update(nonce);
+          hash.digest();
+          resolve(hash.hex());
+        });
+      }
+      catch(err){
+        reject( new errors.FileSystemError(err) );
+      }
+    });
 }
 
 
