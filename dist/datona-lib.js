@@ -24211,56 +24211,26 @@ class Contract {
 
     try {
 
-      var gasPrice = 0;
-
       // create deployment transaction data from bytecode
       const txnData = this.web3Contract.deploy({
         data: '0x' + bytecode,
         arguments: constructorArgs
       }).encodeABI();
 
-      // function to get the transaction nonce of the signatory
-      function getTransactionCount(_gasPrice) {
-        gasPrice = _gasPrice;
-        return web3.eth.getTransactionCount(key.address);
-      }
-
-      // function to construct and sign the transaction once the nonce has been calculated
-      function createTransaction(nonce) {
-        const rawTxn = {
-          nonce: nonce,
-          gasPrice: web3.utils.toHex(gasPrice),
-          gas: web3.utils.toHex(6000000),
-          data: txnData,
-          from: key.address,
-          chainID: 42
-        };
-        const txn = new Transaction(rawTxn, {'chain':'kovan'});
-        txn.sign(key.privateKey);
-        const serializedTxn = txn.serialize();
-        return "0x"+serializedTxn.toString('hex');
+      // create skeleton transaction
+      const transaction = {
+        data: txnData,
+        gas: web3.utils.toHex(6000000)
       }
 
       // function to set the address of this Contract instance once the receipt is received
       function storeAddress(receipt) {
-        if (receipt.status === true){
-          this.setAddress(receipt.contractAddress);
-          return receipt.contractAddress;
-        }
-        else throw new errors.BlockchainError("Blockchain VM reverted the deployment transaction", receipt);
+        this.setAddress(receipt.contractAddress);
+        return receipt.contractAddress;
       }
 
-      // get the nonce, construct and sign the transaction then publish it on the blockchain
-      return web3.eth.getGasPrice()
-        .then(getTransactionCount)
-        .then(createTransaction.bind(this))
-        .then(web3.eth.sendSignedTransaction)
-        .then(storeAddress.bind(this))
-        .catch(
-          function(error) {
-            throw (error instanceof errors.DatonaError) ? error : new errors.BlockchainError(error.message);
-          }
-        );
+      return sendTransaction(key, transaction)
+        .then(storeAddress.bind(this));
 
     }
     catch (error) {
@@ -24589,7 +24559,7 @@ var web3Subscribed = false;
  */
 
 /*
- * Overides the default connection to the blockchain (that configured in config.json).
+ * Overrides the default connection to the blockchain (that configured in config.json).
  */
 function setProvider(url) {
   try {
@@ -24612,6 +24582,63 @@ function setProvider(url) {
   }
 }
 
+
+/*
+ * Promises to publish a transaction on the blockchain
+ */
+function sendTransaction(key, transaction) {
+
+  assert.isInstanceOf(key, "sendTransaction key", crypto.Key);
+  assert.isObject(transaction, "sendTransaction transaction");
+
+  if (web3 === undefined) setProvider(CONFIG.blockchainURL);
+
+  try {
+
+    if (transaction.from === undefined ) transaction.from = key.address;
+    if (transaction.gas === undefined ) transaction.gas = web3.utils.toHex(6000000);
+    if (transaction.chainId === undefined ) transaction.chainId = 42;
+
+    // function to get the transaction nonce of the signatory
+    function getTransactionCount(gasPrice) {
+      if (transaction.gasPrice === undefined ) transaction.gasPrice = web3.utils.toHex(gasPrice);
+      return web3.eth.getTransactionCount(key.address);
+    }
+
+    // function to construct and sign the transaction once the nonce has been calculated
+    function createTransaction(nonce) {
+      if (transaction.nonce === undefined ) transaction.nonce = nonce;
+      const txn = new Transaction(transaction, {'chain':'kovan'});
+      txn.sign(key.privateKey);
+      const serializedTxn = txn.serialize();
+      return "0x"+serializedTxn.toString('hex');
+    }
+
+    // function to reject the promise if the transaction was not successful
+    function checkReceiptStatus(receipt) {
+      if (receipt.status === true) return receipt;
+      else throw new errors.BlockchainError("Blockchain VM reverted the transaction", receipt);
+    }
+
+    // get the nonce, construct and sign the transaction then publish it on the blockchain
+    return getGasPrice()
+      .then(getTransactionCount)
+      .then(createTransaction)
+      .then(web3.eth.sendSignedTransaction)
+      .then(checkReceiptStatus)
+      .catch( error => {
+        throw (error instanceof errors.DatonaError) ? error : new errors.BlockchainError(error.message);
+      });
+
+  }
+  catch (error) {
+    throw (error instanceof errors.DatonaError) ? error : new errors.BlockchainError(error.message);
+  }
+}
+
+function getGasPrice() {
+  return web3.eth.getGasPrice();
+}
 
 /*
  * Subscribes the client to receive notification of a new contract deployed to the
@@ -24695,9 +24722,11 @@ module.exports = {
   DIRECTORY_BIT: DIRECTORY_BIT,
   ROOT_DIRECTORY: ROOT_DIRECTORY,
   setProvider: setProvider,
+  sendTransaction: sendTransaction,
   Contract: Contract,
   Permissions: Permissions,
   GenericSmartDataAccessContract: GenericSmartDataAccessContract,
+  getGasPrice: getGasPrice,
   subscribe: subscribe,
   unsubscribe: unsubscribe,
   close: close
@@ -25225,6 +25254,7 @@ const errors = require('./errors');
 const assert = require('./assertions');
 const ecdsa = require('secp256k1');
 const CryptoJS = require('crypto-js');
+const FS = (typeof window === 'undefined') ? require('fs') : window.FS;
 const keccak256 = require('js-sha3').keccak256;
 const rlp = require('rlp');
 const randomBytes = require('crypto').randomBytes;
@@ -25298,6 +25328,7 @@ module.exports = {
   hexToUint8Array: hexToUint8Array,
   uint8ArrayToHex: uint8ArrayToHex,
   hash: hash,
+  fileToHash: fileToHash,
   Key: Key,
   Buffer: Buffer  // export to give javascript visibility in browser
 };
@@ -25373,6 +25404,31 @@ function hash(data) {
 
 
 /*
+ * Returns a promise to generate a keccak256 hash of the given file.
+ * If the nonce string is given, it is appended to the file.
+ */
+function fileToHash( file, nonce ){
+  return new Promise(
+    function( resolve, reject ){
+      try {
+        const hash = new keccak256.create();
+        const fd = FS.createReadStream(file);
+        fd.on('data', function(data) { hash.update(data); });
+        fd.on('error', function(err){ reject( new errors.FileSystemError(err) ); });
+        fd.on('close', function() {
+          if (nonce) hash.update(nonce);
+          hash.digest();
+          resolve(hash.hex());
+        });
+      }
+      catch(err){
+        reject( new errors.FileSystemError(err) );
+      }
+    });
+}
+
+
+/*
  * Generates a contract address
  */
 function calculateContractAddress(ownerAddress, nonce) {
@@ -25441,7 +25497,7 @@ function fromDatonaSignature(sigStr) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"./assertions":164,"./errors":169,"buffer":221,"crypto":229,"crypto-js":42,"js-sha3":136,"rlp":147,"secp256k1":149}],168:[function(require,module,exports){
+},{"./assertions":164,"./errors":169,"buffer":221,"crypto":229,"crypto-js":42,"fs":170,"js-sha3":136,"rlp":147,"secp256k1":149}],168:[function(require,module,exports){
 "use strict";
 
 /*
