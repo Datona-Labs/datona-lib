@@ -492,9 +492,10 @@ function setProvider(url) {
 
 
 /*
- * Promises to deploy this contract on the blockchain
+ * Promises to publish a transaction on the blockchain
  */
 function sendTransaction(key, transaction) {
+
   assert.isInstanceOf(key, "sendTransaction key", crypto.Key);
   assert.isObject(transaction, "sendTransaction transaction");
 
@@ -514,7 +515,7 @@ function sendTransaction(key, transaction) {
 
     // function to construct and sign the transaction once the nonce has been calculated
     function createTransaction(nonce) {
-      transaction.nonce = nonce;
+      if (transaction.nonce === undefined ) transaction.nonce = nonce;
       const txn = new Transaction(transaction, {'chain':'kovan'});
       txn.sign(key.privateKey);
       const serializedTxn = txn.serialize();
@@ -528,7 +529,7 @@ function sendTransaction(key, transaction) {
     }
 
     // get the nonce, construct and sign the transaction then publish it on the blockchain
-    return web3.eth.getGasPrice()
+    return getGasPrice()
       .then(getTransactionCount)
       .then(createTransaction)
       .then(web3.eth.sendSignedTransaction)
@@ -543,6 +544,9 @@ function sendTransaction(key, transaction) {
   }
 }
 
+function getGasPrice() {
+  return web3.eth.getGasPrice();
+}
 
 /*
  * Subscribes the client to receive notification of a new contract deployed to the
@@ -630,6 +634,7 @@ module.exports = {
   Contract: Contract,
   Permissions: Permissions,
   GenericSmartDataAccessContract: GenericSmartDataAccessContract,
+  getGasPrice: getGasPrice,
   subscribe: subscribe,
   unsubscribe: unsubscribe,
   close: close

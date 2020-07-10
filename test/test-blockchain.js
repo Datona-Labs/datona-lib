@@ -1245,8 +1245,8 @@ describe("Blockchain", function() {
 
 
   describe("sendTransaction", function() {
-    
-    const txnSendCoinsToRequester = {to: requester.address, value: 5};
+
+    const txnSendCoinsToRequester = {to: requester.address, value: 5, data: "0x01020304"};
 
     it("throws a DatonaError if the key is undefined", function() {
       expect(function() {
@@ -1287,12 +1287,14 @@ describe("Blockchain", function() {
       // Force the nonce to be invalid by faking the key's address so the nonce is retrieved for the wrong address
       const incorrectKey = new datona.crypto.Key(owner.privateKey);
       incorrectKey.address = requester.address;
-      return datona.blockchain.sendTransaction(incorrectKey, txnSendCoinsToRequester)
+      const freshTransaction = {to: requester.address, value: 5, data: "0x01020304"};
+      return datona.blockchain.sendTransaction(incorrectKey, freshTransaction)
         .should.eventually.be.rejectedWith(DatonaErrors.BlockchainError, "nonce");
     });
 
     it("resolves with a receipt indicating success if all is well", function() {
-      return datona.blockchain.sendTransaction(ownerKey, txnSendCoinsToRequester)
+      const freshTransaction = {to: requester.address, value: 5, data: "0x01020304"};
+      return datona.blockchain.sendTransaction(ownerKey, freshTransaction)
         .then( receipt => {
           expect(receipt.status).to.equal(true);
           expect(receipt.transactionHash).to.match(/^0x[0-9a-fA-F]{64}$/);
