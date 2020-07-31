@@ -792,6 +792,32 @@ Returns
 
 -----------------------------------------------------------------------------
 
+createFile
+==========
+
+The same as ``write`` but only if the file does not already exist.  Will fail if the vault does not exist or the file already exists.
+
+.. code-block:: javascript
+
+    createFile(contract, file, data, [options]);
+
+----------
+Parameters
+----------
+
+1. ``contract`` *(Address)* - the address of the contract to identify the vault.
+2. ``file`` *(Address)* - the specific file to write to.
+3. ``data`` *(Object)* - the data to write to the file
+4. ``options`` *(Object)* - (Optional) options from the end user.  Allows the server developer to provide server-specific features to end user applications.
+
+-------
+Returns
+-------
+
+``Promise`` - A promise to write the data to the file.  Must reject with a VaultError object if the vault does not exist or the file already exists.
+
+-----------------------------------------------------------------------------
+
 append
 ======
 

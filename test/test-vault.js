@@ -510,6 +510,10 @@ describe("Vault", function() {
         return {request: "write", contract: contract, file: file, data: data, options: options};
       }
 
+      createFile(contract, file, data, options){
+        return {request: "createFile", contract: contract, file: file, data: data, options: options};
+      }
+
       append(contract, file, data, options){
         return {request: "append", contract: contract, file: file, data: data, options: options};
       }
@@ -543,18 +547,18 @@ describe("Vault", function() {
       var stubPermissions = {
         expectedFile: expectedFile,
         expectedRequester: expectedRequester,
-        canRead: false,
-        canWrite: false,
-        canAppend: false,
-        isDirectory: false
+        canRead() { return false },
+        canWrite() { return false },
+        canAppend() { return false },
+        isDirectory() { return false }
       };
       var permissionsByte = 0x00;
       for (const c of permissionStr) {
         switch(c) {
-          case 'd': permissionsByte |= 0x80; stubPermissions.isDirectory = true; break;
-          case 'r': permissionsByte |= 0x04; stubPermissions.canRead = true; break;
-          case 'w': permissionsByte |= 0x02; stubPermissions.canWrite = true; break;
-          case 'a': permissionsByte |= 0x01; stubPermissions.canAppend = true; break;
+          case 'd': permissionsByte |= 0x80; stubPermissions.isDirectory = function() { return true }; break;
+          case 'r': permissionsByte |= 0x04; stubPermissions.canRead = function() { return true }; break;
+          case 'w': permissionsByte |= 0x02; stubPermissions.canWrite = function() { return true }; break;
+          case 'a': permissionsByte |= 0x01; stubPermissions.canAppend = function() { return true }; break;
           default: throw("createPermissions: Invalid character '"+c+"'");
         }
       }
@@ -586,6 +590,12 @@ describe("Vault", function() {
         super(sdacInterface.abi);
       }
 
+      getPermissions(requester, file){
+        return new Promise( function(resolve, reject) {
+          resolve(contractStub.permissions);
+        });
+      }
+
       assertOwner(address){
         return new Promise( function(resolve, reject){
           if( address.toLowerCase() === contractStub.owner.toLowerCase() ) resolve();
@@ -608,15 +618,15 @@ describe("Vault", function() {
       }
 
       assertCanRead(requester, file){
-        return checkPermission(requester, file, contractStub.permissions.canRead);
+        return checkPermission(requester, file, contractStub.permissions.canRead());
       }
 
       assertCanWrite(requester, file){
-        return checkPermission(requester, file, contractStub.permissions.canWrite);
+        return checkPermission(requester, file, contractStub.permissions.canWrite());
       }
 
       assertCanAppend(requester, file){
-        return checkPermission(requester, file, contractStub.permissions.canAppend);
+        return checkPermission(requester, file, contractStub.permissions.canAppend());
       }
 
     }
@@ -968,6 +978,9 @@ describe("Vault", function() {
 
       });
 
+    }
+
+    function commonRWTests({ keeper, requestType, command, permission, inversePermissions, dataToWrite }){
 
       describe("A file within a directory inherits its permissions from its parent directory", function() {
 
@@ -1002,8 +1015,6 @@ describe("Vault", function() {
 
     }
 
-
-
     describe("readVault", function(){
 
       const dataServer = new MyDataServer();
@@ -1018,6 +1029,14 @@ describe("Vault", function() {
         permission: "r",
         inversePermissions: "wa",
         dataToWrite: undefined });
+
+      commonRWTests({
+        keeper: keeper,
+        requestType: "write",
+        command: "writeVault",
+        permission: "w",
+        inversePermissions: "ra",
+        dataToWrite: "Hello World!" });
 
       it("Reading a directory causes the VaultDataServer's readDir function to be called", function() {
         const randomDir = "0x388b32F2653C1d72043d240A7F938a114Ab69584";
@@ -1043,6 +1062,14 @@ describe("Vault", function() {
       describe("parameters", () => { testParameters(keeper.writeVault.bind(keeper), "write") });
 
       commonRWATests({
+        keeper: keeper,
+        requestType: "write",
+        command: "writeVault",
+        permission: "w",
+        inversePermissions: "ra",
+        dataToWrite: "Hello World!" });
+
+      commonRWTests({
         keeper: keeper,
         requestType: "write",
         command: "writeVault",
@@ -1087,6 +1114,63 @@ describe("Vault", function() {
         permission: "a",
         inversePermissions: "rw",
         dataToWrite: "Hello World!" });
+
+      it("append to a file within a directory resolves with a permission error if the signatory is not permitted to append or write to the parent directory", function() {
+        const randomDir = "0x388b32F2653C1d72043d240A7F938a114Ab69584";
+        const fileToAccess = randomDir+"/file1.txt";
+        contractStub = { owner: owner.address, expired: false, permissions: createPermissions( randomDir, owner.address, "dr") };
+        const request = {txnType: "VaultRequest", requestType: "append", contract: contractAddress, file: fileToAccess, data: "Hello World!"};
+        const requestStr = datona.comms.encodeTransaction(request, ownerKey);
+        return keeper.handleSignedRequest(requestStr)
+          .then( function(response){
+            checkSignedErrorResponse(response, "PermissionError");
+          });
+      });
+
+      it("append to a file within a directory resolves with a success response and calls the vault server's appendToDirectory function if the signatory is permitted to append to the directory but not write to it", function() {
+        const randomDir = "0x388b32F2653C1d72043d240A7F938a114Ab69584";
+        const fileToAccess = randomDir+"/file1.txt";
+        contractStub = { owner: owner.address, expired: false, permissions: createPermissions( randomDir, owner.address, "dra") };
+        const request = {txnType: "VaultRequest", requestType: "append", contract: contractAddress, file: fileToAccess, data: "Hello World!"};
+        const requestStr = datona.comms.encodeTransaction(request, ownerKey);
+        return keeper.handleSignedRequest(requestStr)
+          .then( expectSuccessResponse )
+          .then( function(response){
+            expect(response.txn.data.request).to.equal("createFile");
+            expect(response.txn.data.file).to.equal(fileToAccess);
+            expect(response.txn.data.data).to.equal("Hello World!");
+          });
+      });
+
+      it("append to a file within a directory resolves with a success response and calls the vault server's append function if the signatory is permitted to write to the parent directory", function() {
+        const randomDir = "0x388b32F2653C1d72043d240A7F938a114Ab69584";
+        const fileToAccess = randomDir+"/file1.txt";
+        contractStub = { owner: owner.address, expired: false, permissions: createPermissions( randomDir, owner.address, "dw") };
+        const request = {txnType: "VaultRequest", requestType: "append", contract: contractAddress, file: fileToAccess, data: "Hello World!"};
+        const requestStr = datona.comms.encodeTransaction(request, ownerKey);
+        return keeper.handleSignedRequest(requestStr)
+          .then( expectSuccessResponse )
+          .then( function(response){
+            expect(response.txn.data.request).to.equal("append");
+            expect(response.txn.data.file).to.equal(fileToAccess);
+            expect(response.txn.data.data).to.equal("Hello World!");
+          });
+      });
+
+      it("append to a file within a directory resolves with a success response and calls the vault server's append function if the signatory is permitted to write and append to the parent directory", function() {
+        const randomDir = "0x388b32F2653C1d72043d240A7F938a114Ab69584";
+        const fileToAccess = randomDir+"/file1.txt";
+        contractStub = { owner: owner.address, expired: false, permissions: createPermissions( randomDir, owner.address, "dwa") };
+        const request = {txnType: "VaultRequest", requestType: "append", contract: contractAddress, file: fileToAccess, data: "Hello World!"};
+        const requestStr = datona.comms.encodeTransaction(request, ownerKey);
+        return keeper.handleSignedRequest(requestStr)
+          .then( expectSuccessResponse )
+          .then( function(response){
+            expect(response.txn.data.request).to.equal("append");
+            expect(response.txn.data.file).to.equal(fileToAccess);
+            expect(response.txn.data.data).to.equal("Hello World!");
+          });
+      });
 
       it("resolves an error response with a MalformedTransactionError if the request is missing the data", function() {
         const request = {txnType: "VaultRequest", requestType: "append", contract: contractAddress, file: zeroAddress};

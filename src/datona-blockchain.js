@@ -78,6 +78,8 @@ class Permissions {
  */
 class Contract {
 
+  address = undefined;
+
   /*
    * If the address is not given this represents a new contract to be deployed.
    */
