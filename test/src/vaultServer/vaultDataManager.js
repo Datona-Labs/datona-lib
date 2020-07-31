@@ -39,7 +39,23 @@ class RamBasedVaultDataServer extends datona.vault.VaultDataServer {
   };
 
   /**
-   * Creats or appends the given vault file
+   * Creates or appends the given vault file
+   *
+   * @param {address} contract address of the contract that controls the vault
+   * @param {file} the POSIX filename of the file
+   * @param {Object} data the data to store in the vault
+   * @returns {Promise} A promise to update the data in the vault.
+   */
+  createFile(contract, file, data) {
+    if (this.vaults[contract] === undefined) {
+      throw new datona.errors.VaultError("attempt to update a vault that does not exist: " + contract);
+    }
+    if (this.vaults[contract][file] === undefined) { this.vaults[contract][file] = data; }
+    else throw new datona.errors.VaultError("attempt to create a file that already exists: " + file);
+  };
+
+  /**
+   * Creates or appends the given vault file
    *
    * @param {address} contract address of the contract that controls the vault
    * @param {file} the POSIX filename of the file

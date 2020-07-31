@@ -194,25 +194,30 @@
 <li class="toctree-l4"><a class="reference internal" href="#id67">Returns</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#id68">append</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#id69">Parameters</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id70">Returns</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#createfile">createFile</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id68">Parameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id69">Returns</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#id71">read</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#id72">Parameters</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id73">Returns</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id70">append</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id71">Parameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id72">Returns</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#id73">read</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id74">Parameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id75">Returns</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#readdir">readDir</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#id74">Parameters</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id75">Throws</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id76">Returns</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id76">Parameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id77">Throws</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id78">Returns</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#id77">delete</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#id78">Parameters</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id79">Returns</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id79">delete</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id80">Parameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id81">Returns</a></li>
 </ul>
 </li>
 </ul>
@@ -948,14 +953,35 @@
 </div>
 </div>
 <hr class="docutils" />
+<div class="section" id="createfile">
+<h3>createFile<a class="headerlink" href="#createfile" title="Permalink to this headline">¶</a></h3>
+<p>The same as <code class="docutils literal notranslate"><span class="pre">write</span></code> but only if the file does not already exist.  Will fail if the vault does not exist or the file already exists.</p>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="nx">createFile</span><span class="p">(</span><span class="nx">contract</span><span class="p">,</span> <span class="nx">file</span><span class="p">,</span> <span class="nx">data</span><span class="p">,</span> <span class="p">[</span><span class="nx">options</span><span class="p">]);</span>
+</pre></div>
+</div>
 <div class="section" id="id68">
-<h3>append<a class="headerlink" href="#id68" title="Permalink to this headline">¶</a></h3>
+<h4>Parameters<a class="headerlink" href="#id68" title="Permalink to this headline">¶</a></h4>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">contract</span></code> <em>(Address)</em> - the address of the contract to identify the vault.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">file</span></code> <em>(Address)</em> - the specific file to write to.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">data</span></code> <em>(Object)</em> - the data to write to the file</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">options</span></code> <em>(Object)</em> - (Optional) options from the end user.  Allows the server developer to provide server-specific features to end user applications.</p></li>
+</ol>
+</div>
+<div class="section" id="id69">
+<h4>Returns<a class="headerlink" href="#id69" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">Promise</span></code> - A promise to write the data to the file.  Must reject with a VaultError object if the vault does not exist or the file already exists.</p>
+</div>
+</div>
+<hr class="docutils" />
+<div class="section" id="id70">
+<h3>append<a class="headerlink" href="#id70" title="Permalink to this headline">¶</a></h3>
 <p>Must unconditionally append the given data to the given file in the vault identified by the given contract address, creating the file if it does not exist.  Will fail if the vault does not exist.</p>
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="nx">append</span><span class="p">(</span><span class="nx">contract</span><span class="p">,</span> <span class="nx">file</span><span class="p">,</span> <span class="nx">data</span><span class="p">,</span> <span class="p">[</span><span class="nx">options</span><span class="p">]);</span>
 </pre></div>
 </div>
-<div class="section" id="id69">
-<h4>Parameters<a class="headerlink" href="#id69" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id71">
+<h4>Parameters<a class="headerlink" href="#id71" title="Permalink to this headline">¶</a></h4>
 <ol class="arabic simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">contract</span></code> <em>(Address)</em> - the address of the contract to identify the vault.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">file</span></code> <em>(Address)</em> - the specific file to write to.</p></li>
@@ -963,35 +989,15 @@
 <li><p><code class="docutils literal notranslate"><span class="pre">options</span></code> <em>(Object)</em> - (Optional) options from the end user.  Allows the server developer to provide server-specific features to end user applications.</p></li>
 </ol>
 </div>
-<div class="section" id="id70">
-<h4>Returns<a class="headerlink" href="#id70" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id72">
+<h4>Returns<a class="headerlink" href="#id72" title="Permalink to this headline">¶</a></h4>
 <p><code class="docutils literal notranslate"><span class="pre">Promise</span></code> - A promise to append the data to the file.  Must reject with a VaultError object if unsuccessful.</p>
 </div>
 </div>
 <hr class="docutils" />
-<div class="section" id="id71">
-<h3>read<a class="headerlink" href="#id71" title="Permalink to this headline">¶</a></h3>
-<p>Must unconditionally return the data from the given file in the vault identified by the given contract address.  Will fail if the vault or file does not exist.</p>
-<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="nx">read</span><span class="p">(</span><span class="nx">contract</span><span class="p">,</span> <span class="nx">file</span><span class="p">,</span> <span class="p">[</span><span class="nx">options</span><span class="p">]);</span>
-</pre></div>
-</div>
-<div class="section" id="id72">
-<h4>Parameters<a class="headerlink" href="#id72" title="Permalink to this headline">¶</a></h4>
-<ol class="arabic simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">contract</span></code> <em>(Address)</em> - the address of the contract to identify the vault.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">file</span></code> <em>(Address)</em> - the specific file to write to.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">options</span></code> <em>(Object)</em> - (Optional) options from the end user.  Allows the server developer to provide server-specific features to end user applications.</p></li>
-</ol>
-</div>
 <div class="section" id="id73">
-<h4>Returns<a class="headerlink" href="#id73" title="Permalink to this headline">¶</a></h4>
-<p><code class="docutils literal notranslate"><span class="pre">Promise</span></code> - A promise to resolve the vault contents in the same form given when the file was written.  Must reject with a VaultError object if unsuccessful.</p>
-</div>
-</div>
-<hr class="docutils" />
-<div class="section" id="readdir">
-<h3>readDir<a class="headerlink" href="#readdir" title="Permalink to this headline">¶</a></h3>
-<p>Must promise to unconditionally return a list of the names of files in the given directory within the vault identified by the given contract address.  Will fail if the vault does not exist.</p>
+<h3>read<a class="headerlink" href="#id73" title="Permalink to this headline">¶</a></h3>
+<p>Must unconditionally return the data from the given file in the vault identified by the given contract address.  Will fail if the vault or file does not exist.</p>
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="nx">read</span><span class="p">(</span><span class="nx">contract</span><span class="p">,</span> <span class="nx">file</span><span class="p">,</span> <span class="p">[</span><span class="nx">options</span><span class="p">]);</span>
 </pre></div>
 </div>
@@ -1004,30 +1010,50 @@
 </ol>
 </div>
 <div class="section" id="id75">
-<h4>Throws<a class="headerlink" href="#id75" title="Permalink to this headline">¶</a></h4>
-<p><code class="docutils literal notranslate"><span class="pre">VaultError</span></code> - if the vault does not exist.</p>
+<h4>Returns<a class="headerlink" href="#id75" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">Promise</span></code> - A promise to resolve the vault contents in the same form given when the file was written.  Must reject with a VaultError object if unsuccessful.</p>
+</div>
+</div>
+<hr class="docutils" />
+<div class="section" id="readdir">
+<h3>readDir<a class="headerlink" href="#readdir" title="Permalink to this headline">¶</a></h3>
+<p>Must promise to unconditionally return a list of the names of files in the given directory within the vault identified by the given contract address.  Will fail if the vault does not exist.</p>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="nx">read</span><span class="p">(</span><span class="nx">contract</span><span class="p">,</span> <span class="nx">file</span><span class="p">,</span> <span class="p">[</span><span class="nx">options</span><span class="p">]);</span>
+</pre></div>
 </div>
 <div class="section" id="id76">
-<h4>Returns<a class="headerlink" href="#id76" title="Permalink to this headline">¶</a></h4>
+<h4>Parameters<a class="headerlink" href="#id76" title="Permalink to this headline">¶</a></h4>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">contract</span></code> <em>(Address)</em> - the address of the contract to identify the vault.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">file</span></code> <em>(Address)</em> - the specific file to write to.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">options</span></code> <em>(Object)</em> - (Optional) options from the end user.  Allows the server developer to provide server-specific features to end user applications.</p></li>
+</ol>
+</div>
+<div class="section" id="id77">
+<h4>Throws<a class="headerlink" href="#id77" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">VaultError</span></code> - if the vault does not exist.</p>
+</div>
+<div class="section" id="id78">
+<h4>Returns<a class="headerlink" href="#id78" title="Permalink to this headline">¶</a></h4>
 <p><code class="docutils literal notranslate"><span class="pre">Promise</span></code> - A promise to resolve the directory listing in the format <code class="docutils literal notranslate"><span class="pre">[&lt;filename1&gt;][\n&lt;filename2&gt;]...</span></code>   Equivalent to <code class="docutils literal notranslate"><span class="pre">ls</span> <span class="pre">-c1</span></code> in linux.  If the directory does not exist then then the empty string is resolved. Must reject with a VaultError object if unsuccessful.</p>
 </div>
 </div>
 <hr class="docutils" />
-<div class="section" id="id77">
-<h3>delete<a class="headerlink" href="#id77" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id79">
+<h3>delete<a class="headerlink" href="#id79" title="Permalink to this headline">¶</a></h3>
 <p>Must promise to unconditionally delete the vault identified by the given contract address, including all files within.  Will fail if the vault does not exist.</p>
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="nx">deleteVault</span><span class="p">(</span><span class="nx">contract</span><span class="p">,</span> <span class="p">[</span><span class="nx">options</span><span class="p">]);</span>
 </pre></div>
 </div>
-<div class="section" id="id78">
-<h4>Parameters<a class="headerlink" href="#id78" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id80">
+<h4>Parameters<a class="headerlink" href="#id80" title="Permalink to this headline">¶</a></h4>
 <ol class="arabic simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">contract</span></code> <em>(Address)</em> - the address of the contract to identify the vault.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">options</span></code> <em>(Object)</em> - (Optional) options from the end user.  Allows the server developer to provide server-specific features to end user applications.</p></li>
 </ol>
 </div>
-<div class="section" id="id79">
-<h4>Returns<a class="headerlink" href="#id79" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id81">
+<h4>Returns<a class="headerlink" href="#id81" title="Permalink to this headline">¶</a></h4>
 <p><code class="docutils literal notranslate"><span class="pre">Promise</span></code> - A promise to delete the vault and all data within it.  Must reject with a VaultError object if unsuccessful.</p>
 </div>
 </div>

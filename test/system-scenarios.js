@@ -555,6 +555,12 @@ describe("System Scenarios", function() {
         .should.eventually.be.rejectedWith(DatonaErrors.PermissionError, "permission denied");
     });
 
+    it( "[Customer tries to append to his existing proof of address]", function(){
+      const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
+      return vault.append("My new proof of address", customersDirectory+"/proof_of_address.pdf")
+        .should.eventually.be.rejectedWith(DatonaErrors.VaultError);
+    });
+
     it( "Customer adds new proof of address to his directory", function(){
       const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
       return vault.append("My new proof of address", customersDirectory+"/proof_of_address2.pdf")
@@ -646,7 +652,7 @@ describe("System Scenarios", function() {
         .should.eventually.be.rejectedWith(DatonaErrors.PermissionError, "permission denied");
     });
 
-    it( "owner succesfully deletes the vault", function(){
+    it( "owner successfully deletes the vault", function(){
       const vault = new datona.vault.RemoteVault({scheme: vaultServerConfig.url.scheme, host: vaultServerConfig.url.host, port: vaultServerConfig.url.port}, contract.address, ownerKey, vaultOwner.address);
       return vault.delete()
         .then( expectSuccessResponse );

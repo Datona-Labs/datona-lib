@@ -299,17 +299,38 @@ class VaultKeeper {
    */
   appendVault(request, signatory) {
 
+    var directoryIsWritable = false;
+    var fileWithinDirectory = false;
+
     function checkPermissions(contract, signatory, vaultFile) {
       if (!assert.isNotNull(request.data)) throw new errors.MalformedTransactionError("Missing request data field");
-      return contract.assertCanAppend(signatory, (vaultFile.hasDirectory ? vaultFile.directory : vaultFile.file))
-        .then( (permissions) => {
+      fileWithinDirectory = vaultFile.hasDirectory;
+
+      function checkFileOrDirectoryPermissions(permissions) {
+        if (vaultFile.hasDirectory) { // file within a directory.  Permit append if directory has either append or full write permissions.
+          if (permissions.canWrite() === false && permissions.canAppend() === false) throw new errors.PermissionError("permission denied");
+          directoryIsWritable = permissions.canWrite();
+        }
+        else { // file or directory in the root
           if (permissions.isDirectory() && !vaultFile.hasDirectory) throw new errors.PermissionError("Cannot append data to a directory")
-        })
+          if (permissions.canAppend() === false) throw new errors.PermissionError("permission denied");
+        }
+      }
+
+      return contract.getPermissions(signatory, (vaultFile.hasDirectory ? vaultFile.directory : vaultFile.file))
+        .then(checkFileOrDirectoryPermissions)
         .then(contract.assertNotExpired.bind(contract));
     }
 
     function callDataServer(contractAddress, file, data, options) { // bound to this instance
-      return this.vaultDataServer.append(contractAddress, file, data, options);
+      // If appending to a directory that is not fully writable then this is a createFile command.
+      // Otherwise it is an unconditional append which will create the file if it doesn't exist or append the data if it does.
+      if (fileWithinDirectory && !directoryIsWritable) {
+        return this.vaultDataServer.createFile(contractAddress, file, data, options);
+      }
+      else {
+        return this.vaultDataServer.append(contractAddress, file, data, options);
+      }
     }
 
     return _handleVaultKeeperRequest("append", request, signatory, checkPermissions, callDataServer.bind(this));
@@ -381,6 +402,12 @@ class VaultDataServer {
    * Unconditionally creates or overwrites data in a file within the vault controlled by the given contract.
    */
   write(contract, file, data, options) { throw new errors.DeveloperError("Vault server's write has not been implemented"); };
+
+  /*
+   * Creates a new file within the vault controlled by the given contract and writes the given data to it.
+   * Must throw a VaultError if the file already exists
+   */
+  createFile(contract, file, data, options)  { throw new errors.DeveloperError("Vault server's createFile has not been implemented"); };
 
   /*
    * Unconditionally appends data to a file within the vault controlled by the given contract.

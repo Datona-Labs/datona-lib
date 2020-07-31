@@ -24170,6 +24170,8 @@ class Permissions {
  */
 class Contract {
 
+  address = undefined;
+
   /*
    * If the address is not given this represents a new contract to be deployed.
    */
@@ -24211,56 +24213,26 @@ class Contract {
 
     try {
 
-      var gasPrice = 0;
-
       // create deployment transaction data from bytecode
       const txnData = this.web3Contract.deploy({
         data: '0x' + bytecode,
         arguments: constructorArgs
       }).encodeABI();
 
-      // function to get the transaction nonce of the signatory
-      function getTransactionCount(_gasPrice) {
-        gasPrice = _gasPrice;
-        return web3.eth.getTransactionCount(key.address);
-      }
-
-      // function to construct and sign the transaction once the nonce has been calculated
-      function createTransaction(nonce) {
-        const rawTxn = {
-          nonce: nonce,
-          gasPrice: web3.utils.toHex(gasPrice),
-          gas: web3.utils.toHex(6000000),
-          data: txnData,
-          from: key.address,
-          chainID: 42
-        };
-        const txn = new Transaction(rawTxn, {'chain':'kovan'});
-        txn.sign(key.privateKey);
-        const serializedTxn = txn.serialize();
-        return "0x"+serializedTxn.toString('hex');
+      // create skeleton transaction
+      const transaction = {
+        data: txnData,
+        gas: web3.utils.toHex(6000000)
       }
 
       // function to set the address of this Contract instance once the receipt is received
       function storeAddress(receipt) {
-        if (receipt.status === true){
-          this.setAddress(receipt.contractAddress);
-          return receipt.contractAddress;
-        }
-        else throw new errors.BlockchainError("Blockchain VM reverted the deployment transaction", receipt);
+        this.setAddress(receipt.contractAddress);
+        return receipt.contractAddress;
       }
 
-      // get the nonce, construct and sign the transaction then publish it on the blockchain
-      return web3.eth.getGasPrice()
-        .then(getTransactionCount)
-        .then(createTransaction.bind(this))
-        .then(web3.eth.sendSignedTransaction)
-        .then(storeAddress.bind(this))
-        .catch(
-          function(error) {
-            throw (error instanceof errors.DatonaError) ? error : new errors.BlockchainError(error.message);
-          }
-        );
+      return sendTransaction(key, transaction)
+        .then(storeAddress.bind(this));
 
     }
     catch (error) {
@@ -24589,7 +24561,7 @@ var web3Subscribed = false;
  */
 
 /*
- * Overides the default connection to the blockchain (that configured in config.json).
+ * Overrides the default connection to the blockchain (that configured in config.json).
  */
 function setProvider(url) {
   try {
@@ -24612,6 +24584,63 @@ function setProvider(url) {
   }
 }
 
+
+/*
+ * Promises to publish a transaction on the blockchain
+ */
+function sendTransaction(key, transaction) {
+
+  assert.isInstanceOf(key, "sendTransaction key", crypto.Key);
+  assert.isObject(transaction, "sendTransaction transaction");
+
+  if (web3 === undefined) setProvider(CONFIG.blockchainURL);
+
+  try {
+
+    if (transaction.from === undefined ) transaction.from = key.address;
+    if (transaction.gas === undefined ) transaction.gas = web3.utils.toHex(6000000);
+    if (transaction.chainId === undefined ) transaction.chainId = 42;
+
+    // function to get the transaction nonce of the signatory
+    function getTransactionCount(gasPrice) {
+      if (transaction.gasPrice === undefined ) transaction.gasPrice = web3.utils.toHex(gasPrice);
+      return web3.eth.getTransactionCount(key.address);
+    }
+
+    // function to construct and sign the transaction once the nonce has been calculated
+    function createTransaction(nonce) {
+      if (transaction.nonce === undefined ) transaction.nonce = nonce;
+      const txn = new Transaction(transaction, {'chain':'kovan'});
+      txn.sign(key.privateKey);
+      const serializedTxn = txn.serialize();
+      return "0x"+serializedTxn.toString('hex');
+    }
+
+    // function to reject the promise if the transaction was not successful
+    function checkReceiptStatus(receipt) {
+      if (receipt.status === true) return receipt;
+      else throw new errors.BlockchainError("Blockchain VM reverted the transaction", receipt);
+    }
+
+    // get the nonce, construct and sign the transaction then publish it on the blockchain
+    return getGasPrice()
+      .then(getTransactionCount)
+      .then(createTransaction)
+      .then(web3.eth.sendSignedTransaction)
+      .then(checkReceiptStatus)
+      .catch( error => {
+        throw (error instanceof errors.DatonaError) ? error : new errors.BlockchainError(error.message);
+      });
+
+  }
+  catch (error) {
+    throw (error instanceof errors.DatonaError) ? error : new errors.BlockchainError(error.message);
+  }
+}
+
+function getGasPrice() {
+  return web3.eth.getGasPrice();
+}
 
 /*
  * Subscribes the client to receive notification of a new contract deployed to the
@@ -24695,9 +24724,11 @@ module.exports = {
   DIRECTORY_BIT: DIRECTORY_BIT,
   ROOT_DIRECTORY: ROOT_DIRECTORY,
   setProvider: setProvider,
+  sendTransaction: sendTransaction,
   Contract: Contract,
   Permissions: Permissions,
   GenericSmartDataAccessContract: GenericSmartDataAccessContract,
+  getGasPrice: getGasPrice,
   subscribe: subscribe,
   unsubscribe: unsubscribe,
   close: close
@@ -25225,6 +25256,7 @@ const errors = require('./errors');
 const assert = require('./assertions');
 const ecdsa = require('secp256k1');
 const CryptoJS = require('crypto-js');
+const FS = (typeof window === 'undefined') ? require('fs') : window.FS;
 const keccak256 = require('js-sha3').keccak256;
 const rlp = require('rlp');
 const randomBytes = require('crypto').randomBytes;
@@ -25298,6 +25330,7 @@ module.exports = {
   hexToUint8Array: hexToUint8Array,
   uint8ArrayToHex: uint8ArrayToHex,
   hash: hash,
+  fileToHash: fileToHash,
   Key: Key,
   Buffer: Buffer  // export to give javascript visibility in browser
 };
@@ -25373,6 +25406,31 @@ function hash(data) {
 
 
 /*
+ * Returns a promise to generate a keccak256 hash of the given file.
+ * If the nonce string is given, it is appended to the file.
+ */
+function fileToHash( file, nonce ){
+  return new Promise(
+    function( resolve, reject ){
+      try {
+        const hash = new keccak256.create();
+        const fd = FS.createReadStream(file);
+        fd.on('data', function(data) { hash.update(data); });
+        fd.on('error', function(err){ reject( new errors.FileSystemError(err) ); });
+        fd.on('close', function() {
+          if (nonce) hash.update(nonce);
+          hash.digest();
+          resolve(hash.hex());
+        });
+      }
+      catch(err){
+        reject( new errors.FileSystemError(err) );
+      }
+    });
+}
+
+
+/*
  * Generates a contract address
  */
 function calculateContractAddress(ownerAddress, nonce) {
@@ -25441,7 +25499,7 @@ function fromDatonaSignature(sigStr) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"./assertions":164,"./errors":169,"buffer":221,"crypto":229,"crypto-js":42,"js-sha3":136,"rlp":147,"secp256k1":149}],168:[function(require,module,exports){
+},{"./assertions":164,"./errors":169,"buffer":221,"crypto":229,"crypto-js":42,"fs":170,"js-sha3":136,"rlp":147,"secp256k1":149}],168:[function(require,module,exports){
 "use strict";
 
 /*
@@ -25743,17 +25801,38 @@ class VaultKeeper {
    */
   appendVault(request, signatory) {
 
+    var directoryIsWritable = false;
+    var fileWithinDirectory = false;
+
     function checkPermissions(contract, signatory, vaultFile) {
       if (!assert.isNotNull(request.data)) throw new errors.MalformedTransactionError("Missing request data field");
-      return contract.assertCanAppend(signatory, (vaultFile.hasDirectory ? vaultFile.directory : vaultFile.file))
-        .then( (permissions) => {
+      fileWithinDirectory = vaultFile.hasDirectory;
+
+      function checkFileOrDirectoryPermissions(permissions) {
+        if (vaultFile.hasDirectory) { // file within a directory.  Permit append if directory has either append or full write permissions.
+          if (permissions.canWrite() === false && permissions.canAppend() === false) throw new errors.PermissionError("permission denied");
+          directoryIsWritable = permissions.canWrite();
+        }
+        else { // file or directory in the root
           if (permissions.isDirectory() && !vaultFile.hasDirectory) throw new errors.PermissionError("Cannot append data to a directory")
-        })
+          if (permissions.canAppend() === false) throw new errors.PermissionError("permission denied");
+        }
+      }
+
+      return contract.getPermissions(signatory, (vaultFile.hasDirectory ? vaultFile.directory : vaultFile.file))
+        .then(checkFileOrDirectoryPermissions)
         .then(contract.assertNotExpired.bind(contract));
     }
 
     function callDataServer(contractAddress, file, data, options) { // bound to this instance
-      return this.vaultDataServer.append(contractAddress, file, data, options);
+      // If appending to a directory that is not fully writable then this is a createFile command.
+      // Otherwise it is an unconditional append which will create the file if it doesn't exist or append the data if it does.
+      if (fileWithinDirectory && !directoryIsWritable) {
+        return this.vaultDataServer.createFile(contractAddress, file, data, options);
+      }
+      else {
+        return this.vaultDataServer.append(contractAddress, file, data, options);
+      }
     }
 
     return _handleVaultKeeperRequest("append", request, signatory, checkPermissions, callDataServer.bind(this));
@@ -25825,6 +25904,12 @@ class VaultDataServer {
    * Unconditionally creates or overwrites data in a file within the vault controlled by the given contract.
    */
   write(contract, file, data, options) { throw new errors.DeveloperError("Vault server's write has not been implemented"); };
+
+  /*
+   * Creates a new file within the vault controlled by the given contract and writes the given data to it.
+   * Must throw a VaultError if the file already exists
+   */
+  createFile(contract, file, data, options)  { throw new errors.DeveloperError("Vault server's createFile has not been implemented"); };
 
   /*
    * Unconditionally appends data to a file within the vault controlled by the given contract.
