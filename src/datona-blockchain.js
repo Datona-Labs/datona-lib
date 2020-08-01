@@ -259,7 +259,7 @@ class Contract {
    * Promises to call the given state-modifying method with the given arguments.
    * Use 'call' to call a view or pure method.
    */
-  transact(key, method, args = []) {
+  transact(key, method, args = [], options) {
     assert.isInstanceOf(key, "Contract.transact key", crypto.Key);
     assert.isString(method, "Contract.transact method");
     assert.isArray(args, "Contract.call args");
@@ -290,6 +290,7 @@ class Contract {
           to: this.address,
           chainID: 42
         };
+        for (const field in options) rawTxn[field] = options[field];
         const txn = new Transaction(rawTxn, {'chain':'kovan'});
         txn.sign(key.privateKey);
         const serializedTxn = txn.serialize();

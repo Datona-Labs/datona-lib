@@ -753,7 +753,7 @@ Calls the given state-modifying contract method with the given arguments.  Use c
 
 .. code-block:: javascript
 
-    call(key, method, [args);
+    call(key, method, [args], [options]);
 
 ----------
 Parameters
@@ -762,6 +762,7 @@ Parameters
 1. ``key`` *(Key)* - the key used to sign the transaction
 2. ``method`` *(String)* - the name of the contract method to call
 3. ``args`` *(Array)* - (Optional) arguments to pass to the method
+4. ``options`` *(Object)* - (Optional) any fields in this object will be included in the blockchain transaction
 
 -------
 Returns
@@ -791,12 +792,14 @@ Example
 
 .. code-block:: javascript
 
+  // In this example the user has created a smart contract with an additional 'pay(address payee)' method
+
   const myContract = require("../contracts/myContract.json");
   const contract = new Contract(myContract.abi);
 
-  contract.transact(myKey, "terminate")
+  contract.transact(myKey, "pay", [theirAddress], {value: 100})
     .then( function(){
-        console.log("contract has been terminated");
+        console.log("payment successful");
     })
     .catch(console.error);
 
