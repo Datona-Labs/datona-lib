@@ -1,6 +1,6 @@
 {
   "name": "datona-lib",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Core library for access to the Datona IO Platform. Datona Protocol v0.0.2. Adds HTTP and WebSocket support.",
   "main": "src/datona.js",
   "author": "Datona Labs",
