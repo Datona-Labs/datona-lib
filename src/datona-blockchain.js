@@ -473,6 +473,7 @@ var web3Subscribed = false;
  * Overrides the default connection to the blockchain (that configured in config.json).
  */
 function setProvider(url) {
+  close();
   try {
     const urlStr = url.scheme+"://" + url.host+ (url.port === undefined || url.port === "" ? "" : ":"+url.port);
     switch (url.scheme) {
