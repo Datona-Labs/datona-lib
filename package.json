@@ -33,7 +33,7 @@
   },
   "homepage": "https://github.com/Datona-Labs/datona-lib#readme",
   "dependencies": {
-    "axios": "^0.19.2",
+    "axios": "^0.21.1",
     "crypto-js": "^4.0.0",
     "isomorphic-ws": "^4.0.1",
     "js-sha3": "^0.8.0",
