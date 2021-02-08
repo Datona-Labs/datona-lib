@@ -269,32 +269,38 @@
 <li class="toctree-l4"><a class="reference internal" href="#id125">Example</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#sendtransaction">sendTransaction</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#id127">Parameters</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id128">Returns</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id131">Example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#getprovider">getProvider</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id127">Returns</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id129">Throws</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id130">Example</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#subscribe">subscribe</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#id133">Parameters</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id134">Returns</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id135">Throws</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sendtransaction">sendTransaction</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id132">Parameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id133">Returns</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#id136">Example</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="#subscribe">subscribe</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id138">Parameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id139">Returns</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id140">Throws</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id141">Example</a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="#unsubscribe">unsubscribe</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#id137">Parameters</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id138">Returns</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id139">Example</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id142">Parameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id143">Returns</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id144">Example</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#close">close</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#id140">Throws</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id145">Throws</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#getgasprice">getGasPrice</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#id141">Returns</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id143">Example</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id146">Returns</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id148">Example</a></li>
 </ul>
 </li>
 </ul>
@@ -1498,14 +1504,45 @@ datona.blockchain.setProvider(myGateway);
 <hr class="docutils" />
 </div>
 </div>
+<div class="section" id="getprovider">
+<span id="id126"></span><h3>getProvider<a class="headerlink" href="#getprovider" title="Permalink to this headline">¶</a></h3>
+<p>Returns the current web3 provider and chain name.  If the provider hasn’t been
+previously constructed (either through a call to setProvider or the construction of a
+Contract instance) then it will be constructed using the settings in the config file.</p>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="nx">getProvider</span><span class="p">();</span>
+</pre></div>
+</div>
+<div class="section" id="id127">
+<h4>Returns<a class="headerlink" href="#id127" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">Object</span></code> - An object containing the <a class="reference external" href="https://web3js.readthedocs.io/en/v1.3.0/web3.html">Web3</a> instance and the chain name.  <code class="docutils literal notranslate"><span class="pre">{</span> <span class="pre">web3:</span> <span class="pre">Web3,</span> <span class="pre">chain:</span> <span class="pre">string</span> <span class="pre">}</span></code></p>
+</div>
+<div class="section" id="id129">
+<h4>Throws<a class="headerlink" href="#id129" title="Permalink to this headline">¶</a></h4>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">BlockchainError</span></code> - (can only be raised if the provider hasn’t been previously constructed) if the url within the config file is invalid or the scheme (protocol) is not supported.</p></li>
+</ul>
+</div>
+<div class="section" id="id130">
+<h4>Example<a class="headerlink" href="#id130" title="Permalink to this headline">¶</a></h4>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="kr">const</span> <span class="nx">provider</span> <span class="o">=</span> <span class="nx">datona</span><span class="p">.</span><span class="nx">blockchain</span><span class="p">.</span><span class="nx">getProvider</span><span class="p">();</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">provider</span><span class="p">.</span><span class="nx">web3</span><span class="p">.</span><span class="nx">currentProvider</span><span class="p">.</span><span class="nx">url</span><span class="p">);</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">provider</span><span class="p">.</span><span class="nx">chain</span><span class="p">);</span>
+
+<span class="o">&gt;</span> <span class="nx">ws</span><span class="o">:</span><span class="c1">//localhost:8545</span>
+<span class="o">&gt;</span> <span class="nx">kovan</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+</div>
+</div>
 <div class="section" id="sendtransaction">
-<span id="id126"></span><h3>sendTransaction<a class="headerlink" href="#sendtransaction" title="Permalink to this headline">¶</a></h3>
+<span id="id131"></span><h3>sendTransaction<a class="headerlink" href="#sendtransaction" title="Permalink to this headline">¶</a></h3>
 <p>Promises to publish a transaction on the blockchain.  There are three types of transactions: balance transfers between accounts; contract deployment and contract function calls.  The <code class="docutils literal notranslate"><span class="pre">Contract</span></code> class above should be used for contract deployment and calls.</p>
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="nx">sendTransaction</span><span class="p">(</span><span class="nx">key</span><span class="p">,</span> <span class="nx">transaction</span><span class="p">);</span>
 </pre></div>
 </div>
-<div class="section" id="id127">
-<h4>Parameters<a class="headerlink" href="#id127" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id132">
+<h4>Parameters<a class="headerlink" href="#id132" title="Permalink to this headline">¶</a></h4>
 <ol class="arabic simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">key</span></code> <em>(Key)</em> - the Datona Key object used to sign the transaction</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">transaction</span></code> <em>(Object)</em> - Object containing the transaction</p></li>
@@ -1523,22 +1560,22 @@ datona.blockchain.setProvider(myGateway);
 </dd>
 </dl>
 </div>
-<div class="section" id="id128">
-<h4>Returns<a class="headerlink" href="#id128" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id133">
+<h4>Returns<a class="headerlink" href="#id133" title="Permalink to this headline">¶</a></h4>
 <p><code class="docutils literal notranslate"><span class="pre">Promise</span></code> - A promise to publish the transaction.</p>
-<div class="section" id="id129">
-<h5>Resolves With<a class="headerlink" href="#id129" title="Permalink to this headline">¶</a></h5>
+<div class="section" id="id134">
+<h5>Resolves With<a class="headerlink" href="#id134" title="Permalink to this headline">¶</a></h5>
 <p><code class="docutils literal notranslate"><span class="pre">receipt</span></code> - An object containing the EVM receipt.  Will only resolve if the receipt’s status is <code class="docutils literal notranslate"><span class="pre">0x01</span></code> - will reject if not.  See <a class="reference external" href="https://ethereum.stackexchange.com/questions/6531/structure-of-a-transaction-receipt">here</a> for information on the receipt structure.</p>
 </div>
-<div class="section" id="id130">
-<h5>Rejects With<a class="headerlink" href="#id130" title="Permalink to this headline">¶</a></h5>
+<div class="section" id="id135">
+<h5>Rejects With<a class="headerlink" href="#id135" title="Permalink to this headline">¶</a></h5>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">BlockchainError</span></code> - if the transaction is invalid, could not be published or was rejected by the EVM.</p></li>
 </ul>
 </div>
 </div>
-<div class="section" id="id131">
-<h4>Example<a class="headerlink" href="#id131" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id136">
+<h4>Example<a class="headerlink" href="#id136" title="Permalink to this headline">¶</a></h4>
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span>const myTransaction = {
   to: &quot;0xc16a409a39EDe3F38E212900f8d3afe6aa6A8929&quot;,
   value: 1000,
@@ -1554,13 +1591,13 @@ datona.blockchain.sendTransaction(myKey, myTransaction)
 </div>
 </div>
 <div class="section" id="subscribe">
-<span id="id132"></span><h3>subscribe<a class="headerlink" href="#subscribe" title="Permalink to this headline">¶</a></h3>
+<span id="id137"></span><h3>subscribe<a class="headerlink" href="#subscribe" title="Permalink to this headline">¶</a></h3>
 <p>Subscribes the client to receive notification of a new contract deployed to the blockchain with the given code hash.  Optionally, the client can receive notification only if the given address is permitted to access the data controlled by the contract.</p>
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="nx">subscribe</span><span class="p">(</span><span class="nx">bytecodeHash</span><span class="p">,</span> <span class="nx">callback</span><span class="p">,</span> <span class="p">[</span><span class="nx">permittedAddress</span><span class="p">]);</span>
 </pre></div>
 </div>
-<div class="section" id="id133">
-<h4>Parameters<a class="headerlink" href="#id133" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id138">
+<h4>Parameters<a class="headerlink" href="#id138" title="Permalink to this headline">¶</a></h4>
 <ol class="arabic simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">bytecodeHash</span></code> <em>(Hash)</em> - hash of the runtime bytecode of the new contract to monitor for</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">callback</span></code> <em>(function)</em> - function to call if new contract is found: <code class="docutils literal notranslate"><span class="pre">function</span> <span class="pre">callback(contractAddress,</span> <span class="pre">bytecodeHash)</span></code></p></li>
@@ -1572,18 +1609,18 @@ datona.blockchain.sendTransaction(myKey, myTransaction)
 <li><p><code class="docutils literal notranslate"><span class="pre">bytecodeHash</span></code> <em>(Hash)</em> - (Optional) hash of the runtime bytecode of the new contract.  Allows the same callback to be used for multiple subscriptions.</p></li>
 </ol>
 </div>
-<div class="section" id="id134">
-<h4>Returns<a class="headerlink" href="#id134" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id139">
+<h4>Returns<a class="headerlink" href="#id139" title="Permalink to this headline">¶</a></h4>
 <p><code class="docutils literal notranslate"><span class="pre">Hash</span></code> - unique subscription id (can be used to <a class="reference internal" href="#unsubscribe">unsubscribe</a> later).</p>
 </div>
-<div class="section" id="id135">
-<h4>Throws<a class="headerlink" href="#id135" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id140">
+<h4>Throws<a class="headerlink" href="#id140" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">BlockchainError</span></code> - if web3 cannot be subscribed to</p></li>
 </ul>
 </div>
-<div class="section" id="id136">
-<h4>Example<a class="headerlink" href="#id136" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id141">
+<h4>Example<a class="headerlink" href="#id141" title="Permalink to this headline">¶</a></h4>
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="kr">const</span> <span class="nx">myContract</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">&quot;../contracts/myContract.json&quot;</span><span class="p">);</span>
 <span class="kr">const</span> <span class="nx">subscription</span> <span class="o">=</span> <span class="nx">subscribe</span><span class="p">(</span><span class="nx">datona</span><span class="p">.</span><span class="nx">crypto</span><span class="p">.</span><span class="nx">hash</span><span class="p">(</span><span class="nx">myContract</span><span class="p">.</span><span class="nx">runtimeBytecode</span><span class="p">),</span> <span class="nx">registerNewCustomer</span><span class="p">,</span> <span class="nx">myKey</span><span class="p">.</span><span class="nx">address</span><span class="p">);</span>
 
@@ -1611,18 +1648,18 @@ datona.blockchain.sendTransaction(myKey, myTransaction)
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="nx">unsubscribe</span><span class="p">(</span><span class="nx">subscriptionId</span><span class="p">);</span>
 </pre></div>
 </div>
-<div class="section" id="id137">
-<h4>Parameters<a class="headerlink" href="#id137" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id142">
+<h4>Parameters<a class="headerlink" href="#id142" title="Permalink to this headline">¶</a></h4>
 <ol class="arabic simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">subscriptionId</span></code> <em>(Hash)</em> - the subscription to unsubscribe</p></li>
 </ol>
 </div>
-<div class="section" id="id138">
-<h4>Returns<a class="headerlink" href="#id138" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id143">
+<h4>Returns<a class="headerlink" href="#id143" title="Permalink to this headline">¶</a></h4>
 <p><code class="docutils literal notranslate"><span class="pre">uint</span></code> - the number of subscriptions unsubscribed.</p>
 </div>
-<div class="section" id="id139">
-<h4>Example<a class="headerlink" href="#id139" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id144">
+<h4>Example<a class="headerlink" href="#id144" title="Permalink to this headline">¶</a></h4>
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="kr">const</span> <span class="nx">myContract</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">&quot;../contracts/myContract.json&quot;</span><span class="p">);</span>
 <span class="kr">const</span> <span class="nx">subscription</span> <span class="o">=</span> <span class="nx">subscribe</span><span class="p">(</span><span class="nx">datona</span><span class="p">.</span><span class="nx">crypto</span><span class="p">.</span><span class="nx">hash</span><span class="p">(</span><span class="nx">myContract</span><span class="p">.</span><span class="nx">runtimeBytecode</span><span class="p">),</span> <span class="nx">registerNewCustomer</span><span class="p">,</span> <span class="nx">myKey</span><span class="p">.</span><span class="nx">address</span><span class="p">);</span>
 
@@ -1640,8 +1677,8 @@ datona.blockchain.sendTransaction(myKey, myTransaction)
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="nx">close</span><span class="p">();</span>
 </pre></div>
 </div>
-<div class="section" id="id140">
-<h4>Throws<a class="headerlink" href="#id140" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id145">
+<h4>Throws<a class="headerlink" href="#id145" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">BlockchainError</span></code> - if the connection cannot be closed.</p></li>
 </ul>
@@ -1654,16 +1691,16 @@ datona.blockchain.sendTransaction(myKey, myTransaction)
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="nx">getGasPrice</span><span class="p">();</span>
 </pre></div>
 </div>
-<div class="section" id="id141">
-<h4>Returns<a class="headerlink" href="#id141" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id146">
+<h4>Returns<a class="headerlink" href="#id146" title="Permalink to this headline">¶</a></h4>
 <p><code class="docutils literal notranslate"><span class="pre">Promise</span></code> - A promise to return the gas price</p>
-<div class="section" id="id142">
-<h5>Resolves With<a class="headerlink" href="#id142" title="Permalink to this headline">¶</a></h5>
+<div class="section" id="id147">
+<h5>Resolves With<a class="headerlink" href="#id147" title="Permalink to this headline">¶</a></h5>
 <p><code class="docutils literal notranslate"><span class="pre">String</span></code> - String representation of the gas price in wei</p>
 </div>
 </div>
-<div class="section" id="id143">
-<h4>Example<a class="headerlink" href="#id143" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id148">
+<h4>Example<a class="headerlink" href="#id148" title="Permalink to this headline">¶</a></h4>
 <div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="nx">getGasPrice</span><span class="p">().</span><span class="nx">then</span><span class="p">(</span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">);</span>
 
 <span class="o">&gt;</span> <span class="s2">&quot;20000000000&quot;</span>

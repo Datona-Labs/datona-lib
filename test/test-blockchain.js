@@ -1304,6 +1304,31 @@ describe("Blockchain", function() {
   });
 
 
+  describe("setProvider", function() {
+
+    it("by default, uses CONFIG.json", function () {
+      const result = datona.blockchain.getProvider();
+      should.exist(result.web3);
+      expect(result.web3.currentProvider.url).to.equal("ws://localhost:8545");
+      expect(result.chain).to.equal("kovan");
+    });
+
+    it("can be set to a user defined host and chain", function () {
+      const url = {
+        scheme: "http",
+        host: "1.2.3.4",
+        port: "5678"
+      }
+      datona.blockchain.setProvider(url, "ropsten");
+      const result = datona.blockchain.getProvider();
+      should.exist(result.web3);
+      expect(result.web3.currentProvider.host).to.equal("http://1.2.3.4:5678");
+      expect(result.chain).to.equal("ropsten");
+    });
+
+  });
+
+
   after( function(){
     datona.blockchain.close();
   });
