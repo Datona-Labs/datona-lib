@@ -1086,7 +1086,7 @@ describe("Blockchain", function() {
       }
       callback(contractAddress, bytecodeHash){
         var found = false;
-        this.contracts.forEach(address => found |= (address == contractAddress) );
+        this.contracts.forEach(address => found |= (address === contractAddress) );
         if (!found) this.contracts.push(contractAddress);
         else console.log(this.name+": found");
       };
@@ -1146,17 +1146,17 @@ describe("Blockchain", function() {
 
       it("will receive notification of a deployed contract", function() {
         const sdacSH = new SubscriptionHandler();
-        assert(sdacSH.contracts.length == 0);
+        assert(sdacSH.contracts.length === 0);
         const subscriptionId = datona.blockchain.subscribe(bcHash, sdacSH.callback.bind(sdacSH));
-        assert(sdacSH.contracts.length == 0);
+        assert(sdacSH.contracts.length === 0);
         contract = new datona.blockchain.Contract(testSDAC.abi);
         return contract.deploy(ownerKey, testSDAC.bytecode, [requester.address, 10])
           .then( async function(contractAddress){
-            for (i=0; i<50 && sdacSH.contracts.length == 0; i++) {
+            for (i=0; i<50 && sdacSH.contracts.length === 0; i++) {
               await sleep(100);
             }
             expect(datona.blockchain.unsubscribe(subscriptionId)).to.equal(1);
-            if (sdacSH.contracts.length == 0) throw "Contract deployment notification not received";
+            if (sdacSH.contracts.length === 0) throw "Contract deployment notification not received";
             expect(sdacSH.contracts.length).to.equal(1);
             expect(sdacSH.contracts[0].toLowerCase()).to.equal(contractAddress.toLowerCase());
           });
@@ -1166,16 +1166,16 @@ describe("Blockchain", function() {
         const nonSdacHash = datona.crypto.hash("hello world");
         const sdacSH = new SubscriptionHandler();
         const nonSdacSH = new SubscriptionHandler();
-        assert(sdacSH.contracts.length == 0);
-        assert(nonSdacSH.contracts.length == 0);
+        assert(sdacSH.contracts.length === 0);
+        assert(nonSdacSH.contracts.length === 0);
         const sdacSubscriptionId = datona.blockchain.subscribe(bcHash, sdacSH.callback.bind(sdacSH));
         const nonSdacSubscriptionId = datona.blockchain.subscribe(nonSdacHash, nonSdacSH.callback.bind(nonSdacSH));
-        assert(sdacSH.contracts.length == 0);
-        assert(nonSdacSH.contracts.length == 0);
+        assert(sdacSH.contracts.length === 0);
+        assert(nonSdacSH.contracts.length === 0);
         contract = new datona.blockchain.Contract(testSDAC.abi);
         return contract.deploy(ownerKey, testSDAC.bytecode, [requester.address, 10])
           .then( async function(contractAddress){
-            for (i=0; i<50 && sdacSH.contracts.length == 0; i++) {
+            for (i=0; i<50 && sdacSH.contracts.length === 0; i++) {
               await sleep(100);
             }
             await sleep(100); // give chance for second callback to be called
@@ -1199,17 +1199,17 @@ describe("Blockchain", function() {
 
       it("will receive notification of a deployed contract with permission granted", function() {
         const sdacSH = new SubscriptionHandler();
-        assert(sdacSH.contracts.length == 0);
+        assert(sdacSH.contracts.length === 0);
         const subscriptionId = datona.blockchain.subscribe(bcHash, sdacSH.callback.bind(sdacSH), requester.address);
-        assert(sdacSH.contracts.length == 0);
+        assert(sdacSH.contracts.length === 0);
         contract = new datona.blockchain.Contract(testSDAC.abi);
         return contract.deploy(ownerKey, testSDAC.bytecode, [requester.address, 10])
           .then( async function(contractAddress){
-            for (i=0; i<50 && sdacSH.contracts.length == 0; i++) {
+            for (i=0; i<50 && sdacSH.contracts.length === 0; i++) {
               await sleep(100);
             }
             expect(datona.blockchain.unsubscribe(subscriptionId)).to.equal(1);
-            if (sdacSH.contracts.length == 0) throw "Contract deployment notification not received";
+            if (sdacSH.contracts.length === 0) throw "Contract deployment notification not received";
             expect(sdacSH.contracts.length).to.equal(1);
             expect(sdacSH.contracts[0].toLowerCase()).to.equal(contractAddress.toLowerCase());
           });
@@ -1218,17 +1218,17 @@ describe("Blockchain", function() {
       it("will not receive notification of a deployed contract if permission not granted", function() {
         const sdacSH = new SubscriptionHandler(); sdacSH.name = "sdacSH";
         const anotherSdacSH = new SubscriptionHandler(); anotherSdacSH.name = "anotherSdacSH";
-        assert(sdacSH.contracts.length == 0);
-        assert(anotherSdacSH.contracts.length == 0);
+        assert(sdacSH.contracts.length === 0);
+        assert(anotherSdacSH.contracts.length === 0);
         const sdacSubscriptionId = datona.blockchain.subscribe(bcHash, sdacSH.callback.bind(sdacSH));
         const randomAddress = "0x288b32F2653C1d72043d240A7F938a114Ab69584";
         const anotherSdacSubscriptionId = datona.blockchain.subscribe(bcHash, anotherSdacSH.callback.bind(anotherSdacSH), randomAddress);
-        assert(sdacSH.contracts.length == 0);
-        assert(anotherSdacSH.contracts.length == 0);
+        assert(sdacSH.contracts.length === 0);
+        assert(anotherSdacSH.contracts.length === 0);
         contract = new datona.blockchain.Contract(testSDAC.abi);
         return contract.deploy(ownerKey, testSDAC.bytecode, [requester.address, 10])
           .then( async function(contractAddress){
-            for (i=0; i<50 && sdacSH.contracts.length == 0; i++) {
+            for (i=0; i<50 && sdacSH.contracts.length === 0; i++) {
               await sleep(100);
             }
             await sleep(1000); // give plenty of time for permission check to run
@@ -1299,6 +1299,48 @@ describe("Blockchain", function() {
           expect(receipt.status).to.equal(true);
           expect(receipt.transactionHash).to.match(/^0x[0-9a-fA-F]{64}$/);
         });
+    });
+
+  });
+
+
+  describe("setProvider", function() {
+
+    it("by default, uses CONFIG.json", function () {
+      const result = datona.blockchain.getProvider();
+      should.exist(result.web3);
+      expect(result.web3.currentProvider.url).to.equal("ws://localhost:8545");
+      expect(result.chain).to.equal("kovan");
+    });
+
+    it("can be set to a user defined host and chain", function () {
+      const url = {
+        scheme: "http",
+        host: "1.2.3.4",
+        port: "5678"
+      }
+      datona.blockchain.setProvider(url, "ropsten");
+      const result = datona.blockchain.getProvider();
+      should.exist(result.web3);
+      expect(result.web3.currentProvider.host).to.equal("http://1.2.3.4:5678");
+      expect(result.chain).to.equal("ropsten");
+    });
+
+    it("rejects if url is invalid", function () {
+      expect( function() {
+        datona.blockchain.setProvider("invalid url", "ropsten");
+      }).to.throw(DatonaErrors.BlockchainError, "setProvider url is invalid");
+    });
+
+    it("rejects if schema is not supported", function () {
+      const url = {
+        scheme: "ftp",
+        host: "1.2.3.4",
+        port: "5678"
+      }
+      expect( function() {
+        datona.blockchain.setProvider(url, "ropsten");
+      }).to.throw(DatonaErrors.BlockchainError, "Invalid url scheme for the blockchain provider");
     });
 
   });

@@ -1,7 +1,8 @@
 {
-    "blockchainURL" : {
-      "scheme": "ws",
-      "host": "localhost",
-      "port": "8545"
-    }
+  "blockchain": "kovan",
+  "blockchainURL" : {
+    "scheme": "ws",
+    "host": "localhost",
+    "port": "8545"
+  }
 }

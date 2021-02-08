@@ -1328,6 +1328,46 @@ Example
 
 -----------------------------------------------------------------------------
 
+.. _getProvider:
+
+getProvider
+===========
+
+Returns the current web3 provider and chain name.  If the provider hasn't been
+previously constructed (either through a call to setProvider or the construction of a
+Contract instance) then it will be constructed using the settings in the config file.
+
+.. code-block:: javascript
+
+    getProvider();
+
+-------
+Returns
+-------
+
+``Object`` - An object containing the `Web3 <https://web3js.readthedocs.io/en/v1.3.0/web3.html>`_ instance and the chain name.  ``{ web3: Web3, chain: string }``
+
+------
+Throws
+------
+
+* ``BlockchainError`` - (can only be raised if the provider hasn't been previously constructed) if the url within the config file is invalid or the scheme (protocol) is not supported.
+
+-------
+Example
+-------
+
+.. code-block:: javascript
+
+  const provider = datona.blockchain.getProvider();
+  console.log(provider.web3.currentProvider.url);
+  console.log(provider.chain);
+
+  > ws://localhost:8545
+  > kovan
+
+-----------------------------------------------------------------------------
+
 .. _sendTransaction:
 
 sendTransaction

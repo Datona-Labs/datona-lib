@@ -31,7 +31,6 @@ const assert = require('./assertions');
 const Web3 = (typeof window === 'undefined') ? require('web3') : window.Web3;
 const Transaction = require('ethereumjs-tx').Transaction;
 const sdacInterface = require("../contracts/SDAC.json");
-var web3;
 
 
 /*
@@ -78,22 +77,16 @@ class Permissions {
  */
 class Contract {
 
-  address = undefined;
-
   /*
    * If the address is not given this represents a new contract to be deployed.
    */
   constructor(abi, address) {
     assert.isArray(abi, "Contract abi");
-    try{
-      if (web3 === undefined) setProvider(CONFIG.blockchainURL);
-      this.web3Contract = new web3.eth.Contract(abi);
-    }
-    catch (error) {
-      throw new errors.BlockchainError("Could not construct contract: "+error.message);
-    }
+    getProvider(); // constructs web3 if not yet constructed
+    this.web3Contract = new web3.eth.Contract(abi);
     this.abi = abi;
     if (address !== undefined) this.setAddress(address);
+    else this.address = undefined;
   }
 
 
@@ -277,7 +270,7 @@ class Contract {
       // function to get the transaction nonce of the signatory
       function getTransactionCount(_gasPrice) {
         gasPrice = _gasPrice;
-        return web3.eth.getTransactionCount(key.address);
+        return web3.eth.getTransactionCount(key.address, "pending");
       }
 
       // function to construct and sign the transaction once the nonce has been calculated
@@ -291,7 +284,7 @@ class Contract {
           chainID: 42
         };
         for (const field in options) rawTxn[field] = options[field];
-        const txn = new Transaction(rawTxn, {'chain':'kovan'});
+        const txn = new Transaction(rawTxn, {'chain':chain});
         txn.sign(key.privateKey);
         const serializedTxn = txn.serialize();
         return "0x"+serializedTxn.toString('hex');
@@ -461,9 +454,10 @@ class GenericSmartDataAccessContract extends Contract {
  * Variables
  */
 
+var web3;
 var subscriptions = [];
 var web3Subscribed = false;
-
+var chain = CONFIG.blockchain || "kovan";
 
 /*
  * External Functions
@@ -472,9 +466,10 @@ var web3Subscribed = false;
 /*
  * Overrides the default connection to the blockchain (that configured in config.json).
  */
-function setProvider(url) {
+function setProvider(url, blockchain) {
   close();
   try {
+    chain = blockchain || chain;
     const urlStr = url.scheme+"://" + url.host+ (url.port === undefined || url.port === "" ? "" : ":"+url.port);
     switch (url.scheme) {
       case "ws":
@@ -496,6 +491,20 @@ function setProvider(url) {
 
 
 /*
+ * Returns the web3 instance and the blockchain name
+ */
+function getProvider() {
+  try {
+    if (web3 === undefined) setProvider(CONFIG.blockchainURL);
+  }
+  catch (error) {
+    throw new errors.BlockchainError("Could not construct web3 provider: "+error.message);
+  }
+  return { web3: web3, chain: chain };
+}
+
+
+/*
  * Promises to publish a transaction on the blockchain
  */
 function sendTransaction(key, transaction) {
@@ -503,7 +512,7 @@ function sendTransaction(key, transaction) {
   assert.isInstanceOf(key, "sendTransaction key", crypto.Key);
   assert.isObject(transaction, "sendTransaction transaction");
 
-  if (web3 === undefined) setProvider(CONFIG.blockchainURL);
+  getProvider();
 
   try {
 
@@ -514,13 +523,13 @@ function sendTransaction(key, transaction) {
     // function to get the transaction nonce of the signatory
     function getTransactionCount(gasPrice) {
       if (transaction.gasPrice === undefined ) transaction.gasPrice = web3.utils.toHex(gasPrice);
-      return web3.eth.getTransactionCount(key.address);
+      return web3.eth.getTransactionCount(key.address, "pending");
     }
 
     // function to construct and sign the transaction once the nonce has been calculated
     function createTransaction(nonce) {
       if (transaction.nonce === undefined ) transaction.nonce = nonce;
-      const txn = new Transaction(transaction, {'chain':'kovan'});
+      const txn = new Transaction(transaction, {'chain': chain});
       txn.sign(key.privateKey);
       const serializedTxn = txn.serialize();
       return "0x"+serializedTxn.toString('hex');
@@ -634,6 +643,7 @@ module.exports = {
   DIRECTORY_BIT: DIRECTORY_BIT,
   ROOT_DIRECTORY: ROOT_DIRECTORY,
   setProvider: setProvider,
+  getProvider: getProvider,
   sendTransaction: sendTransaction,
   Contract: Contract,
   Permissions: Permissions,
@@ -656,7 +666,7 @@ module.exports = {
  * receive all new pending transactions
  */
 function monitorForPendingTransactions() {
-  if (web3 === undefined) setProvider(CONFIG.blockchainURL);
+  getProvider();
   web3.eth
     .subscribe('pendingTransactions', (error, result) => {
       if (error) throw new errors.BlockchainError("Failed to subscribe to web3: "+error.message);
