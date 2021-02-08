@@ -155,8 +155,8 @@ class HttpClient extends DatonaClient {
 
   send(signedTxnStr) {
     let source = axios.CancelToken.source();
-    const timer = setTimeout(() => { source.cancel() }, this.connectionTimeout);
-    return this.socket.post("", signedTxnStr, {cancelToken: source.token})
+    const timer = setTimeout(() => { source.cancel("request timed out"); }, this.connectionTimeout*10);
+    return this.socket.post("", signedTxnStr, {cancelToken: source.token, headers: {'Content-Type': 'application/json'}})
       .then( (response) => {
         clearTimeout(timer);
         return JSON.stringify(response.data);
@@ -192,6 +192,7 @@ class DatonaConnector {
         this.client = new WebSocketClient(url);
         break;
       case "http":
+      case "https":
         this.client = new HttpClient(url);
         break;
       default:
