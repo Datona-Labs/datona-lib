@@ -78,8 +78,6 @@ class Permissions {
  */
 class Contract {
 
-  address = undefined;
-
   /*
    * If the address is not given this represents a new contract to be deployed.
    */
@@ -94,6 +92,7 @@ class Contract {
     }
     this.abi = abi;
     if (address !== undefined) this.setAddress(address);
+    else this.address = undefined;
   }
 
 
@@ -291,7 +290,7 @@ class Contract {
           chainID: 42
         };
         for (const field in options) rawTxn[field] = options[field];
-        const txn = new Transaction(rawTxn, {'chain':'kovan'});
+        const txn = new Transaction(rawTxn, {'chain':'ropsten'});
         txn.sign(key.privateKey);
         const serializedTxn = txn.serialize();
         return "0x"+serializedTxn.toString('hex');
@@ -520,7 +519,7 @@ function sendTransaction(key, transaction) {
     // function to construct and sign the transaction once the nonce has been calculated
     function createTransaction(nonce) {
       if (transaction.nonce === undefined ) transaction.nonce = nonce;
-      const txn = new Transaction(transaction, {'chain':'kovan'});
+      const txn = new Transaction(transaction, {'chain':'ropsten'});
       txn.sign(key.privateKey);
       const serializedTxn = txn.serialize();
       return "0x"+serializedTxn.toString('hex');
