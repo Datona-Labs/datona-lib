@@ -512,7 +512,7 @@ function sendTransaction(key, transaction) {
   assert.isInstanceOf(key, "sendTransaction key", crypto.Key);
   assert.isObject(transaction, "sendTransaction transaction");
 
-  if (web3 === undefined) setProvider(CONFIG.blockchainURL);
+  getProvider();
 
   try {
 
@@ -666,7 +666,7 @@ module.exports = {
  * receive all new pending transactions
  */
 function monitorForPendingTransactions() {
-  if (web3 === undefined) setProvider(CONFIG.blockchainURL);
+  getProvider();
   web3.eth
     .subscribe('pendingTransactions', (error, result) => {
       if (error) throw new errors.BlockchainError("Failed to subscribe to web3: "+error.message);

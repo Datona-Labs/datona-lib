@@ -1326,6 +1326,23 @@ describe("Blockchain", function() {
       expect(result.chain).to.equal("ropsten");
     });
 
+    it("rejects if url is invalid", function () {
+      expect( function() {
+        datona.blockchain.setProvider("invalid url", "ropsten");
+      }).to.throw(DatonaErrors.BlockchainError, "setProvider url is invalid");
+    });
+
+    it("rejects if schema is not supported", function () {
+      const url = {
+        scheme: "ftp",
+        host: "1.2.3.4",
+        port: "5678"
+      }
+      expect( function() {
+        datona.blockchain.setProvider(url, "ropsten");
+      }).to.throw(DatonaErrors.BlockchainError, "Invalid url scheme for the blockchain provider");
+    });
+
   });
 
 
